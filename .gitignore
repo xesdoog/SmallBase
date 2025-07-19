@@ -1,0 +1,7 @@
+.vscode
+.vs
+*.editorconfig
+*.code-workspace
+*.log
+*.ini
+*.json
