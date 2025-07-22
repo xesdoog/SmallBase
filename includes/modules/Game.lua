@@ -108,7 +108,7 @@ end
 ---@param b_SriptHostPed? boolean
 Game.CreatePed = function(i_ModelHash, v_SpawnPos, i_Heading, b_Networked, b_SriptHostPed)
     if not Game.CanCreateEntity("peds") then
-        if not b_AutoCleanupEntities then
+        if not GVars.b_AutoCleanupEntities then
             YimToast:ShowError(
                 "SmallBase",
                 "Ped spawn limit reached! Consider enabling 'Auto Replace Entities' in the Settings tab if you want to automatically replace old entities when you reach the limit.",
@@ -145,7 +145,7 @@ end
 ---@param b_SriptHostVehicle? boolean
 Game.CreateVehicle = function(i_ModelHash, v_SpawnPos, i_Heading, b_Networked, b_SriptHostVehicle)
     if not Game.CanCreateEntity("vehicles") then
-        if not b_AutoCleanupEntities then
+        if not GVars.b_AutoCleanupEntities then
             YimToast:ShowError(
                 "SmallBase",
                 "Vehicle spawn limit reached! Consider enabling 'Auto Replace Entities' in the Settings tab if you want to automatically replace old entities when you reach the limit.",
@@ -194,7 +194,7 @@ end
 ---@param i_Heading? integer
 Game.CreateObject = function(i_ModelHash, v_SpawnPos, b_Networked, b_SriptHostPed, b_Dynamic, bPlaceOnGround, i_Heading)
     if not Game.CanCreateEntity("objects") then
-        if not b_AutoCleanupEntities then
+        if not GVars.b_AutoCleanupEntities then
             YimToast:ShowError(
                 "SmallBase",
                 "Object spawn limit reached! Consider enabling 'Auto Replace Entities' in the Settings tab if you want to automatically replace old entities when you reach the limit.",
@@ -235,7 +235,7 @@ Game.CreateObject = function(i_ModelHash, v_SpawnPos, b_Networked, b_SriptHostPe
 end
 
 Game.SafeRemovePedFromGroup = function(ped)
-    local groupID = PED.GET_PED_GROUP_INDEX(Self.GetPedID())
+    local groupID = PED.GET_PED_GROUP_INDEX(Self:GetHandle())
     if PED.DOES_GROUP_EXIST(groupID) and PED.IS_PED_GROUP_MEMBER(ped, groupID) then
         PED.REMOVE_PED_FROM_GROUP(ped)
     end
@@ -783,7 +783,7 @@ Game.SyncNetworkID = function(netID)
     NETWORK.NETWORK_REQUEST_CONTROL_OF_NETWORK_ID(netID)
     while not NETWORK.NETWORK_HAS_CONTROL_OF_NETWORK_ID(netID) and not timer:isDone() do
         NETWORK.NETWORK_REQUEST_CONTROL_OF_NETWORK_ID(netID)
-        Yield()
+        yield()
     end
 
     NETWORK.SET_NETWORK_ID_CAN_MIGRATE(netID, true)
@@ -801,7 +801,7 @@ Game.DesyncNetworkID = function(netID)
     NETWORK.NETWORK_REQUEST_CONTROL_OF_NETWORK_ID(netID)
     while not NETWORK.NETWORK_HAS_CONTROL_OF_NETWORK_ID(netID) and timer:isDone() do
         NETWORK.NETWORK_REQUEST_CONTROL_OF_NETWORK_ID(netID)
-        Yield()
+        yield()
     end
 
     NETWORK.SET_NETWORK_ID_CAN_MIGRATE(netID, false)
@@ -832,7 +832,7 @@ function Game.StartSyncedPtfxLoopedOnEntityBone(i_EntityHandle, s_PtfxDict, s_Pt
     local boneList = {}
     local isRightBone = false
 
-    if Game.IsOnline() and (i_EntityHandle ~= Self.GetPedID()) and entities.take_control_of(i_EntityHandle, 300) then
+    if Game.IsOnline() and (i_EntityHandle ~= Self:GetHandle()) and entities.take_control_of(i_EntityHandle, 300) then
         Game.SyncNetworkID(NETWORK.NETWORK_GET_NETWORK_ID_FROM_ENTITY(i_EntityHandle))
     end
 
@@ -842,12 +842,10 @@ function Game.StartSyncedPtfxLoopedOnEntityBone(i_EntityHandle, s_PtfxDict, s_Pt
         boneList = { bone }
     end
 
-    for _, v in ipairs(boneList) do
-        local boneIndex = v
-
-        if type(v) == "string" then
-            isRightBone = (string.find(v, "_rf") ~= nil) or (string.find(v, "_rr") ~= nil)
-            boneIndex = Game.GetEntityBoneIndexByName(i_EntityHandle, v)
+    for _, boneIndex in ipairs(boneList) do
+        if type(boneIndex) == "string" then
+            isRightBone = (string.find(boneIndex, "_rf") ~= nil) or (string.find(boneIndex, "_rr") ~= nil)
+            boneIndex = Game.GetEntityBoneIndexByName(i_EntityHandle, boneIndex)
         end
 
         if boneIndex ~= -1 then
@@ -873,7 +871,7 @@ function Game.StartSyncedPtfxLoopedOnEntityBone(i_EntityHandle, s_PtfxDict, s_Pt
             )
 
             table.insert(effects, fxHandle)
-            Yield()
+            yield()
         end
     end
 
@@ -896,7 +894,7 @@ Game.StartSyncedPtfxNonLoopedOnEntityBone = function(i_EntityHandle, s_PtfxDict,
 
     local boneList = {}
 
-    if Game.IsOnline() and (i_EntityHandle ~= Self.GetPedID()) and entities.take_control_of(i_EntityHandle, 500) then
+    if Game.IsOnline() and (i_EntityHandle ~= Self:GetHandle()) and entities.take_control_of(i_EntityHandle, 500) then
         Game.SyncNetworkID(NETWORK.NETWORK_GET_NETWORK_ID_FROM_ENTITY(i_EntityHandle))
     end
 
@@ -906,11 +904,9 @@ Game.StartSyncedPtfxNonLoopedOnEntityBone = function(i_EntityHandle, s_PtfxDict,
         boneList = { bone }
     end
 
-    for _, v in ipairs(boneList) do
-        local i_BoneIndex = v
-
-        if type(v) == "string" then
-            i_BoneIndex = Game.GetEntityBoneIndexByName(i_EntityHandle, v)
+    for _, boneIndex in ipairs(boneList) do
+        if type(boneIndex) == "string" then
+            boneIndex = Game.GetEntityBoneIndexByName(i_EntityHandle, boneIndex)
         end
 
         GRAPHICS.USE_PARTICLE_FX_ASSET(s_PtfxDict)
@@ -923,7 +919,7 @@ Game.StartSyncedPtfxNonLoopedOnEntityBone = function(i_EntityHandle, s_PtfxDict,
             v_Rot.x,
             v_Rot.y,
             v_Rot.z,
-            i_BoneIndex or 0,
+            boneIndex or 0,
             f_Scale,
             false,
             false,
@@ -978,7 +974,13 @@ function Game.GetPedComponents(ped)
     return variations
 end
 
+---@param ped number
+---@param components table
 function Game.ApplyPedComponents(ped, components)
+    if (not components or next(components) == nil) then
+        return
+    end
+
     for _, part in ipairs(components) do
         if PED.IS_PED_COMPONENT_VARIATION_VALID(
             ped,
@@ -1005,11 +1007,11 @@ end
 ---@param maxSpeed? number  -- **Optional**: if set, skips vehicles faster than this speed (m/s)
 ---@return integer -- vehicle handle or 0
 Game.GetClosestVehicle = function(closeTo, range, excludeEntity, nonPlayerVehicle, maxSpeed)
-    local thisPos = type(closeTo) == "number" and Game.GetEntityCoords(closeTo, false) or closeTo
+    local this = type(closeTo) == "number" and Game.GetEntityCoords(closeTo, false) or closeTo
     local closestVeh = 0
     local closestDist = range * range
 
-    if VEHICLE.IS_ANY_VEHICLE_NEAR_POINT(thisPos.x, thisPos.y, thisPos.z, range) then
+    if VEHICLE.IS_ANY_VEHICLE_NEAR_POINT(this.x, this.y, this.z, range) then
         local veh_handles = entities.get_all_vehicles_as_handles()
 
         for _, veh in ipairs(veh_handles) do
@@ -1018,7 +1020,8 @@ Game.GetClosestVehicle = function(closeTo, range, excludeEntity, nonPlayerVehicl
 
                 if not (nonPlayerVehicle and PED.IS_PED_A_PLAYER(driver)) then
                     local vehPos = Game.GetEntityCoords(veh, true)
-                    local distance = thisPos:distance(vehPos)
+                    ---@diagnostic disable-next-line -- it's literally evaluated at the top 😡
+                    local distance = this:distance(vehPos)
 
                     if distance <= closestDist and math.floor(VEHICLE.GET_VEHICLE_BODY_HEALTH(veh)) > 0 then
                         if maxSpeed then
@@ -1046,14 +1049,15 @@ end
 ---@param aliveOnly boolean **Optional**: if true, ignores dead peds.
 ---@return integer
 Game.GetClosestPed = function(closeTo, range, aliveOnly)
-    local thisPos = type(closeTo) == 'number' and Game.GetEntityCoords(closeTo, false) or closeTo
+    local this = type(closeTo) == 'number' and Game.GetEntityCoords(closeTo, false) or closeTo
     local closestDist = range * range
 
-    if PED.IS_ANY_PED_NEAR_POINT(thisPos.x, thisPos.y, thisPos.z, range) then
+    if PED.IS_ANY_PED_NEAR_POINT(this.x, this.y, this.z, range) then
         for _, ped in ipairs(entities.get_all_peds_as_handles()) do
-            if PED.IS_PED_HUMAN(ped) and (ped ~= Self.GetPedID()) then
+            if PED.IS_PED_HUMAN(ped) and (ped ~= Self:GetHandle()) then
                 local pedPos = Game.GetEntityCoords(ped, true)
-                local distance = thisPos:distance(pedPos)
+                ---@diagnostic disable-next-line
+                local distance = this:distance(pedPos)
 
                 if distance <= closestDist then
                     if aliveOnly then
@@ -1099,27 +1103,6 @@ Game.GetWaypointCoords = function()
     end
 end
 
----@param area vec3
----@param radius number
----@param isFree boolean
----@return boolean, string
-Game.DoesHumanScenarioExistInArea = function(area, radius, isFree)
-    for _, v in ipairs(t_PedScenarios) do
-        if TASK.DOES_SCENARIO_OF_TYPE_EXIST_IN_AREA(
-            area.x,
-            area.y,
-            area.z,
-            v.scenario,
-            radius,
-            isFree
-        ) then
-            return true, v.label
-        end
-    end
-
-    return false, ""
-end
-
 -- Starts a Line Of Sight world probe shape test.
 ---@param src vec3
 ---@param dest vec3
@@ -1138,11 +1121,12 @@ Game.RayCast = function(src, dest, traceFlags, entityToExclude)
         7
     )
 
-    local endCoords = memory.allocate(0xC)
-    local surfaceNormal = memory.allocate(0xC)
+    local endCoords = vec3:zero()
+    local surfaceNormal = vec3:zero()
+    local hit = false
     local entityHit = 0
-    local _, hit, retEntityHit, retEndCoords = 0, false, 0, vec3:zero()
-    _, hit, retEndCoords, _, retEntityHit = SHAPETEST.GET_SHAPE_TEST_RESULT(
+
+    _, hit, endCoords, _, entityHit = SHAPETEST.GET_SHAPE_TEST_RESULT(
         rayHandle,
         hit,
         endCoords,
@@ -1150,9 +1134,7 @@ Game.RayCast = function(src, dest, traceFlags, entityToExclude)
         entityHit
     )
 
-    memory.free(endCoords)
-    memory.free(surfaceNormal)
-    return hit, retEndCoords, retEntityHit
+    return hit, endCoords, entityHit
 end
 
 ---@class Game.World
@@ -1210,11 +1192,27 @@ Game.World.MarkSelectedEntity = function(entity, offset)
             true,
             1,
             false,
-            0,
-            0,
+            ---@diagnostic disable-next-line
+            0, 0,
             false
         )
     end)
+end
+
+---@param modelHash number|string
+function Game.GetModelType(modelHash)
+    modelHash = Game.EnsureModelHash(modelHash)
+
+    if not Game.IsModelHash(modelHash) then
+        return 0
+    end
+
+    if STREAMING.IS_MODEL_A_PED(modelHash) then
+        return eEntityTypes.Ped
+    elseif STREAMING.IS_MODEL_A_VEHICLE(modelHash) then
+        return eEntityTypes.Vehicle
+    else return eEntityTypes.Object
+    end
 end
 
 ---@param modelName string
@@ -1245,10 +1243,11 @@ end
 ---@param coords vec3
 ---@param forwardVector vec3
 ---@param distance integer
+---@return vec3|nil
 Game.FindSpawnPointInDirection = function(coords, forwardVector, distance)
-    local pVector = memory.allocate(0xC)
+    local bFound, vOutPos = false, vec3:zero()
 
-    local bFound, vSpawnPos = MISC.FIND_SPAWN_POINT_IN_DIRECTION(
+    bFound, vOutPos = MISC.FIND_SPAWN_POINT_IN_DIRECTION(
         coords.x,
         coords.y,
         coords.z,
@@ -1256,18 +1255,17 @@ Game.FindSpawnPointInDirection = function(coords, forwardVector, distance)
         forwardVector.y,
         forwardVector.z,
         distance,
-        pVector
+        vOutPos
     )
 
-    memory.free(pVector)
-    return bFound and vSpawnPos or nil
+    return bFound and vOutPos or nil
 end
 
 ---@param distance integer
 Game.FindSpawnPointNearPlayer = function(distance)
     return Game.FindSpawnPointInDirection(
-        Self.GetPos(),
-        Self.GetForwardVector(),
+        Self:GetPos(),
+        Self:GetForwardVector(),
         distance
     )
 end
@@ -1276,11 +1274,10 @@ end
 ---@param nodeType integer
 ---@return vec3, integer
 Game.GetClosestVehicleNodeWithHeading = function(coords, nodeType)
-    local outPos = memory.allocate(0xC)
+    local outPos = vec3:zero()
     local outHeading = 0
-    local retVec = vec3:zero()
 
-    _, retVec, outHeading = PATHFIND.GET_CLOSEST_VEHICLE_NODE_WITH_HEADING(
+    _, outPos, outHeading = PATHFIND.GET_CLOSEST_VEHICLE_NODE_WITH_HEADING(
         coords.x,
         coords.y,
         coords.z,
@@ -1291,8 +1288,7 @@ Game.GetClosestVehicleNodeWithHeading = function(coords, nodeType)
         0
     )
 
-    memory.free(outPos)
-    return retVec, outHeading
+    return outPos, outHeading
 end
 
 ---@param entity integer | table
@@ -1419,11 +1415,12 @@ function Game.Audio:ToggleEmitter(emitter, toggle, entity, station)
             emitter = self.Emitters[emitter] or { name = emitter, default_station = station }
         end
 
-        entity  = entity or Self.GetPedID()
+        entity  = entity or Self:GetHandle()
         emitter = emitter or self.Emitters.rave_1
         station = station or emitter.default_station
 
         AUDIO.SET_STATIC_EMITTER_ENABLED(emitter.name, true)
+        ---@diagnostic disable-next-line: param-type-mismatch -- 3 lines above, breh! jeesus
         AUDIO.SET_EMITTER_RADIO_STATION(emitter.name, station)
         AUDIO.LINK_STATIC_EMITTER_TO_ENTITY(emitter.name, entity)
 
@@ -1443,7 +1440,7 @@ function Game.Audio:BlastRadio(toggle, station)
     Game.Audio:ToggleEmitter(
         self.Emitters.radio_high,
         toggle,
-        Self.GetPedID(),
+        Self:GetHandle(),
         station
     )
 end

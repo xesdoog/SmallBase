@@ -49,6 +49,7 @@ end
 ---@class Vehicle : Entity
 ---@field private layout CVehicle
 ---@field private m_class_id number
+---@field Create fun(_, modelHash: number, entityType: eEntityTypes, pos?: vec3, heading?: number, isNetwork?: boolean, isScriptHostPed?: boolean): Vehicle
 ---@overload fun(handle: integer): Vehicle
 Vehicle = Class("Vehicle", Entity)
 
@@ -91,7 +92,7 @@ function Vehicle:GetManufacturer()
     end
 
     local mfr = VEHICLE.GET_MAKE_NAME_FROM_VEHICLE_MODEL(self:GetModelHash())
-    return (mfr:lower():gsub("^%l", string.upper))
+    return mfr:capitalize()
 end
 
 ---@return number|nil
@@ -179,7 +180,7 @@ function Vehicle:IsEnemyVehicle()
 
     local occupants = self:GetOccupants()
     for _, passenger in ipairs(occupants) do
-        if not ENTITY.IS_ENTITY_DEAD(passenger, false) and Self.IsPedMyEnemy(passenger) then
+        if not ENTITY.IS_ENTITY_DEAD(passenger, false) and Self:IsPedMyEnemy(passenger) then
             return true
         end
     end
@@ -331,35 +332,35 @@ function Vehicle:MaxPerformance()
     local maxArmor = VEHICLE.GET_NUM_VEHICLE_MODS(handle, 16) - 1
     while VEHICLE.IS_VEHICLE_MOD_GEN9_EXCLUSIVE(handle, 16, maxArmor) do
         maxArmor = maxArmor - 1
-        Yield()
+        yield()
     end
     VEHICLE.SET_VEHICLE_MOD(handle, 16, maxArmor, false)
 
     local maxEngine = VEHICLE.GET_NUM_VEHICLE_MODS(handle, 11) - 1
     while VEHICLE.IS_VEHICLE_MOD_GEN9_EXCLUSIVE(handle, 11, maxEngine) do
         maxEngine = maxEngine - 1
-        Yield()
+        yield()
     end
     VEHICLE.SET_VEHICLE_MOD(handle, 11, maxEngine, false)
 
     local maxBrakes = VEHICLE.GET_NUM_VEHICLE_MODS(handle, 12) - 1
     while VEHICLE.IS_VEHICLE_MOD_GEN9_EXCLUSIVE(handle, 12, maxBrakes) do
         maxBrakes = maxBrakes - 1
-        Yield()
+        yield()
     end
     VEHICLE.SET_VEHICLE_MOD(handle, 12, maxBrakes, false)
 
     local maxTrans = VEHICLE.GET_NUM_VEHICLE_MODS(handle, 13) - 1
     while VEHICLE.IS_VEHICLE_MOD_GEN9_EXCLUSIVE(handle, 13, maxTrans) do
         maxTrans = maxTrans - 1
-        Yield()
+        yield()
     end
     VEHICLE.SET_VEHICLE_MOD(handle, 13, maxTrans, false)
 
     local maxSusp = VEHICLE.GET_NUM_VEHICLE_MODS(handle, 15) - 1
     while VEHICLE.IS_VEHICLE_MOD_GEN9_EXCLUSIVE(handle, 15, maxSusp) do
         maxSusp = maxSusp - 1
-        Yield()
+        yield()
     end
     VEHICLE.SET_VEHICLE_MOD(handle, 15, maxSusp, false)
 
@@ -386,7 +387,7 @@ function Vehicle:SetCustomPaint(hex, p, m, is_primary, is_secondary)
 
     script.run_in_fiber(function()
         local pt = m and 3 or 1
-        local r, g, b, _ = Col(hex):AsRGBA()
+        local r, g, b, _ = Color(hex):AsRGBA()
 
         VEHICLE.SET_VEHICLE_MOD_KIT(handle, 0)
         if is_primary then
@@ -760,7 +761,7 @@ function Vehicle:PreloadMod(modType, index)
 
     VEHICLE.PRELOAD_VEHICLE_MOD(handle, modType, index)
     while not VEHICLE.HAS_PRELOAD_MODS_FINISHED(handle) do
-        Yield()
+        yield()
     end
     return VEHICLE.HAS_PRELOAD_MODS_FINISHED(handle)
 end
@@ -870,8 +871,8 @@ function Vehicle:Clone(cloneSpawnPos)
         return
     end
 
-    cloneSpawnPos = cloneSpawnPos or self:GetOffsetInWorldCoords(0, 5, 0.1)
-    local clone = Vehicle(Game.CreateVehicle(self:GetModelHash(), cloneSpawnPos)) -- TODO: add a `Vehicle:Create()` method that internally calls `Entity:Create(model, type)`: spawns a new vehicle and returns a new instance
+    cloneSpawnPos = cloneSpawnPos or self:GetOffsetInWorldCoords(math.random(-2, 2), math.random(4, 8), 0.1)
+    local clone = Vehicle:Create(self:GetModelHash(), eEntityTypes.Vehicle, cloneSpawnPos)
     local tModData = self:GetMods()
 
     if next(tModData) ~= nil then

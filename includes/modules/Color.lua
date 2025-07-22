@@ -1,6 +1,8 @@
+---@diagnostic disable: param-type-mismatch
+
 ---@class Color
-Color = {}
-Color.__index = Color
+---@overload fun(...): Color
+Color = Class("Color")
 Color.value = nil
 Color.arg = nil
 Color.type = nil
@@ -9,31 +11,27 @@ Color.g = 0
 Color.b = 0
 Color.a = 0
 Color.string_colors = {
-    ["black"]  = {0.0, 0.0, 0.0, 1.0},
-    ["white"]  = {1.0, 1.0, 1.0, 1.0},
-    ["red"]    = {1.0, 0.0, 0.0, 1.0},
-    ["green"]  = {0.0, 1.0, 0.0, 1.0},
-    ["blue"]   = {0.0, 0.0, 1.0, 1.0},
-    ["yellow"] = {1.0, 1.0, 0.0, 1.0},
-    ["orange"] = {1.0, 0.5, 0.0, 1.0},
-    ["pink"]   = {1.0, 0.0, 0.5, 1.0},
-    ["purple"] = {1.0, 0.0, 1.0, 1.0},
+    ["black"]  = { 0.0, 0.0, 0.0, 1.0 },
+    ["white"]  = { 1.0, 1.0, 1.0, 1.0 },
+    ["red"]    = { 1.0, 0.0, 0.0, 1.0 },
+    ["green"]  = { 0.0, 1.0, 0.0, 1.0 },
+    ["blue"]   = { 0.0, 0.0, 1.0, 1.0 },
+    ["yellow"] = { 1.0, 1.0, 0.0, 1.0 },
+    ["orange"] = { 1.0, 0.5, 0.0, 1.0 },
+    ["pink"]   = { 1.0, 0.0, 0.5, 1.0 },
+    ["purple"] = { 1.0, 0.0, 1.0, 1.0 },
 }
 
-Color.__call = function(self)
-    return self.r, self.g, self.b, self.a
-end
-
-Color.__tostring = function(self)
+function Color:__tostring()
     if not self.value or not self.type then
         return string.format(
-        [[
+            [[
 
-        <class Color (empty)>
+        <Color (empty)>
             - Value: '%s'
         ]],
-        self:GetValue()
-    )
+            self:GetValue()
+        )
     end
 
     local f_r, f_g, f_b, f_a = self:AsFloat()
@@ -41,7 +39,7 @@ Color.__tostring = function(self)
     return string.format(
         [[
 
-        <class Color>
+        <Color>
             - Float: %.3f, %.3f, %.3f, %.3f
             - RGBA: %d, %d, %d, %d
             - U32: 0x%X
@@ -61,7 +59,7 @@ Color.__tostring = function(self)
 end
 
 function Color:print()
-    log.debug(tostring(self))
+    print(self:__tostring())
 end
 
 function Color:GetValue()
@@ -70,7 +68,7 @@ function Color:GetValue()
     end
 
     if #self.arg == 1 then
-        if self.type:lower() == "imu32" then
+        if self.type:lower() == "u32" then
             return ("0x%X"):format(self.arg[1])
         end
         return self.arg[1]
@@ -85,47 +83,40 @@ end
 
 -- Constructor
 --
--- Returns a `Color` instance.
+-- Returns a new `Color` instance.
 ---@param ... any
-function Color:New(...)
+function Color.new(...)
     local instance = setmetatable({}, Color)
-    local args = type(...) == "table" and ... or {...}
-    self.arg = args
-    self.value = table.unpack(args)
+    local args = type(...) == "table" and ... or { ... }
+
+    instance.arg = args
+    instance.value = table.unpack(args)
 
     if #args >= 3 and type(args[1]) == "number" then
-        if (
-            type(args[1]) ~= type(args[2]) or
-            type(args[1]) ~= type(args[3])
-        ) then
+        if type(args[1]) ~= type(args[2]) or type(args[1]) ~= type(args[3]) then
             log.warning("[Color Error]: Param type mismatch.")
             instance.type = nil
         end
 
-        if (
-            math.type(args[1]) ~= math.type(args[2]) or
-            math.type(args[1]) ~= math.type(args[3])
-        ) then
+        if math.type(args[1]) ~= math.type(args[2]) or math.type(args[1]) ~= math.type(args[3]) then
             log.warning("[Color Error]: Param type mismatch.")
             instance.type = nil
         end
 
-        if (
-            math.type(args[1]) == "float" and args[1] >= 0 and args[1] <= 1.0 and
-            math.type(args[2]) == "float" and args[2] >= 0 and args[2] <= 1.0 and
-            math.type(args[3]) == "float" and args[3] >= 0 and args[3] <= 1.0
-        ) then
+        if math.type(args[1]) == "float" and args[1] >= 0 and args[1] <= 1.0
+            and math.type(args[2]) == "float" and args[2] >= 0 and args[2] <= 1.0
+            and math.type(args[3]) == "float" and args[3] >= 0 and args[3] <= 1.0
+        then
             if not args[4] or math.type(args[1]) ~= math.type(args[4]) then
                 args[4] = 1.0
             end
             instance.type = "float"
         end
 
-        if (
-            math.type(args[1]) == "integer" and args[1] >= 0 and args[1] <= 255 and
-            math.type(args[2]) == "integer" and args[2] >= 0 and args[2] <= 255 and
-            math.type(args[3]) == "integer" and args[3] >= 0 and args[3] <= 255
-        ) then
+        if  math.type(args[1]) == "integer" and args[1] >= 0 and args[1] <= 255
+            and math.type(args[2]) == "integer" and args[2] >= 0 and args[2] <= 255
+            and math.type(args[3]) == "integer" and args[3] >= 0 and args[3] <= 255
+        then
             if not args[4] or math.type(args[1]) ~= math.type(args[4]) then
                 args[4] = 255
             end
@@ -138,34 +129,30 @@ function Color:New(...)
         instance.a = args[4]
     end
 
-    if #args == 1 then
-        if type(args[1]) == "string" then
+    if (#args == 1) then
+        if (type(args[1]) == "string") then
             if args[1]:match("^#?%x%x%x%x%x%x$") or args[1]:match("^#?%x%x%x%x%x%x%x%x$") then
                 instance.type = "hex"
-                instance.r, instance.g, instance.b, instance.a = instance:AsRGBA()
+                instance.r, instance.g, instance.b, instance.a = instance:AsFloat()
             else
-                if self.string_colors[string.lower(args[1])] then
-                    local _arg = self.string_colors[string.lower(args[1])]
+                if Color.string_colors[string.lower(args[1])] then
+                    local _arg = Color.string_colors[string.lower(args[1])]
                     instance.type = "float"
 
                     instance.r = _arg[1]
                     instance.g = _arg[2]
                     instance.b = _arg[3]
                     instance.a = _arg[4]
-
                 else
                     log.warning(("[Color Error]: Invalid argument: '%s'"):format(args[1]))
                     instance.type = nil
                 end
             end
-        elseif type(args[1]) == "number" then
-            if math.type(args[1]) == "integer" and args[1] >= 0 and args[1] <= 0xFFFFFFFF then
-                instance.type = "ImU32"
-            end
-
-            instance.r, instance.g, instance.b, instance.a = self:AsFloat()
+        elseif (type(args[1]) == "number") and (math.type(args[1]) == "integer") and (args[1] >= 0) and (args[1] <= 0xFFFFFFFF) then
+            instance.type = "U32"
+            instance.r, instance.g, instance.b, instance.a = instance:AsFloat()
         else
-            log.warning(("[Color Error]: Invalid argument: '%s'"):format(args[1]))
+            error(("[Color]: Invalid argument: '%s'"):format(args[1]))
             instance.type = nil
         end
     end
@@ -173,20 +160,56 @@ function Color:New(...)
     return instance
 end
 
+-- Allows you to register new named colors in the Color class itself
+--
+-- that you can call later using `Color.new("your_custom_color_name")`
+--
+-- Example usage:
+--
+--      Color:RegisterNamedColor("Magenta", "#FF00FF")
+--
+-- You can then use it like so:
+--
+--      local r, g, b, a = Color.new("Magenta"):AsRGBA()
+---@param name string
+---@param ... any
+function Color:RegisterNamedColor(name, ...)
+    name = name:lower()
+
+    if Color.string_colors[name] then
+        log.debug(
+            string.format(
+                "[Color]: '%s' was not registered because it already exists.",
+                name
+            )
+        )
+        return
+    end
+
+    local color = Color.new(...)
+
+    if not color then
+        return
+    end
+
+    local f_r, f_g, f_b, f_a = color:AsFloat()
+    Color.string_colors[name] = { f_r, f_g, f_b, f_a or 1 }
+end
+
 -- Returns a color in **RGBA** format.
 ---@return number, number, number, number
 function Color:AsRGBA()
     if self.type then
         if self.type:lower() == "rgba" then
-            return self()
+            return self.r, self.g, self.b, self.a
         end
 
         if self.type:lower() == "float" then
             return
-            math.floor(self.r * 255),
-            math.floor(self.g * 255),
-            math.floor(self.b * 255),
-            math.floor(self.a * 255)
+                math.floor(self.r * 255),
+                math.floor(self.g * 255),
+                math.floor(self.b * 255),
+                math.floor(self.a * 255)
         end
 
         if self.type:lower() == "hex" then
@@ -207,7 +230,7 @@ function Color:AsRGBA()
             return r, g, b, a
         end
 
-        if self.type:lower() == "imu32" then
+        if self.type:lower() == "u32" then
             local r = (self.value >> 0x0) & 0xFF
             local g = (self.value >> 0x8) & 0xFF
             local b = (self.value >> 0x10) & 0xFF
@@ -228,7 +251,7 @@ function Color:AsFloat()
     end
 
     if self.type:lower() == "float" then
-        return self()
+        return self.r, self.g, self.b, self.a
     else
         local r, g, b, a = self:AsRGBA()
         return r / 255, g / 255, b / 255, a / 255
@@ -255,35 +278,10 @@ function Color:AsU32()
         return 0x0
     end
 
-    if self.type:lower() == "imu32" then
+    if self.type:lower() == "u32" then
         return self.value
     else
         local r, g, b, a = self:AsRGBA()
         return (a << 0x18) | (b << 0x10) | (g << 0x8) | r
     end
-end
-
--- Wrapper for `Color:New()`
---
-----------------------------------
--- Returns a `Color` instance.
-function Col(...)
-    return Color:New(...)
-end
-
--- Wrapper for `Color:AsU32()`
---
-----------------------------------
--- Returns a uint32 color in **ABGR** format.
----@return number
-function ImU32(...)
-    return Col(...):AsU32()
-end
-
--- Wrapper for `Color:AsFloat()`
---
-----------------------------------
--- Returns ImGui color floats in **RGBA** format.
-function ImCol(...)
-    return Col(...):AsFloat()
 end

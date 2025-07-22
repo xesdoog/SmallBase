@@ -1,5 +1,12 @@
 ---@diagnostic disable
 
+---@enum eEntityTypes
+eEntityTypes = {
+    Ped     = 1,
+    Vehicle = 2,
+    Object  = 3
+}
+
 ---@enum eGameState
 eGameState = {
     Invalid       = -1,

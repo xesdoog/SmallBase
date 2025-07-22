@@ -10,9 +10,9 @@ if not gpad_keybinds then
     gpad_keybinds = CFG:ReadItem("gpad_keybinds")
 end
 
-if not LANG then
-    ---@type string|nil
-    LANG = CFG:ReadItem("LANG")
+if not GVars.LANG then
+    ---@type string
+    GVars.LANG = CFG:ReadItem("LANG")
 end
 
 Backend:check_kb_keybinds()
@@ -22,7 +22,7 @@ Backend:check_gpad_keybinds()
 ---@class Translator
 Translator = {}
 Translator.__index = Translator
-Translator.lang = LANG
+Translator.lang = GVars.LANG
 Translator.log_history = {}
 Translator.cache = {}
 Translator.button_map = {
@@ -93,12 +93,12 @@ end
 ---@param label string
 ---@return string
 function Translator:Translate(label)
-    if #self.cache > 0 and self.lang ~= LANG then
+    if #self.cache > 0 and self.lang ~= GVars.LANG then
         self.cache = {}
-        self.lang = LANG
+        self.lang = GVars.LANG
     end
 
-    if self.cache[label] and self.lang == LANG then
+    if self.cache[label] and self.lang == GVars.LANG then
         return self.cache[label]
     end
 
@@ -106,7 +106,7 @@ function Translator:Translate(label)
     local retStr, logmsg
     if Labels[label] then
         for _, v in pairs(Labels[label]) do
-            if LANG == v.iso then
+            if GVars.LANG == v.iso then
                 retStr = v.text
                 break
             end

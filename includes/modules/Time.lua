@@ -22,7 +22,7 @@ end
 function Time.Sleep(ms)
     local future = Time.millis() + ms
     while Time.millis() < future do
-        Yield()
+        yield()
     end
 end
 

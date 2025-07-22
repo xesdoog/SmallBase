@@ -11,7 +11,6 @@ local eAccessorType <const> = {
 ---@field private m_type eAccessorType
 ---@field m_script? string
 ---@field m_path integer[] -- offset chain
----@field [string] Accessor -- broken because it assumes all string indexes return Accessor but it silences warnings about unk fields when doing something like `SomeGlobal.f_*`
 ---@overload fun(addr: integer, m_type: integer, script?: string): Accessor
 local Accessor = Class("Accessor")
 
@@ -19,32 +18,48 @@ local Accessor = Class("Accessor")
 --------------------------------------------------------
 --------------------------------------------------------
 --------------------------------------------------------
+
+local AccessorDispatch = {
+    [eAccessorType.GLOBAL] = function(self, method, args)
+        local callback = globals[method]
+        if not callback then
+            log.warning(("Attempt to call an unsupported function: globals.%s"):format(method))
+            return
+        end
+
+        table.insert(args, 1, self:GetAddress())
+        return callback(table.unpack(args))
+    end,
+    [eAccessorType.LOCAL] = function(self, method, args)
+        local callback = locals[method]
+        if not callback then
+            log.warning(("Attempt to call an unsupported function: locals.%s"):format(method))
+            return
+        end
+
+        table.insert(args, 1, self:GetAddress())
+        table.insert(args, 1, self.m_script)
+        return callback(table.unpack(args))
+    end,
+}
+
 ---@param self Accessor
 ---@param method string
 ---@param ... any
 ---@return any
 local function Call(self, method, ...)
-    if not Accessor.CanAccess() then
+    if not self.CanAccess() then
         log.warning("Cannot access globals & locals at the moment.")
         return -1
     end
 
-    local addr  = self:GetAddress()
-    local atype = self:GetType()
-
-    if (atype == eAccessorType.GLOBAL) then
-        if not globals[method] then
-            log.warning(("Attempt to call an unsupported function: globals.%s"):format(method))
-            return -1
-        end
-        return globals[method](addr, ...)
-    else
-        if not locals[method] then
-            log.warning(("Attempt to call an unsupported function: locals.%s"):format(method))
-            return -1
-        end
-        return locals[method](self.m_script, addr, ...)
+    local args = { ... }
+    local dispatcher = AccessorDispatch[self:GetType()]
+    if not dispatcher then
+        log.warning("Unsupported accessor type")
+        return -1
     end
+    return dispatcher(self, method, args)
 end
 
 ---@param m_base number

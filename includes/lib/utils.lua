@@ -1,3 +1,6 @@
+require("includes.modules.Vector2")
+require("includes.modules.Vector3")
+
 --#region Global functions
 
 ---@param t table
@@ -11,6 +14,7 @@ function ConstEnum(t)
                     "Attempt to modify read-only enum: '%s'", key
                 )
             )
+            ---@diagnostic disable-next-line
             return key
         end,
         __metatable = false
@@ -45,7 +49,7 @@ function Await(runnable, _args, timeout)
             log.warning("[Await Error]: timeout reached!")
             return false
         end
-        Yield()
+        yield()
     end
 
     return true
@@ -260,6 +264,28 @@ table.getduplicates = function(t, value)
         end
     end
     return count
+end
+
+---@param t table
+---@param seen? table
+table.copy = function(t, seen)
+    seen = seen or {}
+    if seen[t] then
+        return seen[t]
+    end
+
+    local out = {}
+    seen[t] = out
+
+    for k, v in pairs(t) do
+        if type(v) == "table" then
+            out[k] = table.copy(v, seen)
+        else
+            out[k] = v
+        end
+    end
+
+    return out
 end
 
 -- Removes duplicate items from a table and returns a new one with the results.
@@ -488,13 +514,19 @@ string.titlecase = function(str)
     end))
 end
 
+---@param value number|string
+---@return string
 string.formatint = function(value)
-    return tostring(value):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
+    local s, _ = tostring(value):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
+    return s
 end
 
----@param value number | string
-string.formatmoney = function(value)
-    return "$" .. tostring(string.formatint(value))
+---@param value number|string
+---@param currency? string
+---@return string
+string.formatmoney = function(value, currency)
+    currency = currency or "$"
+    return "$" .. string.formatint(value)
 end
 
 string.hex2string = function(hex)
@@ -595,11 +627,10 @@ end
 -- Creates a colored ImGui text.
 ---@param text string
 ---@param color any
----@param alpha? number
 ---@param wrap_size? number
-UI.ColoredText = function(text, color, alpha, wrap_size)
-    local r, g, b, a = Col(color):AsFloat()
-    ImGui.PushStyleColor(ImGuiCol.Text, r, g, b, alpha or a)
+UI.ColoredText = function(text, color, wrap_size)
+    local r, g, b, a = Color(color):AsFloat()
+    ImGui.PushStyleColor(ImGuiCol.Text, r, g, b, a or 1)
 
     if wrap_size then
         ImGui.PushTextWrapPos(ImGui.GetFontSize() * wrap_size)
@@ -618,12 +649,11 @@ end
 ---@param color any
 ---@param hovercolor any
 ---@param activecolor any
----@param alpha? number
 ---@return boolean
-UI.ColoredButton = function(text, color, hovercolor, activecolor, alpha)
-    local buttonR, buttonG, buttonB, buttonA = Col(color):AsFloat()
-    local hoveredR, hoveredG, hoveredB, hoveredA = Col(hovercolor):AsFloat()
-    local activeR, activeG, activeB, activeA = Col(activecolor):AsFloat()
+UI.ColoredButton = function(text, color, hovercolor, activecolor)
+    local buttonR, buttonG, buttonB, buttonA = Color(color):AsFloat()
+    local hoveredR, hoveredG, hoveredB, hoveredA = Color(hovercolor):AsFloat()
+    local activeR, activeG, activeB, activeA = Color(activecolor):AsFloat()
 
     ImGui.PushStyleColor(ImGuiCol.Button, buttonR, buttonG, buttonB, buttonA)
     ImGui.PushStyleColor(ImGuiCol.ButtonHovered, hoveredR, hoveredG, hoveredB, hoveredA)
@@ -637,17 +667,17 @@ end
 --
 -- When the symbol is hovered, it displays a tooltip.
 ---@param text string
----@param color? any
+---@param color? Color
 ---@param alpha? number
 UI.HelpMarker = function(text, color, alpha)
-    if not Backend.b_DisableTooltips then
+    if not GVars.b_DisableTooltips then
         ImGui.SameLine()
         ImGui.TextDisabled("(?)")
         if ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled) then
             ImGui.SetNextWindowBgAlpha(0.75)
             ImGui.BeginTooltip()
             if color then
-                UI.ColoredText(text, color, alpha, 20)
+                UI.ColoredText(text, color, 20)
             else
                 ImGui.PushTextWrapPos(ImGui.GetFontSize() * 20)
                 ImGui.TextWrapped(text)
@@ -660,15 +690,14 @@ end
 
 -- Displays a tooltip whenever the widget this function is called after is hovered.
 ---@param text string
----@param color? any
----@param alpha? number
+---@param color? Color
 UI.Tooltip = function(text, color)
-    if not Backend.b_DisableTooltips then
+    if not GVars.b_DisableTooltips then
         if ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled) then
             ImGui.SetNextWindowBgAlpha(0.75)
             ImGui.BeginTooltip()
             if color then
-                UI.ColoredText(text, color, alpha, 20)
+                UI.ColoredText(text, color, 20)
             else
                 ImGui.PushTextWrapPos(ImGui.GetFontSize() * 20)
                 ImGui.TextWrapped(text)
@@ -688,7 +717,7 @@ UI.ConfirmPopup = function(name, callback, ...)
             ImGuiWindowFlags.NoTitleBar |
             ImGuiWindowFlags.AlwaysAutoResize
         ) then
-        UI.ColoredText(_T("CONFIRM_PROMPT_"), "yellow", 1, 30)
+        UI.ColoredText(_T("CONFIRM_PROMPT_"), "yellow", 30)
         ImGui.Spacing()
 
         if ImGui.Button(_T("GENERIC_YES_"), 80, 30) then
@@ -738,7 +767,7 @@ end
 -- Plays a sound when an ImGui widget is clicked.
 ---@param sound string
 UI.WidgetSound = function(sound)
-    if Backend.b_DisableUISounds or not t_UISounds[sound] then
+    if GVars.b_DisableUISounds or not t_UISounds[sound] then
         return
     end
 
@@ -772,7 +801,7 @@ UI.HotkeyPrompt = function(window_name, keybind, isController)
     if UI.IsItemClicked('lmb') then
         UI.WidgetSound("Select2")
         ImGui.OpenPopup(window_name)
-        Backend.b_IsSettingHotkeys = true
+        GVars.b_IsSettingHotkeys = true
     end
 
     ImGui.SameLine()

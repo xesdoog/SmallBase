@@ -24,9 +24,44 @@ function Entity.new(handle)
     )
 end
 
-function Entity:Create(modelHash, modelType)
-    -- TODO
+---@param modelHash number
+---@param entityType eEntityTypes
+---@param pos? vec3
+---@param heading? number
+---@param isNetwork? boolean
+---@param isScriptHostPed? boolean
+function Entity:Create(modelHash, entityType, pos, heading, isNetwork, isScriptHostPed)
+    modelHash = Game.EnsureModelHash(modelHash)
+    if not Game.IsModelHash(modelHash) then
+        return
+    end
+
+    if (entityType == eEntityTypes.Ped) then
+        local handle = Game.CreatePed(modelHash, pos, heading, isNetwork, isScriptHostPed)
+        return Ped(handle)
+    elseif (entityType == eEntityTypes.Vehicle) then
+        local handle = Game.CreateVehicle(modelHash, pos, heading, isNetwork, isScriptHostPed)
+        return Vehicle(handle)
+    else
+        -- TODO
+    end
 end
+
+
+--[[
+-- I would rather repeat code and have clear return types as opposed to this
+
+---@param func function
+---@param ... any
+function Entity:CallFunc(func, ...)
+    if not self:Exists() then
+        return
+    end
+
+    local args = { ... }
+    return func(table.unpack(args))
+end
+]]
 
 function Entity:Destroy()
     self.m_handle = nil
@@ -146,4 +181,76 @@ function Entity:GetOffsetGivenWorldCoords(offset_x, offset_y, offset_z)
         offset_y,
         offset_z
     )
+end
+
+function Entity:GetBoneCount()
+    if not self:Exists() then
+        return 0
+    end
+    return Game.GetEntityBoneCount(self:GetHandle())
+end
+
+---@param boneName string
+function Entity:GetBoneIndexByName(boneName)
+    if not self:Exists() then
+        return 0
+    end
+    return Game.GetEntityBoneIndexByName(self:GetHandle(), boneName)
+end
+
+---@param bone string|number
+function Entity:GetBonePosition(bone)
+    if not self:Exists() then
+        return vec3:zero()
+    end
+    return Game.GetEntityBonePos(self:GetHandle(), bone)
+end
+
+---@param bone string|number
+function Entity:GetBoneRotation(bone)
+    if not self:Exists() then
+        return vec3:zero()
+    end
+    return Game.GetEntityBoneRot(self:GetHandle(), bone)
+end
+
+---@param bone string|number
+function Entity:GetWorldPositionOfBone(bone)
+    if not self:Exists() then
+        return vec3:zero()
+    end
+    return Game.GetEntityBonePos(self:GetHandle(), bone)
+end
+
+---@param coords vec3
+---@param xAxis? boolean
+---@param yAxis? boolean
+---@param zAxis? boolean
+---@param clearArea? boolean
+function Entity:SetCoords(coords, xAxis, yAxis, zAxis, clearArea)
+    if not self:Exists() then
+        return
+    end
+
+    Game.SetEntityCoords(self:GetHandle(), coords, xAxis, yAxis, zAxis, clearArea)
+end
+
+---@param coords vec3
+---@param xAxis? boolean
+---@param yAxis? boolean
+---@param zAxis? boolean
+function Entity:SetCoordsNoOffset(coords, xAxis, yAxis, zAxis)
+    if not self:Exists() then
+        return
+    end
+
+    Game.SetEntityCoordsNoOffset(self:GetHandle(), coords, xAxis, yAxis, zAxis)
+end
+
+function Entity:Kill()
+    if not self:Exists() then
+        return
+    end
+
+    ENTITY.SET_ENTITY_HEALTH(self:GetHandle(), 0, 0, 0)
 end

@@ -1,5 +1,6 @@
 ---@class Ped : Entity
 ---@field private layout CPed
+---@field Create fun(_, modelHash: number, entityType: eEntityTypes, pos?: vec3, heading?: number, isNetwork?: boolean, isScriptHostPed?: boolean): Ped
 ---@overload fun(handle: integer): Ped
 Ped = Class("Ped", Entity)
 
@@ -103,7 +104,7 @@ function Ped:IsEnemy()
     end
 
     local pedHandle = self:GetHandle()
-    local localPlayer = Self.GetPedID()
+    local localPlayer = Self:GetHandle()
 
     if pedHandle == localPlayer then
         return false
@@ -125,6 +126,16 @@ function Ped:IsEnemy()
     )
 end
 
+function Ped:GetCurrentWeapon()
+    if not self:IsValid() then
+        return 0
+    end
+
+    local armed, weapon = false, 0
+    armed, weapon = WEAPON.GET_CURRENT_PED_WEAPON(self:GetHandle(), weapon, false)
+    return armed and weapon or 0
+end
+
 ---@return Vehicle|nil
 function Ped:GetVehicle()
     if not self:IsValid() or self:IsOnFoot() then
@@ -132,6 +143,17 @@ function Ped:GetVehicle()
     end
 
     return Vehicle(PED.GET_VEHICLE_PED_IS_USING(self:GetHandle()))
+end
+
+---@return number -- weapon hash or 0.
+function Ped:GetVehicleWeapon()
+    if not self:IsValid() or self:IsOnFoot() then
+        return 0
+    end
+
+    local armed, weapon = false, 0
+    armed, weapon = WEAPON.GET_CURRENT_PED_VEHICLE_WEAPON(self:GetHandle(), weapon)
+    return armed and weapon or 0
 end
 
 ---@return number
@@ -146,4 +168,81 @@ end
 ---@return integer
 function Ped:GetArmour()
     return self:IsValid() and PED.GET_PED_ARMOUR(self:GetHandle()) or 0
+end
+
+---@param cloneSpawnPos? vec3
+---@param isNetwork? boolean
+---@param isScriptHost? boolean
+---@param copyHeadBlend? boolean
+function Ped:Clone(cloneSpawnPos, isNetwork, isScriptHost, copyHeadBlend)
+    if not self:IsValid() then
+        return
+    end
+
+    if (isNetwork == nil) then
+        isNetwork = Game.IsOnline()
+    end
+
+    if (isScriptHost == nil) then
+        isScriptHost = false
+    end
+
+    if (copyHeadBlend == nil) then
+        copyHeadBlend = true
+    end
+
+    cloneSpawnPos = cloneSpawnPos or self:GetOffsetInWorldCoords(math.random(-2, 2), math.random(2, 5), 0.1)
+    local clone = Ped(PED.CLONE_PED(self:GetHandle(), isNetwork, isScriptHost, copyHeadBlend))
+    Ped:SetCoords(cloneSpawnPos)
+
+    return clone
+end
+
+---@param targetPed number
+function Ped:CloneToTarget(targetPed)
+    if not self:IsValid() then
+        return
+    end
+
+    PED.CLONE_PED_TO_TARGET(self:GetHandle(), targetPed)
+end
+
+---@param boneID number
+function Ped:GetBoneIndex(boneID)
+    if not self:IsValid() then
+        return
+    end
+
+    return Game.GetPedBoneIndex(self:GetHandle(), boneID)
+end
+
+---@param boneID number
+function Ped:GetBoneCoords(boneID)
+    if not self:IsValid() then
+        return vec3:zero()
+    end
+
+    return Game.GetPedBoneCoords(self:GetHandle(), boneID)
+end
+
+function Ped:GetVehicleSeat()
+    if (not self:IsValid() or not self:IsAlive() or self:IsOnFoot()) then
+        return
+    end
+
+    return Game.GetPedVehicleSeat(self:GetHandle())
+end
+
+function Ped:GetComponentVariations()
+    if not self:IsValid() then
+        return {}
+    end
+
+    return Game.GetPedComponents(self:GetHandle())
+end
+
+---@param components? table
+function Ped:SetComponenVariations(components)
+    components = components or self:GetComponentVariations()
+    Game.ApplyPedComponents(self:GetHandle(), components)
 end

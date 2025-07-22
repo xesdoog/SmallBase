@@ -2,6 +2,7 @@
 ---@field private layout CPed
 ---@overload fun(handle: integer): Player
 Player = Class("Player", Ped)
+Player.Create = nil
 
 ---@return boolean
 function Player:IsPlaying()

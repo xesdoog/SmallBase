@@ -1,31 +1,35 @@
----@diagnostic disable: undefined-global, lowercase-global
+-- TODO: Add support for commands with params
 
 ---@class CommandExecutor
-CommandExecutor = {}
+---@field suggestions table
+CommandExecutor = {
+    user_cmd = "",
+    cmd_index = 0,
+    cmd_entered = false,
+    GUI = {
+        b_IsOpen = false,
+        b_ShouldDraw = false
+    }
+}
 CommandExecutor.__index = CommandExecutor
 
-CommandExecutor.user_cmd = ""
-CommandExecutor.cmd_index = 0
-CommandExecutor.cmd_entered = false
-CommandExecutor.suggestions = nil
 
-
----@param arg string
+---@param cmd string
 ---@param callback function
-function CommandExecutor:RegisterCommand(arg, callback)
-    if not arg
-    or (type(arg) ~= "string")
+function CommandExecutor:RegisterCommand(cmd, callback)
+    if not cmd
+    or (type(cmd) ~= "string")
     or not callback
     or (type(callback) ~= "function") then
         return
     end
 
-    table.insert(self.commands, {arg = arg, callback = callback})
+    table.insert(self.commands, { arg = cmd, callback = callback })
 end
 
 function CommandExecutor:HandleCallbacks()
     for _, v in ipairs(self.commands) do
-        if  #self.user_cmd > 0
+        if #self.user_cmd > 0
         and self.cmd_entered
         and (self.user_cmd:lower() == v.arg:lower())
         and (type(v.callback) == "function") then
@@ -37,20 +41,22 @@ function CommandExecutor:HandleCallbacks()
 end
 
 function CommandExecutor:Draw()
-    if Backend.b_ShouldDrawCommandsUI then
+    if self.GUI.b_ShouldDraw then
         local screen_w = ImGui.GetWindowWidth()
         local screen_h = ImGui.GetWindowHeight()
 
         ImGui.SetNextWindowSize(400, 200)
         ImGui.SetNextWindowPos(screen_w + 300, screen_h - 90)
         ImGui.SetNextWindowBgAlpha(0.75)
-        Backend.b_ShouldDrawCommandsUI, Backend.b_IsCommandsUIOpen = ImGui.Begin(
+
+        self.GUI.b_ShouldDraw, self.GUI.b_IsOpen = ImGui.Begin(
             "Command Executor",
-            Backend.b_IsCommandsUIOpen,
+            self.GUI.b_IsOpen,
             ImGuiWindowFlags.NoTitleBar |
             ImGuiWindowFlags.NoMove |
             ImGuiWindowFlags.NoResize
         )
+
         ImGui.Spacing()
         ImGui.SeparatorText("Command Executor")
         ImGui.Spacing()
@@ -60,11 +66,9 @@ function CommandExecutor:Draw()
             "Type your command",
             self.user_cmd,
             128,
-            ImGuiInputTextFlags.EnterReturnsTrue &
-            ~ImGuiInputTextFlags.AllowTabInput
+            ImGuiInputTextFlags.EnterReturnsTrue
         )
-
-        Backend.b_IsTyping = ImGui.IsItemActive()
+        GVars.b_IsTyping = ImGui.IsItemActive()
 
         if self.commands[1] and #self.user_cmd > 0 then
             self.suggestions = {}
@@ -98,18 +102,16 @@ function CommandExecutor:Draw()
 
         if self.cmd_entered then
             UI.WidgetSound("Click")
-            Backend.b_ShouldDrawCommandsUI = false
-            Backend.b_IsCommandsUIOpen = false
-            gui.override_mouse(false)
+            self:Close()
         end
         ImGui.End()
     end
 end
 
--- script.register_looped("SS_COMMAND_EXECUTOR", function()
---     CommandExecutor:HandleCallbacks()
--- end)
+function CommandExecutor:Close()
+    self.GUI.b_ShouldDraw = false
+    self.GUI.b_IsOpen = false
+    gui.override_mouse(false)
+end
 
-CommandExecutor.commands = {
-
-}
+CommandExecutor.commands = {}
