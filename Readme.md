@@ -11,8 +11,11 @@ This project is a tribute to Pocakking's BigBase: The biological father of YimMe
 - 🧠 Read/write wrappers for script globals and locals using a custom `Accessor` class.
 - 🚘 Small `VehicleMods` struct for cloning, customizing, and applying modifications with ease. Included in the `Vehicle` class.
 - 🧩 Extensible modular structure (backend, utils, services, etc...).
+- ⚙️ Fully automatic config parser.
 
 ### TODO
 
-- [ ] Cleanup `Game.lua` and rewrite the `Self` class.
+- [x] Cleanup `Game.lua` and rewrite the `Self` class.
+- [ ] Add and `Object` class.
+- [ ] Add a modular UI class.
 - [ ] Showcase examples.
