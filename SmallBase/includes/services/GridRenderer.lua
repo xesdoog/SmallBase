@@ -319,7 +319,7 @@ function GridRenderer:Draw()
             if (item.type:lower() == "checkbox") or (item.type:lower() == "radio") then
                 UI.WidgetSound("Nav2")
                 if item.persistent then
-                    CFG:SaveItem(item.gvar, _G[item.gvar])
+                    Serializer:SaveItem(item.gvar, _G[item.gvar])
                 end
             end
 

@@ -9,7 +9,7 @@
 ---@field window_tint number
 ---@field plate_text string
 ---@field window_states table<integer, boolean>
----@field wheels { wheel_index: integer, wheel_type: integer }
+---@field wheels { index: integer, type: integer, var?: integer }
 ---@field xenon_color? number
 ---@field livery? number
 ---@field livery2? number
@@ -111,10 +111,9 @@ end
 ---@return string
 function Vehicle:GetClassName()
     local clsid = self:GetClassID()
-
     for name, id in pairs(eVehicleClasses) do
         if (id == clsid) then
-            return tostring(name:gsub("_", " "))
+            return name
         end
     end
 
@@ -272,7 +271,7 @@ function Vehicle:HasABS()
         local pModelFlags = self.layout.m_model_flags
         if pModelFlags:is_valid() then
             local iModelFlags = pModelFlags:get_dword()
-            return Lua_fn.has_bit(iModelFlags, MF._ABS_STD)
+            return Lua_fn.has_bit(iModelFlags, eVehicleModelFlags.ABS_STD)
         end
     end
 
@@ -282,7 +281,7 @@ end
 
 ---@return boolean
 function Vehicle:IsSports()
-    return self:GetModelInfoFlag(VMF._SPORTS)
+    return self:GetModelInfoFlag(eVehicleModelInfoFlags.SPORTS)
 end
 
 ---@return boolean
@@ -303,12 +302,12 @@ end
 -- Returns whether the vehicle is a pussy shaver.
 ---@return boolean
 function Vehicle:IsElectric()
-    return self:GetModelInfoFlag(VMF._IS_ELECTRIC)
+    return self:GetModelInfoFlag(eVehicleModelInfoFlags.IS_ELECTRIC)
 end
 
 -- Returns whether the vehicle is an F1 race car.
 function Vehicle:IsFormulaOne()
-    return self:GetModelInfoFlag(VMF._IS_FORMULA_VEHICLE) or
+    return self:GetModelInfoFlag(eVehicleModelInfoFlags.IS_FORMULA_VEHICLE) or
         (self:GetClassName() == "Open Wheel")
 end
 
@@ -316,8 +315,8 @@ end
 --
 -- equipped with hydraulic suspension.
 function Vehicle:IsLowrider()
-    return self:GetModelInfoFlag(VMF._HAS_LOWRIDER_HYDRAULICS) or
-        self:GetModelInfoFlag(VMF._HAS_LOWRIDER_DONK_HYDRAULICS)
+    return self:GetModelInfoFlag(eVehicleModelInfoFlags.HAS_LOWRIDER_HYDRAULICS) or
+        self:GetModelInfoFlag(eVehicleModelInfoFlags.HAS_LOWRIDER_DONK_HYDRAULICS)
 end
 
 function Vehicle:MaxPerformance()
@@ -594,15 +593,18 @@ function Vehicle:GetColors()
     return col1, col2
 end
 
+---@return table
 function Vehicle:GetCustomWheels()
     local handle = self:GetHandle()
     if not self:IsValid() then
-        return 0, 0
+        return {}
     end
 
-    local wheel_type  = VEHICLE.GET_VEHICLE_WHEEL_TYPE(handle)
-    local wheel_index = VEHICLE.GET_VEHICLE_MOD_VARIATION(handle, 23)
-    return wheel_type, wheel_index
+    local wheels = {}
+    wheels.type  = VEHICLE.GET_VEHICLE_WHEEL_TYPE(handle)
+    wheels.index = VEHICLE.GET_VEHICLE_MOD(handle, 23)
+    wheels.var = VEHICLE.GET_VEHICLE_MOD_VARIATION(handle, 23)
+    return wheels
 end
 
 function Vehicle:SetCustomWheels(tWheelData)
@@ -611,12 +613,12 @@ function Vehicle:SetCustomWheels(tWheelData)
         return
     end
 
-    if tWheelData.wheel_type then
-        VEHICLE.SET_VEHICLE_WHEEL_TYPE(handle, tWheelData.wheel_type)
+    if tWheelData.type then
+        VEHICLE.SET_VEHICLE_WHEEL_TYPE(handle, tWheelData.type)
     end
 
-    if tWheelData.wheel_index then
-        VEHICLE.SET_VEHICLE_MOD(handle, 23, tWheelData.wheel_index, true)
+    if tWheelData.index then
+        VEHICLE.SET_VEHICLE_MOD(handle, 23, tWheelData.index, (tWheelData.var and tWheelData.var == 1))
     end
 end
 
@@ -646,28 +648,31 @@ end
 function Vehicle:GetNeonLights()
     local handle = self:GetHandle()
     local bHasNeonLights = false
-    local t = {}
-
-    t.neon = {
+    local neon = {
         enabled = {},
         color = { r = 0, g = 0, b = 0 }
     }
 
     for i = 1, 4 do
-        local isEnabled = VEHICLE.GET_VEHICLE_NEON_LIGHT_ENABLED(handle, i-1)
-        t.neon.enabled[i] = isEnabled
+        local isEnabled = VEHICLE.GET_VEHICLE_NEON_ENABLED(handle, i-1)
+        neon.enabled[i] = isEnabled
         if isEnabled then
             bHasNeonLights = true
         end
     end
 
     if bHasNeonLights then
-        t.neon.color.r,
-        t.neon.color.g,
-        t.neon.color.b = VEHICLE.GET_VEHICLE_NEON_LIGHTS_COLOUR(handle)
+        neon.color.r,
+        neon.color.g,
+        neon.color.b = VEHICLE.GET_VEHICLE_NEON_COLOUR(
+            handle,
+            neon.color.r,
+            neon.color.g,
+            neon.color.b
+        )
     end
 
-    return t
+    return neon
 end
 
 ---@param tNeonData table
@@ -678,10 +683,10 @@ function Vehicle:SetNeonLights(tNeonData)
 
     local handle = self:GetHandle()
     for i = 0, 3 do
-        VEHICLE.SET_VEHICLE_NEON_LIGHT_ENABLED(handle, i, tNeonData.enabled[i])
+        VEHICLE.SET_VEHICLE_NEON_ENABLED(handle, i, tNeonData.enabled[i])
     end
 
-    VEHICLE.SET_VEHICLE_NEON_LIGHTS_COLOUR(
+    VEHICLE.SET_VEHICLE_NEON_COLOUR(
         handle,
         tNeonData.color.r,
         tNeonData.color.g,
@@ -705,8 +710,7 @@ function Vehicle:GetMods()
     local window_tint = VEHICLE.GET_VEHICLE_WINDOW_TINT(handle)
     local plate_text = VEHICLE.GET_VEHICLE_NUMBER_PLATE_TEXT(handle)
     local col1, col2 = self:GetColors()
-    local wheels = {}
-    wheels.wheel_type, wheels.wheel_index = self:GetCustomWheels()
+    local wheels = self:GetCustomWheels()
 
     local struct = VehicleMods.new(
         _mods,
@@ -879,6 +883,7 @@ function Vehicle:Clone(cloneSpawnPos)
         clone:ApplyMods(tModData)
     end
 
+    clone:SetAsNoLongerNeeded()
     return clone
 end
 
@@ -907,7 +912,7 @@ end
 ---@param flag number
 ---@param toggle boolean
 function Vehicle:SetHandlingFlag(flag, toggle)
-    if not self:IsValid() or not self:IsCar() or not self:IsBike() or not self:IsQuad() then
+    if not self:IsValid() or not (self:IsCar() or self:IsBike() or self:IsQuad()) then
         return
     end
 

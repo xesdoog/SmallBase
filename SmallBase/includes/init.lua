@@ -1,9 +1,7 @@
 ---@diagnostic disable: lowercase-global
 
-require("includes.mock_env")
-
 local SCRIPT_NAME    <const> = "SmallBase"
-local SCRIPT_VERSION <const> = "0.3a"
+local SCRIPT_VERSION <const> = "0.4a"
 local TARGET_BUILD   <const> = "any"
 local TARGET_VERSION <const> = "any"
 local DEFAULT_CONFIG <const> = {
@@ -45,7 +43,7 @@ GVars = {
 Time       = require("includes.modules.Time").new()
 KeyManager = require("includes.services.KeyManager")
 YimToast   = require("includes.lib.YimToast")
-CFG        = require("includes.services.Serializer"):init(SCRIPT_NAME, DEFAULT_CONFIG, GVars, { pretty = true, indent = 4 })
+Serializer = require("includes.services.Serializer"):init(SCRIPT_NAME, DEFAULT_CONFIG, GVars, { pretty = true, indent = 4 })
 Timer      = Time.Timer
 yield      = coroutine.yield
 sleep      = Time.Sleep
@@ -53,10 +51,13 @@ sleep      = Time.Sleep
 
 local s_BasePath = "includes"
 local t_Packages = {
+    "data.enums",
     "data.refs",
     "data.peds",
     "data.vehicles",
     "data.weapons",
+    "modules.vector2",
+    "modules.vector3",
     "lib.utils",
     "modules.Accessor",
     "modules.Decorator",

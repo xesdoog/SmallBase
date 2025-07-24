@@ -115,7 +115,7 @@ function Backend:SetHotkey(keybind, isControllerKey)
                 KeyManager:UpdateKeybind(oldKey, {code = key_code, name = key_name})
             end
 
-            CFG:SaveItem(configName, configVal)
+            Serializer:SaveItem(configName, configVal)
             key_code, key_name = nil, nil
             GVars.b_IsSettingHotkeys = false
             ImGui.CloseCurrentPopup()
@@ -243,6 +243,6 @@ function Backend:OnPlayerSwitch(s)
 end
 
 function Backend:ResetSettings()
-    CFG:Reset()
+    Serializer:Reset()
 end
 --#endregion

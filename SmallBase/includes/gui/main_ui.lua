@@ -144,20 +144,40 @@ function MainUI()
 
     if UI.IsItemClicked("lmb") then
         debug_counter = debug_counter + 1
-        if debug_counter == 7 then
+        if (debug_counter == 7) then
             UI.WidgetSound("Nav")
             log.debug("Debug mode activated.")
-            SS_debug = true
-            CFG:SaveItem("SS_debug", true)
+            Backend.debug_mode = true
         elseif debug_counter > 7 then
             UI.WidgetSound("Cancel")
             log.debug("Debug mode deactivated.")
-            SS_debug = false
+            Backend.debug_mode = false
             debug_counter = 0
-            CFG:SaveItem("SS_debug", false)
         end
     end
 
     UI.WrappedText("A Lua base for YimMenu V1. Support for cross-compatibility with V2 may be added later.", 25)
     ImGui.Dummy(1, 10)
+    ImGui.Separator()
+
+    ImGui.SetNextWindowBgAlpha(0)
+    if ImGui.BeginChild("footer", -1, 120, false) then
+        GVars.b_AutoCleanupEntities, _ = ImGui.Checkbox("Auto Cleanup Entities", GVars.b_AutoCleanupEntities)
+
+        if ImGui.Button("Test Read Global") then
+            local fKickVotesNeededRatio = ScriptGlobal(262145):At(6)
+            print(fKickVotesNeededRatio, fKickVotesNeededRatio:ReadFloat())
+        end
+
+        ImGui.SameLine()
+
+        if ImGui.Button("Test Random Local") then
+            local fEntryPointLocal = ScriptLocal("main_persistent", 23)
+            print(fEntryPointLocal, fEntryPointLocal:ReadFloat())
+        end
+
+        ImGui.Spacing()
+        ImGui.TextDisabled(("v%s"):format(Backend.__version))
+        ImGui.EndChild()
+    end
 end

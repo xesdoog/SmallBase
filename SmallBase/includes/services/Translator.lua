@@ -3,16 +3,16 @@
 local Labels = require("lib.Translations")
 
 if not keybinds then
-    keybinds = CFG:ReadItem("keybinds")
+    keybinds = Serializer:ReadItem("keybinds")
 end
 
 if not gpad_keybinds then
-    gpad_keybinds = CFG:ReadItem("gpad_keybinds")
+    gpad_keybinds = Serializer:ReadItem("gpad_keybinds")
 end
 
 if not GVars.LANG then
     ---@type string
-    GVars.LANG = CFG:ReadItem("LANG")
+    GVars.LANG = Serializer:ReadItem("LANG")
 end
 
 Backend:check_kb_keybinds()

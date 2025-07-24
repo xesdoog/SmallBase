@@ -1,5 +1,3 @@
-
-
 -- Optional parameters struct.
 ---@class SerializerOptionals
 ---@field pretty? boolean Pretty Encoding
@@ -118,6 +116,7 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
         runtime_vars[key] = saved_value ~= nil and saved_value or default_value
     end
 
+    -- static one liners
     instance.TickHandler = function()
         instance:OnTick()
     end
@@ -125,6 +124,7 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
     instance.ShutdownHandler = function()
         instance:OnShutdown()
     end
+    --
 
     instance:SyncKeys()
     return instance
@@ -288,7 +288,7 @@ function Serializer:SyncKeys(runtime_vars)
     end
 
     for k in pairs(saved) do
-        if default[k] == nil then
+        if (k ~= "__version" and default[k] == nil) then
             saved[k] = nil
             Backend:debug(string.format("[Serializer]: Removed deprecated config key: '%s'", k))
             dirty = true
@@ -445,4 +445,3 @@ function Serializer:DebugDump()
 end
 
 return Serializer
---#endregion

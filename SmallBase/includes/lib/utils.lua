@@ -1,7 +1,25 @@
-require("includes.modules.Vector2")
-require("includes.modules.Vector3")
+---@diagnostic disable: lowercase-global
 
 --#region Global functions
+
+print = function(...)
+    local out = {}
+
+    for i = 1, select("#", ...) do
+        out[i] = tostring(select(i, ...))
+    end
+
+    log.info(table.concat(out, "\t"))
+end
+
+printf = function(fmt, ...)
+    local ok, msg = pcall(string.format, fmt, ...)
+    if not ok then
+        msg = "<formatting error!> " .. tostring(msg)
+    end
+
+    log.info(msg)
+end
 
 ---@param t table
 ---@return table
@@ -179,13 +197,19 @@ table.serialize = function(tbl, indent, key_order, seen)
             if is_empty_table(v) then
                 return "{}"
             elseif seen[v] then
-                return '"<circular reference>"'
+                return "<circular reference>"
             else
                 return table.serialize(v, depth, key_order, seen)
             end
-        else
-            return "\"<unsupported>\""
+        elseif getmetatable(v) and v.__type then
+            return tostring(v.__type)
+        elseif type(v) == "userdata" then
+            if (v.rip and v.get_address) then
+                return string.format("<pointer@0x%X>", v:get_address())
+            end
+            return "<userdata>"
         end
+        return "<unsupported>"
     end
 
     table.insert(pieces, get_indent(indent) .. "{\n")
@@ -240,6 +264,10 @@ table.serialize = function(tbl, indent, key_order, seen)
 
     table.insert(pieces, get_indent(indent) .. "}")
     return table.concat(pieces)
+end
+
+table.print = function(t)
+    print(table.serialize(t))
 end
 
 -- Returns the number of values in a table. Doesn't count nil fields.
@@ -809,7 +837,7 @@ UI.HotkeyPrompt = function(window_name, keybind, isController)
     if ImGui.Button(string.format("%s##%s", _T("GENERIC_UNBIND_LABEL_"), window_name)) then
         UI.WidgetSound("Delete")
         keybind.code, keybind.name = 0, "[Unbound]"
-        CFG:SaveItem(configName, configVal)
+        Serializer:SaveItem(configName, configVal)
     end
     ImGui.EndDisabled()
     ImGui.SetNextWindowPos(780, 400, ImGuiCond.Appearing)

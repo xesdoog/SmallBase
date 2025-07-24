@@ -71,7 +71,7 @@ end
 
 ---@return boolean
 function Entity:Exists()
-    return (self.m_handle and Game.IsScriptHandle(self.m_handle))
+    return (self:GetHandle() and Game.IsScriptHandle(self:GetHandle()))
 end
 
 ---@return number
@@ -88,7 +88,7 @@ end
 ---@return vec3
 function Entity:GetPos(bIsAlive)
     if bIsAlive == nil then bIsAlive = false end
-    return self:Exists() and ENTITY.GET_ENTITY_COORDS(self.m_handle, bIsAlive) or vec3:zero()
+    return self:Exists() and ENTITY.GET_ENTITY_COORDS(self:GetHandle(), bIsAlive) or vec3:zero()
 end
 
 ---@param rotationOrder? integer
@@ -253,4 +253,8 @@ function Entity:Kill()
     end
 
     ENTITY.SET_ENTITY_HEALTH(self:GetHandle(), 0, 0, 0)
+end
+
+function Entity:SetAsNoLongerNeeded()
+    ENTITY.SET_ENTITY_AS_NO_LONGER_NEEDED(self:GetHandle())
 end

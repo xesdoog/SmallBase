@@ -3,6 +3,12 @@
 ---@class Self: Player
 Self = Class("Self", Player)
 
+-- override
+---@return number
+function Self:GetHandle()
+    return PLAYER.PLAYER_PED_ID()
+end
+
 ---@return number
 function Self:GetPlayerID()
     return PLAYER.PLAYER_ID()

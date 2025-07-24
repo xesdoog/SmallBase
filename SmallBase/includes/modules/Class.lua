@@ -6,7 +6,7 @@ function Class(name, base)
     local cls = {}
     cls.__index = cls
     cls.__name = name or "unk"
-    cls.__type = "class"
+    cls.__index.__type = ("Class<%s>"):format(name)
 
     -- Constructors
     function cls.new(...) end
@@ -24,7 +24,6 @@ function Class(name, base)
         setmetatable(cls, { __index = base })
         cls.__base = base
     end
-    -- TODO: Add Python-like super() method to resolve base and access its metamethods
 
     -- created classes can be called directly: freemode = ScriptLocal("freemode", 1424) // fKickVotesNeededRatio = ScriptGlobal(262145).f_6
     -- I prefer this rather than having to explicitly call the constructor.
@@ -32,7 +31,20 @@ function Class(name, base)
         cls,
         {
             __call = function(c, ...)
-                if rawget(c, "new") then
+                if base then
+                    if base.new then
+                        local instance = base.new(...)
+                        return setmetatable(instance, c)
+                    end
+
+                    if base.init then
+                        local instance = setmetatable({}, c)
+                        base.init(instance, ...)
+                        return instance
+                    end
+                end
+
+                if c.new then
                     return c.new(...)
                 end
 
@@ -45,6 +57,10 @@ function Class(name, base)
             __index = base
         }
     )
+
+    function cls:super()
+        return self.__base or self
+    end
 
     ---@param subclassName string
     function cls:extend(subclassName)

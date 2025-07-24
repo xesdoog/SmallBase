@@ -14,7 +14,7 @@ local eAccessorType <const> = {
 ---@overload fun(addr: integer, m_type: integer, script?: string): Accessor
 local Accessor = Class("Accessor")
 
---#region internal
+--#region Internal
 --------------------------------------------------------
 --------------------------------------------------------
 --------------------------------------------------------
@@ -83,7 +83,8 @@ end
 
 ---@return boolean
 function Accessor.CanAccess(_)
-    return network.is_session_started() and not script.is_active("maintransition")
+    local gs, gt = Memory.GetGameState(), Memory.GetGameTime()
+    return (gs and gs == 0) and gt >= 2e4 and not script.is_active("maintransition")
 end
 
 function Accessor:At(offset)
@@ -109,34 +110,23 @@ function Accessor:GetAddress()
 end
 
 function Accessor:__tostring()
-    local prefix = self.m_type == 0 and "Global" or "Local"
-    local chain = ""
+    local prefix = self.m_type == eAccessorType.GLOBAL and "Global" or "Local"
+    local chain, suffix = "", ""
 
     for _, offset in ipairs(self.m_path or {}) do
         chain = chain .. ".f_" .. offset
     end
 
-    return string.format("<%s_%d%s>", prefix, self.m_address, chain)
-end
-
--- This allows us to do something like `local some_global = ScriptGlobal(262145):At(6).f_9.f_420` because why the hell not?
---
--- We can turn this into an abomination if we really want to: `ScriptGlobal(262145)[6]:At(9).f_420 + 5` lol
-function Accessor:__index(key)
-    local offset = key:match("^f_(%d+)$")
-
-    if offset then
-        return self:At(tonumber(offset))
+    if (self.m_type == eAccessorType.LOCAL) and (self.m_script and #self.m_script > 0) then
+        suffix = ":" .. self.m_script
     end
 
-    return rawget(Accessor, key) or getmetatable(self)[key] -- TODO: use a better fallback.
+    return string.format("<%s_%d%s%s>", prefix, self.m_address, chain, suffix)
 end
 
 
--- Reminder: Keep R/W explicit. Stop trying to be fancy.
--- 
--- We can add equality and assignment but this is better and less error-prone.
-
+-- Reminder: Keep R/W explicit.
+-- Stop trying to be fancy.
 -----------------------------
 ---------- Read -------------
 -----------------------------
@@ -220,21 +210,33 @@ ScriptGlobal = Class("ScriptGlobal", Accessor)
 ---@return ScriptGlobal
 function ScriptGlobal.new(address)
     local instance = Accessor.new(address, eAccessorType.GLOBAL)
+    ---@diagnostic disable: undefined-field
+    instance.__index.__type = ScriptGlobal.__type
     return setmetatable(instance, ScriptGlobal)
 end
 
 ---@class ScriptLocal : Accessor
 ---@overload fun(scr: string, address: integer): ScriptLocal
 ScriptLocal = Class("ScriptLocal", Accessor)
+setmetatable(ScriptLocal,
+    {
+        __call = function (_, scr, addr)
+            return ScriptLocal.new(scr, addr)
+        end,
+        __index = Accessor
+    }
+)
 
 ---@param script_name string Script name
 ---@param address integer Local address
 ---@return ScriptLocal
 function ScriptLocal.new(script_name, address)
     local instance = Accessor.new(address, eAccessorType.LOCAL, script_name)
-    instance.ReadString  = nil
-    instance.WriteString = nil
-    instance.WriteUint   = nil
+    ---@diagnostic disable: undefined-field
+    instance.__index.ReadString  = nil
+    instance.__index.WriteString = nil
+    instance.__index.WriteUint   = nil
+    instance.__index.__type = ScriptLocal.__type
 
     return setmetatable(instance, ScriptLocal)
 end
