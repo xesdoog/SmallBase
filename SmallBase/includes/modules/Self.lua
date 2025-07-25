@@ -14,6 +14,10 @@ function Self:GetPlayerID()
     return PLAYER.PLAYER_ID()
 end
 
+function Self:GetModelHash()
+    return ENTITY.GET_ENTITY_MODEL(self:GetHandle())
+end
+
 -- Returns the entity localPlayer is aiming at.
 ---@param skipPlayers? boolean
 ---@return integer | nil

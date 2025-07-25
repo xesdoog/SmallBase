@@ -12,6 +12,8 @@
 ---@operator le(vec3): boolean
 ---@operator lt(vec3): boolean
 
+vec3.__type = "vec3"
+
 ---@param arg any
 ---@return boolean
 function vec3:assert(arg)
@@ -209,6 +211,28 @@ function vec3:to_direction()
         math.cos(radians.z) * math.abs(math.cos(radians.x)),
         math.sin(radians.x)
     )
+end
+
+---@return table
+function vec3:serialize()
+    return {
+        __type = self.__type,
+        x = self.x or 0,
+        y = self.y or 0,
+        z = self.z or 0
+    }
+end
+
+function vec3.from_table(t)
+    if (type(t) ~= "table" or not (t.x and t.y and t.z)) then
+        return vec3:zero()
+    end
+
+    return vec3:new(t.x, t.y, t.z)
+end
+
+if Serializer and not Serializer.class_types["vec3"] then
+    Serializer:RegisterNewType("vec3", vec3.serialize, vec3.from_table)
 end
 
 if vec2 then

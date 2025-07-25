@@ -1,3 +1,5 @@
+---@diagnostic disable: param-type-mismatch
+
 -- Optional parameters struct.
 ---@class SerializerOptionals
 ---@field pretty? boolean Pretty Encoding
@@ -21,8 +23,11 @@
 ---@field private xor_key string
 ---@field TickHandler fun(): nil
 ---@field ShutdownHandler fun(): nil
----@overload fun(_, scrname: string, default_config: table, runtime_vars: table, varargs: SerializerOptionals): Serializer
+---@field class_types table<string, {serializer:fun(), constructor:fun()}>
+---@overload fun(scrname?: string, default_config?: table, runtime_vars?: table, varargs?: SerializerOptionals): Serializer
 local Serializer = Class("Serializer")
+Serializer.class_types = {}
+Serializer.deferred_objects = {}
 Serializer.json = require("includes.lib.Json")()
 Serializer.default_xor_key = "\xA3\x4F\xD2\x9B\x7E\xC1\xE8\x36\x5D\x0A\xF7\xB4\x6C\x2D\x89\x50\x1E\x73\xC9\xAF\x3B\x92\x58\xE0\x14\x7D\xA6\xCB\x81\x3F\xD5\x67"
 Serializer.b64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
@@ -42,17 +47,20 @@ Serializer.__credits = [[
 
 assert(Serializer.json.VERSION == "20211016.28", "Bad Json package version.")
 
----@param script_name string
----@param default_config table
+---@param script_name? string
+---@param default_config? table
 ---@param runtime_vars? table Runtime variables that will be tracked for auto-save.
 ---@param varargs? SerializerOptionals
 ---@return Serializer
 function Serializer:init(script_name, default_config, runtime_vars, varargs)
-    varargs = varargs or { pretty = true, indent = 2 }
+    varargs = varargs or {}
+    local timestamp = tostring(os.date("%H:%M:%S")):gsub(":", "_")
+    script_name = script_name or (Backend and Backend.script_name or ("noname_%s"):format(timestamp))
+
     ---@type Serializer
     local instance = setmetatable(
         {
-            default_config = default_config,
+            default_config = default_config or {__version = Backend and Backend.__version or self.__version},
             file_name = string.format("%s.json", script_name:lower():gsub(" ", "_")),
             xor_key = varargs and varargs.encryption_key or self.default_xor_key,
             m_disabled = false,
@@ -60,7 +68,7 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
             m_key_states = {},
             parsing_options = {
                 pretty = varargs.pretty ~= nil and varargs.pretty or true,
-                indent = string.rep(" ", varargs.indent or 2),
+                indent = string.rep(" ", varargs.indent or 4),
                 strict_parsing = varargs.strict_parsing or false
             }
         },
@@ -83,23 +91,38 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
         _ENV.GVars = runtime_vars
     end
 
-    instance.m_key_states.__version = config_data.__version
+    instance.m_key_states.__version = config_data.__version or Backend and Backend.__version or Serializer.__version
+    config_data.__version = instance.m_key_states.__version
     setmetatable(
         runtime_vars,
         {
             __index = function(_, k)
-                return instance.m_key_states[k]
+                local value = instance.m_key_states[k]
+                if (value ~= nil) then
+                    return value
+                end
+
+                value = config_data[k]
+                if (value ~= nil) then
+                    runtime_vars[k] = value
+                    instance.m_key_states[k] = value
+                    instance.m_dirty = true
+                    return value
+                end
+
+                return nil
             end,
             __newindex = function(_, k, v)
-                if (type(v) == "table") then
+                if type(v) == "table" and getmetatable(v) == nil and type(v.serialize) ~= "function" then
                     v = table.copy(v)
                 end
 
-                if k ~= "__version" then
+                if (k ~= "__version") then
                     if (instance.default_config[k] == nil) then
-                        rawset(instance.m_key_states, k, v)
-                        Backend:debug(string.format("[Serializer]: Ignored runtime key '%s'", k))
-                        return -- ignore invalid runtime vars
+                        local value = config_data[k] ~= nil and config_data[k] or v -- first seen
+                        instance.default_config[k] = value
+                        instance.m_key_states[k] = value
+                        return
                     end
 
                     if (instance.m_key_states[k] ~= v) then
@@ -116,6 +139,10 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
         runtime_vars[key] = saved_value ~= nil and saved_value or default_value
     end
 
+    for key, saved_value in pairs(config_data) do
+        runtime_vars[key] = saved_value
+    end
+
     -- static one liners
     instance.TickHandler = function()
         instance:OnTick()
@@ -126,8 +153,27 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
     end
     --
 
-    instance:SyncKeys()
+    if default_config then
+        instance:SyncKeys()
+    end
+
+    script.register_looped("SB_SERIALIZER", instance.TickHandler)
+    event.register_handler(menu_event.ScriptsReloaded, instance.ShutdownHandler)
+    event.register_handler(menu_event.MenuUnloaded, instance.ShutdownHandler)
+
     return instance
+end
+
+---@param typename string
+---@param serializer function
+---@param constructor function
+function Serializer:RegisterNewType(typename, serializer, constructor)
+    assert(type(typename) == "string", "Attempt to register an invalid type. Type name should be string.")
+    typename = typename:lower():trim()
+    self.class_types[typename] = {
+        serializer  = serializer,
+        constructor = constructor
+    }
 end
 
 ---@return boolean
@@ -139,17 +185,107 @@ function Serializer:IsBase64(data)
     return (#data % 4 == 0 and data:match("^[A-Za-z0-9+/]+=?=?$") ~= nil)
 end
 
+---@param value any
+---@return any
+function Serializer:Preprocess(value, seen)
+    seen = seen or {}
+    if seen[value] then
+        return seen[value]
+    end
+
+    local t = type(value)
+    if (t == "table") or (t == "userdata") then
+        seen[value] = {}
+
+        local type_name = rawget(value, "__type")
+        if type_name then
+            local name = tostring(type_name):lower():trim()
+            local fallback = self.class_types[name] and self.class_types[name].serializer
+
+            if (type(fallback) == "function") then
+                local ok, result = pcall(fallback, value)
+                if (ok and type(result) == "table") then
+                    seen[value] = result
+                    return result
+                end
+            end
+        end
+
+        if (type(value.serialize) == "function") then
+            local ok, result = pcall(value.serialize, value)
+            if ok and (type(result) == "table") then
+                seen[value] = result
+                return result
+            end
+        end
+
+        local out = {}
+        seen[value] = out
+        for k, v in pairs(value) do
+            out[k] = self:Preprocess(v, seen)
+        end
+
+        return out
+    end
+
+    return value
+end
+
+---@param value any
+---@return any
+function Serializer:Postprocess(value)
+    if (type(value) == "table") then
+        local type_name = rawget(value, "__type")
+        if type_name then
+            local name = tostring(type_name):lower():trim()
+            local ctor = self.class_types[name] and self.class_types[name].constructor
+
+            if (type(ctor) == "function") then
+                local ok, result = pcall(ctor, value)
+                if ok then
+                    return result
+                end
+            else
+                table.insert(self.deferred_objects, value)
+                return value
+            end
+        end
+
+        local out = {}
+        for k, v in pairs(value) do
+            out[self:Postprocess(k)] = self:Postprocess(v)
+        end
+
+        return out
+    end
+
+    return value
+end
+
 ---@param data any
 ---@param etc? any
 function Serializer:Encode(data, etc)
-    return self.json:encode(data, etc, { pretty = self.parsing_options.pretty, indent = self.parsing_options.indent })
+    return self.json:encode(
+        self:Preprocess(data),
+        etc,
+        {
+            pretty = self.parsing_options.pretty,
+            indent = self.parsing_options.indent
+        }
+    )
 end
 
 ---@param data any
 ---@param etc? any
 ---@return any
 function Serializer:Decode(data, etc)
-    return self.json:decode(data, etc, { strictParsing = self.parsing_options.strict_parsing or false })
+    local parsed = self.json:decode(
+        data,
+        etc,
+        { strictParsing = self.parsing_options.strict_parsing or false }
+    )
+
+    return self:Postprocess(parsed)
 end
 
 ---@param data any
@@ -206,7 +342,7 @@ end
 function Serializer:ReadItem(item_name)
     local data = self:Read()
 
-    if type(data) ~= "table" then
+    if (type(data) ~= "table") then
         log.warning("[Serializer]: Invalid data type! Returning default value.")
         return self.default_config[item_name]
     end
@@ -414,6 +550,27 @@ function Serializer:Decrypt()
     self:Parse(self:Decode(decrypted))
 end
 
+function Serializer:FlushObjectQueue()
+    for _, t in ipairs(self.deferred_objects) do
+        local name  = t.__type:lower():trim()
+        local entry = self.class_types[name]
+        local ctor  = entry and entry.constructor
+
+        if type(ctor) == "function" then
+            local ok, result = pcall(ctor, t)
+            if ok and result then
+                for k, v in pairs(self.m_key_states) do
+                    if (v == t) then
+                        self.m_key_states[k] = result
+                    end
+                end
+            end
+        end
+    end
+
+    self.deferred_objects = {}
+end
+
 function Serializer:Flush()
     if not self:CanAccess() then
         return
@@ -441,7 +598,16 @@ function Serializer:OnShutdown()
 end
 
 function Serializer:DebugDump()
-    print(table.serialize(self.m_key_states))
+    local out = {
+        script_name    = Backend and Backend.script_name or "nil",
+        file_name      = self.file_name,
+        is_disabled    = self.m_disabled,
+        key_states     = self.m_key_states,
+        default_config = self.default_config,
+        runtime_vars   = _ENV.GVars or {},
+    }
+
+    table.print(out)
 end
 
 return Serializer

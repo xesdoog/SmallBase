@@ -162,8 +162,6 @@ function MainUI()
 
     ImGui.SetNextWindowBgAlpha(0)
     if ImGui.BeginChild("footer", -1, 120, false) then
-        GVars.b_AutoCleanupEntities, _ = ImGui.Checkbox("Auto Cleanup Entities", GVars.b_AutoCleanupEntities)
-
         if ImGui.Button("Test Read Global") then
             local fKickVotesNeededRatio = ScriptGlobal(262145):At(6)
             print(fKickVotesNeededRatio, fKickVotesNeededRatio:ReadFloat())
@@ -174,6 +172,22 @@ function MainUI()
         if ImGui.Button("Test Random Local") then
             local fEntryPointLocal = ScriptLocal("main_persistent", 23)
             print(fEntryPointLocal, fEntryPointLocal:ReadFloat())
+        end
+
+        if Backend.debug_mode then
+            ImGui.SameLine()
+
+            if ImGui.Button("Dump Serializer") then
+                Serializer:DebugDump()
+            end
+
+            GVars.drawbox, _ = ImGui.Checkbox("Draw Box", GVars.drawbox)
+
+            if GVars.drawbox then
+                script.run_in_fiber(function()
+                    Self:DrawBoundingBox(Color("red"))
+                end)
+            end
         end
 
         ImGui.Spacing()

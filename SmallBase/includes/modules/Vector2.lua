@@ -3,8 +3,8 @@
 ---@class vec2
 ---@field x float
 ---@field y float
----@overload fun(x: number, y: number): vec2 -- vec2(68, 419)
----@overload fun(pos: {x: number, y: number} | { [1]: number, [2]: number }): vec2 -- vec2({x = 68, y = 419}) or vec2({68, 419})
+---@overload fun(x: number, y: number): vec2
+---@overload fun(pos: {x: number, y: number} | { [1]: number, [2]: number }): vec2
 ---@operator add(vec2|number): vec2
 ---@operator sub(vec2|number): vec2
 ---@operator mul(vec2|number): vec2
@@ -15,37 +15,7 @@
 ---@operator lt(vec2): boolean
 vec2 = {}
 vec2.__index = vec2
-setmetatable(
-    vec2,
-    {
-        __call = function(_, ...)
-            local n = select("#", ...)
-            local x, y
-
-            if (n == 1) then
-                local arg = ...
-
-                if (type(arg) == "table" or type(arg) == "userdata") then
-                    if (type(arg.x) == "number" and type(arg.y) == "number") then
-                        x, y = arg.x, arg.y
-                    elseif (type(arg[1]) == "number" and type(arg[2]) == "number") then
-                        x, y = arg[1], arg[2]
-                    else
-                        error("Invalid argument: table must have x/y or [1]/[2]")
-                    end
-                else
-                    error(string.format("Invalid argument: expected table or userdata, got %s instead.", type(arg)))
-                end
-            elseif (n == 2) then
-                x, y = ...
-            else
-                error("Invalid vector2 constructor: expected table or tuple (x, y)")
-            end
-
-            return vec2:new(x, y)
-        end
-    }
-)
+vec2.__type = "vec2"
 
 ---@param arg any
 ---@return boolean
@@ -68,7 +38,7 @@ function vec2:new(x, y)
             x = x or 0,
             y = y or 0
         },
-        self
+        vec2
     )
 end
 
@@ -271,4 +241,25 @@ end
 function vec2:from_polar(angle, radius)
     radius = radius or 1
     return vec2:new(math.cos(angle) * radius, math.sin(angle) * radius)
+end
+
+---@return table
+function vec2:serialize()
+    return {
+        __type = self.__type,
+        x = self.x or 0,
+        y = self.y or 0
+    }
+end
+
+function vec2.from_table(t)
+    if (type(t) ~= "table" or not (t.x and t.y)) then
+        return vec2:zero()
+    end
+
+    return vec2:new(t.x, t.y)
+end
+
+if Serializer and not Serializer.class_types["vec2"] then
+    Serializer:RegisterNewType("vec2", vec2.serialize, vec2.from_table)
 end

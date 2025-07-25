@@ -85,6 +85,7 @@ end
 --
 -- Returns a new `Color` instance.
 ---@param ... any
+---@return Color
 function Color.new(...)
     local instance = setmetatable({}, Color)
     local args = type(...) == "table" and ... or { ... }
@@ -284,4 +285,21 @@ function Color:AsU32()
         local r, g, b, a = self:AsRGBA()
         return (a << 0x18) | (b << 0x10) | (g << 0x8) | r
     end
+end
+
+function Color:serialize()
+    return { __type = "color", arg = self.arg }
+end
+
+function Color.from_table(t)
+    if (type(t) ~= "table" or not t.arg) then
+        log.warning("[Color]: Deserialization failed: invalid data!")
+        return Color.new(0, 0, 0, 1)
+    end
+
+    return Color.new(t.arg)
+end
+
+if Serializer and not Serializer.class_types["color"] then
+    Serializer:RegisterNewType("color", Color.serialize, Color.from_table)
 end

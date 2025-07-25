@@ -1,6 +1,6 @@
 ---@diagnostic disable: param-type-mismatch
 
----@class Entity
+---@class Entity : ClassMeta<Entity>
 ---@field private m_handle number
 ---@field private m_modelhash number
 ---@field private layout pointer[]
@@ -257,4 +257,71 @@ end
 
 function Entity:SetAsNoLongerNeeded()
     ENTITY.SET_ENTITY_AS_NO_LONGER_NEEDED(self:GetHandle())
+end
+
+function Entity:GetModelDimensions()
+    if not self:Exists() then
+        return vec3:zero(), vec3:zero()
+    end
+
+    return Game.GetModelDimensions(self:GetModelHash())
+end
+
+function Entity:GetBoxCorners()
+    if not self:Exists() then
+        return {}
+    end
+
+    local corners = {}
+    local vmin, vmax = self:GetModelDimensions()
+
+    for x = 0, 1 do
+        for y = 0, 1 do
+            for z = 0, 1 do
+                local v_Offset = vec3:new(
+                    x == 0 and vmin.x or vmax.x,
+                    y == 0 and vmin.y or vmax.y,
+                    z == 0 and vmin.z or vmax.z
+                )
+
+                local v_WorldPos = self:GetOffsetInWorldCoords(
+                    v_Offset.x,
+                    v_Offset.y,
+                    v_Offset.z
+                )
+                table.insert(corners, v_WorldPos)
+            end
+        end
+    end
+
+    return corners
+end
+
+---@param color Color
+function Entity:DrawBoundingBox(color)
+    local r, g, b, a = color:AsRGBA()
+    local corners = self:GetBoxCorners()
+    local connections = {
+        {1,2}, {2,4}, {4,3}, {3,1},
+        {5,6}, {6,8}, {8,7}, {7,5},
+        {1,5}, {2,6}, {3,7}, {4,8},
+    }
+
+    for _, pair in ipairs(connections) do
+        local corner_a = corners[pair[1]]
+        local corner_b = corners[pair[2]]
+
+        GRAPHICS.DRAW_LINE(
+            corner_a.x,
+            corner_a.y,
+            corner_a.z,
+            corner_b.x,
+            corner_b.y,
+            corner_b.z,
+            r,
+            g,
+            b,
+            a or 255
+        )
+    end
 end

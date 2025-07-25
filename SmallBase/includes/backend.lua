@@ -2,19 +2,34 @@
 
 ---@class Backend
 Backend = {
-    debug_mode       = false,
-    __version        = "",
-    game_build       = "",
-    target_version   = "",
-    CreatedBlips     = {},
+    debug_mode = true,
+    __version = "",
+    game_build = "",
+    target_version = "",
+    CreatedBlips = {},
     AttachedEntities = {},
-    SpawnedEntities  = {
-        peds = {},
+    SpawnedEntities = {
+        peds     = {},
         vehicles = {},
-        objects = {},
+        objects  = {},
     },
+    b_IsTyping = false,
+    b_IsSettingHotkeys = false,
+    b_ShouldAnimateLoadingLabel = false,
+    s_LoadingLabel = "",
 }
 Backend.__index = Backend
+
+---@param name string
+---@param version string
+---@param game_build? string
+---@param target_version? string
+function Backend:init(name, version, game_build, target_version)
+    self.script_name    = name
+    self.__version      = version
+    self.game_build     = game_build or "any"
+    self.target_version = target_version or "any"
+end
 
 ---@param data string
 function Backend:debug(data)

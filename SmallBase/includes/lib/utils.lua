@@ -2,23 +2,67 @@
 
 --#region Global functions
 
-print = function(...)
-    local out = {}
+if (event and menu_event) then
+    print = function(...)
+        local out = {}
 
-    for i = 1, select("#", ...) do
-        out[i] = tostring(select(i, ...))
+        for i = 1, select("#", ...) do
+            local v = select(i, ...)
+            local str
+
+            if (type(v) == "table") then
+                if v.__tostring then -- custom classes
+                    str = v.__tostring(v)
+                elseif (type(table.serialize) == "function") then
+                    local ok, result = pcall(table.serialize, v)
+                    str = ok and result or "<serialization error!>"
+                end
+            else
+                local ok, result = pcall(tostring, v)
+                str = ok and result or "<tostring error!>"
+            end
+
+            out[i] = str
+        end
+
+        log.info(table.concat(out, "\t"))
     end
 
-    log.info(table.concat(out, "\t"))
+    do
+        local levels = {
+            debug   = log.debug,
+            info    = log.info,
+            warning = log.warning,
+        }
+
+        for level, func in pairs(levels) do
+            local fname = "f" .. level
+            log[fname] = function(fmt, ...)
+                local ok, msg = pcall(string.format, fmt, ...)
+                if not ok then
+                    msg = string.format("<format error: %s> %s", tostring(msg), tostring(fmt))
+                end
+
+                func(msg)
+            end
+        end
+    end
 end
 
 printf = function(fmt, ...)
-    local ok, msg = pcall(string.format, fmt, ...)
-    if not ok then
-        msg = "<formatting error!> " .. tostring(msg)
+    log.finfo(fmt, ...)
+end
+
+function IsInstance(object, class)
+    local mt = getmetatable(object)
+    while mt do
+        if (mt == class) then
+            return true
+        end
+        mt = rawget(mt, "__base")
     end
 
-    log.info(msg)
+    return false
 end
 
 ---@param t table
@@ -87,32 +131,6 @@ function Sum(...)
     return result
 end
 
-function GetBoxCorners(entity, v_Min, v_Max)
-    local corners = {}
-
-    for x = 0, 1 do
-        for y = 0, 1 do
-            for z = 0, 1 do
-                local v_Offset = vec3:new(
-                    x == 0 and v_Min.x or v_Max.x,
-                    y == 0 and v_Min.y or v_Max.y,
-                    z == 0 and v_Min.z or v_Max.z
-                )
-
-                local v_WorldPos = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(
-                    entity,
-                    v_Offset.x,
-                    v_Offset.y,
-                    v_Offset.z
-                )
-                table.insert(corners, v_WorldPos)
-            end
-        end
-    end
-
-    return corners
-end
-
 --#region stdlib extensions
 ---@param t_LookupTable table
 ---@param key string | number
@@ -159,7 +177,7 @@ end
 ---@param key_order? table
 ---@param seen? table
 table.serialize = function(tbl, indent, key_order, seen)
-    indent = indent or 0
+    indent = indent or 2
     seen = seen or {}
 
     if seen[tbl] then
@@ -174,15 +192,6 @@ table.serialize = function(tbl, indent, key_order, seen)
 
     local is_array = #tbl > 0
     local pieces = {}
-
-    local function find(t, val)
-        for _, v in ipairs(t) do
-            if v == val then
-                return true
-            end
-        end
-        return false
-    end
 
     local function is_empty_table(t)
         return type(t) == "table" and next(t) == nil
@@ -212,7 +221,7 @@ table.serialize = function(tbl, indent, key_order, seen)
         return "<unsupported>"
     end
 
-    table.insert(pieces, get_indent(indent) .. "{\n")
+    table.insert(pieces, "{\n")
 
     local keys = {}
 
@@ -229,7 +238,7 @@ table.serialize = function(tbl, indent, key_order, seen)
             end
 
             for k in pairs(tbl) do
-                if not find(keys, k) then
+                if not table.find(keys, k) then
                     table.insert(keys, k)
                 end
             end
@@ -670,25 +679,6 @@ UI.ColoredText = function(text, color, wrap_size)
         ImGui.PopTextWrapPos()
     end
     ImGui.PopStyleColor(1)
-end
-
--- Creates a colored ImGui button.
----@param text string
----@param color any
----@param hovercolor any
----@param activecolor any
----@return boolean
-UI.ColoredButton = function(text, color, hovercolor, activecolor)
-    local buttonR, buttonG, buttonB, buttonA = Color(color):AsFloat()
-    local hoveredR, hoveredG, hoveredB, hoveredA = Color(hovercolor):AsFloat()
-    local activeR, activeG, activeB, activeA = Color(activecolor):AsFloat()
-
-    ImGui.PushStyleColor(ImGuiCol.Button, buttonR, buttonG, buttonB, buttonA)
-    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, hoveredR, hoveredG, hoveredB, hoveredA)
-    ImGui.PushStyleColor(ImGuiCol.ButtonActive, activeR, activeG, activeB, activeA)
-    local retVal = ImGui.Button(text)
-    ImGui.PopStyleColor(3)
-    return retVal
 end
 
 -- Creates a help marker (?) symbol in front of the widget this function is called after.
