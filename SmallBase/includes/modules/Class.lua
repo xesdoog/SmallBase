@@ -80,10 +80,10 @@ function Class(name, base)
         return IsInstance(self, of)
     end
 
-    if (Serializer and type(cls.serialize) == "function" and type(cls.from_table) == "function") then
+    if (Serializer and type(cls.serialize) == "function" and type(cls.deserialize) == "function") then
         local typename = cls.__type:lower():trim()
         if not Serializer.class_types[typename] then
-            Serializer:RegisterNewType(typename, cls.serialize, cls.from_table)
+            Serializer:RegisterNewType(typename, cls.serialize, cls.deserialize)
         end
     end
 

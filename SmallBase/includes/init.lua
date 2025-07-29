@@ -1,7 +1,7 @@
 ---@diagnostic disable: lowercase-global
 
 local SCRIPT_NAME    <const> = "SmallBase"
-local SCRIPT_VERSION <const> = "0.5a"
+local SCRIPT_VERSION <const> = "0.6a"
 
 ---unused|optional
 -- local DEFAULT_CONFIG <const> = {
@@ -34,13 +34,16 @@ GVars = {}
 -------------------------------------------------------
 -- These services must be loaded before any class that registers with/uses them
 Serializer = require("includes.services.Serializer"):init()
+KeyManager = require("includes.services.KeyManager"):init()
 Time       = require("includes.modules.Time").new()
-KeyManager = require("includes.services.KeyManager")
-YimToast   = require("includes.lib.YimToast")
 
-Timer      = Time.Timer
-yield      = coroutine.yield
-sleep      = Time.Sleep
+if (Backend:GetAPIVersion() ~= eAPIVersion.L54) then
+    YimToast = require("includes.services.YimToast").new()
+end
+
+Timer = Time.Timer
+yield = coroutine.yield
+sleep = Time.Sleep
 -------------------------------------------------------
 
 local base_path = "includes"
@@ -58,6 +61,7 @@ local packages = {
     "modules.Vector3",
     "modules.Game",
     "modules.Entity",
+    "modules.Object",
     "modules.Ped",
     "modules.Player",
     "modules.Self",
@@ -74,3 +78,5 @@ end
 if Serializer and Serializer.FlushObjectQueue then
     Serializer:FlushObjectQueue()
 end
+
+Backend:RegisterHandlers()

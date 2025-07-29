@@ -10,14 +10,15 @@ This project is a tribute to Pocakking's BigBase: The biological father of YimMe
 - 🤖 Entity abstraction (`Entity`, `Vehicle`, `Ped`, etc...).
 - 🔢 Read/write wrappers for script globals and locals using a custom `Accessor` class.
 - 🧩 Extensible modular structure (backend, utils, services, etc...).
-- ⚙️ Fully automatic config parser with custom object serialization/restoration.
+- ⚙️ Fully automatic config parser with custom object serialization/deserialization.
+- 🧹 Centralized shutdown/cleanup registration via `Backend` callbacks.
 - 🧠 IntelliSense-aware typing for *(almost)* everything.
 - 💬 Dev-friendly logging.
 
 ### TODO
 
 - [x] Cleanup `Game.lua` and rewrite the `Self` class.
-- [ ] Add an `Object` class.
+- [x] Add an `Object` class.
 - [ ] Add a modular `UI` class.
 - [ ] Add a custom `Thread Manager`.
 - [ ] Showcase examples.

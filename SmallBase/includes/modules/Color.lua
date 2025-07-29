@@ -291,7 +291,7 @@ function Color:serialize()
     return { __type = "color", arg = self.arg }
 end
 
-function Color.from_table(t)
+function Color.deserialize(t)
     if (type(t) ~= "table" or not t.arg) then
         log.warning("[Color]: Deserialization failed: invalid data!")
         return Color.new(0, 0, 0, 1)
@@ -301,5 +301,5 @@ function Color.from_table(t)
 end
 
 if Serializer and not Serializer.class_types["color"] then
-    Serializer:RegisterNewType("color", Color.serialize, Color.from_table)
+    Serializer:RegisterNewType("color", Color.serialize, Color.deserialize)
 end

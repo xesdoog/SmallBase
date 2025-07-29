@@ -99,14 +99,14 @@ end
 
 ---@return boolean
 function Ped:IsEnemy()
-    if not self:IsValid() then
+    if (not self:IsValid()) then
         return false
     end
 
     local pedHandle = self:GetHandle()
     local localPlayer = Self:GetHandle()
 
-    if pedHandle == localPlayer then
+    if (pedHandle == localPlayer) then
         return false
     end
 

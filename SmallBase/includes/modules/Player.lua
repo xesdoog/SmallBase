@@ -2,7 +2,11 @@
 ---@field private layout CPed
 ---@overload fun(handle: integer): Player
 Player = Class("Player", Ped)
+
+-- override
 Player.Create = nil
+Player.Delete = nil
+Player.SetAsNoLongerNeeded = nil
 
 ---@return boolean
 function Player:IsPlaying()

@@ -252,7 +252,7 @@ function vec2:serialize()
     }
 end
 
-function vec2.from_table(t)
+function vec2.deserialize(t)
     if (type(t) ~= "table" or not (t.x and t.y)) then
         return vec2:zero()
     end
@@ -261,5 +261,5 @@ function vec2.from_table(t)
 end
 
 if Serializer and not Serializer.class_types["vec2"] then
-    Serializer:RegisterNewType("vec2", vec2.serialize, vec2.from_table)
+    Serializer:RegisterNewType("vec2", vec2.serialize, vec2.deserialize)
 end

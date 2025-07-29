@@ -8,24 +8,21 @@ local eToastLevel <const> = {
     ERROR   = 3,
 }
 
-local __init__ = false
-local __instance__ = nil
-
-local bgColors = {
+local bgColors <const> = {
     [0] = {r = 0.15, g = 0.15, b = 0.15, a = 1.0},
     [1] = {r = 0.1, g = 0.6, b = 0.1, a = 0.5},
     [2] = {r = 0.8, g = 0.6, b = 0.1, a = 0.5},
     [3] = {r = 0.8, g = 0.1, b = 0.1, a = 0.5},
 }
 
-local textColors = {
+local textColors <const> = {
     [0] = {r = 1.0, g = 1.0, b = 1.0, a = 1.0},
     [1] = {r = 1.0, g = 1.0, b = 1.0, a = 0.8},
     [2] = {r = 0.01, g = 0.01, b = 0.01, a = 1.0},
     [3] = {r = 0.01, g = 0.01, b = 0.01, a = 1.0},
 }
 
-local frontendSounds = {
+local frontendSounds <const> = {
     [0] = {
         soundName = "PIN_CENTRED",
         soundRef = "DLC_HEIST_BIOLAB_PREP_HACKING_SOUNDS"
@@ -44,7 +41,7 @@ local frontendSounds = {
     },
 }
 
-local logLevels = {
+local logLevels <const> = {
     [0] = log.info,
     [1] = log.info,
     [2] = log.warning,
@@ -57,16 +54,18 @@ local function logError(caller, message)
 end
 
 local function GetScreenResolution()
-    local scr = {x = 0, y = 0}
-    local sr_ptr = memory.scan_pattern("66 0F 6E 0D ? ? ? ? 0F B7 3D")
-    if sr_ptr:is_valid() then
-        scr.x = sr_ptr:sub(0x4):rip():get_word()
-        scr.y = sr_ptr:add(0x4):rip():get_word()
+    local pScreenResolution = memory.scan_pattern("66 0F 6E 0D ? ? ? ? 0F B7 3D")
+    if pScreenResolution:is_null() then
+        return { x = 0, y = 0}
     end
-    return scr
+
+    return {
+        x = pScreenResolution:sub(0x4):rip():get_word(),
+        y = pScreenResolution:add(0x4):rip():get_word()
+    }
 end
 
-local SCREEN_RES <const> = GetScreenResolution()
+local SCREEN_RESOLUTION <const> = Game and Game.ScreenResolution or GetScreenResolution()
 
 ---@class Toast
 ---@field caller string The notification title.
@@ -75,11 +74,11 @@ local SCREEN_RES <const> = GetScreenResolution()
 ---@field duration number **Optional:** The duration of the notification *(default 3s)*.
 ---@field start_time number Time at which the notification was first shown.
 ---@field should_draw boolean Whether the notification UI should be drawn.
+---@field should_log? boolean **Optional:** Log to console as well.
 local Toast = {}
 Toast.__index = Toast
-Toast.screen_resolution = SCREEN_RES
 Toast.ui_width = 320
-Toast.ui_pos_x = Toast.screen_resolution.x - Toast.ui_width - 20
+Toast.ui_pos_x = SCREEN_RESOLUTION.x - Toast.ui_width - 20
 Toast.ui_pos_y = -200.0
 
 ---@param caller string The notification title.
@@ -88,29 +87,36 @@ Toast.ui_pos_y = -200.0
 ---@param duration number **Optional:** The duration of the notification *(default 3s)*.
 ---@param log boolean **Optional:** Log to console as well.
 function Toast.new(caller, message, level, duration, log)
-    return setmetatable({
-        caller = caller or "YimToast",
-        message = message,
-        level = level or 0,
-        duration = duration or 3.0,
-        start_time = os.clock(),
-        should_draw = false,
-        should_log = log
-    }, Toast)
+    return setmetatable(
+        {
+            caller      = caller or "YimToast",
+            message     = message,
+            level       = level or 0,
+            duration    = duration or 3.0,
+            start_time  = Time.now(),
+            should_draw = false,
+            should_log  = log
+        },
+        Toast
+    )
 end
 
-function Toast:Draw()
+---@param notifier Notifier
+function Toast:Draw(notifier)
     if not self.should_draw then
         return
     end
 
     local windowBgCol = bgColors[self.level] or bgColors[0]
     local textCol     = textColors[self.level] or textColors[0]
-    local elapsed     = os.clock() - self.start_time
+    local elapsed     = Time.now() - self.start_time
     local progress    = 1.0 - (elapsed / self.duration)
 
-    if __instance__ and #__instance__.queue > 0 then
-        __caller__ = string.format("%s  (+%d)", self.caller, #__instance__.queue)
+    ---@type string
+    local __caller__
+
+    if (notifier and notifier:GetQueueCount() > 0) then
+        __caller__ = string.format("%s  (+%d)", self.caller, notifier:GetQueueCount())
     else
         __caller__ = self.caller
     end
@@ -158,25 +164,41 @@ end
 
 
 ---@class Notifier
----@field queue Toast[]
+---@field private last_caller string
+---@field private last_message string
+---@field private last_time number
+---@field private rate_limit number
+---@field private queue Toast[]
+---@field private active Toast
+---@field private should_draw boolean
 local Notifier = {}
 Notifier.__index = Notifier
-Notifier.last_caller = nil
-Notifier.last_message = nil
-Notifier.last_time = 0
-Notifier.rate_limit = 3.0
 
 function Notifier.new()
-    __instance__ = setmetatable(
+    local instance = setmetatable(
         {
-            queue = {},
-            active = nil,
+            queue       = {},
             should_draw = false,
+            last_time   = 0,
+            rate_limit  = 3.0,
         },
         Notifier
     )
-    __init__ = true
-    return __instance__
+
+    gui.add_always_draw_imgui(function()
+        instance:Draw()
+    end)
+
+    script.register_looped("YimToast", function(s)
+        instance:Update()
+        s:sleep(1)
+    end)
+
+    return instance
+end
+
+function Notifier:GetQueueCount()
+    return #self.queue
 end
 
 ---@param caller string The notification title.
@@ -185,7 +207,7 @@ end
 ---@param withLog? boolean **Optional:** Log to console as well.
 ---@param duration? number **Optional:** The duration of the notification *(default 3s)*.
 function Notifier:Notify(caller, message, level, withLog, duration)
-    local current_time = os.clock()
+    local current_time = Time.now()
     if (self.last_caller == caller and self.last_message == message) and (current_time - self.last_time) < self.rate_limit then
         return
     end
@@ -201,7 +223,7 @@ end
 ---@param withLog? boolean **Optional:** Log to console as well.
 ---@param duration? number **Optional:** The duration of the notification *(default 3s)*.
 function Notifier:ShowMessage(caller, message, withLog, duration)
-    local current_time = os.clock()
+    local current_time = Time.now()
     if (self.last_caller == caller and self.last_message == message) and (current_time - self.last_time) < self.rate_limit then
         return
     end
@@ -217,7 +239,7 @@ end
 ---@param withLog? boolean **Optional:** Log to console as well.
 ---@param duration? number **Optional:** The duration of the notification *(default 3s)*.
 function Notifier:ShowSuccess(caller, message, withLog, duration)
-    local current_time = os.clock()
+    local current_time = Time.now()
     if (self.last_caller == caller and self.last_message == message) and (current_time - self.last_time) < self.rate_limit then
         return
     end
@@ -233,7 +255,7 @@ end
 ---@param withLog? boolean **Optional:** Log to console as well.
 ---@param duration? number **Optional:** The duration of the notification *(default 3s)*.
 function Notifier:ShowWarning(caller, message, withLog, duration)
-    local current_time = os.clock()
+    local current_time = Time.now()
     if (self.last_caller == caller and self.last_message == message) and (current_time - self.last_time) < self.rate_limit then
         return
     end
@@ -249,7 +271,7 @@ end
 ---@param withLog? boolean **Optional:** Log to console as well.
 ---@param duration? number **Optional:** The duration of the notification *(default 3s)*.
 function Notifier:ShowError(caller, message, withLog, duration)
-    local current_time = os.clock()
+    local current_time = Time.now()
     if (self.last_caller == caller and self.last_message == message) and (current_time - self.last_time) < self.rate_limit then
         return
     end
@@ -263,7 +285,7 @@ end
 function Notifier:Update()
     if not self.active and #self.queue > 0 then
         self.active = table.remove(self.queue, 1)
-        self.active.start_time = os.clock()
+        self.active.start_time = Time.now()
         self.active.should_draw = true
         self.should_draw = true
 
@@ -287,17 +309,17 @@ function Notifier:Update()
     end
 
     if self.active then
-        if (os.clock() - self.active.start_time) < (self.active.duration / 3) then
+        if (Time.now() - self.active.start_time) < (self.active.duration / 3) then
             if self.active.ui_pos_y < 20 then
                 self.active.ui_pos_y = self.active.ui_pos_y + 20
             end
         end
-        if (os.clock() - self.active.start_time) >= (self.active.duration * 0.95) then
+        if (Time.now() - self.active.start_time) >= (self.active.duration * 0.95) then
             if self.active.ui_pos_y > -200 then
                 self.active.ui_pos_y = self.active.ui_pos_y - 20
             end
         end
-        if (os.clock() - self.active.start_time) >= self.active.duration then
+        if (Time.now() - self.active.start_time) >= self.active.duration then
             self.active.should_draw = false
             self.active = nil
             self.should_draw = false
@@ -307,22 +329,8 @@ end
 
 function Notifier:Draw()
     if self.should_draw and self.active then
-        self.active:Draw()
+        self.active:Draw(self)
     end
 end
 
-
-local YimToast = Notifier.new()
-assert(YimToast ~= nil, "YimToast failed to load!")
-if __init__ then
-    gui.add_always_draw_imgui(function()
-        YimToast:Draw()
-    end)
-
-    script.register_looped("YimToast", function(s)
-        YimToast:Update()
-        s:sleep(1)
-    end)
-end
-
-return YimToast
+return Notifier

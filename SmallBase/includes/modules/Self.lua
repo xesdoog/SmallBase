@@ -110,10 +110,6 @@ function Self:Teleport(where, keepVehicle)
     end)
 end
 
-function Self:IsSwitchingPlayers()
-    return STREAMING.IS_PLAYER_SWITCH_IN_PROGRESS()
-end
-
 -- Returns whether the player is currently using any mobile or computer app.
 function Self:IsBrowsingApps()
     for _, v in ipairs(t_AppScriptNames) do
@@ -147,3 +143,62 @@ function Self:IsPedMyEnemy(pedHandle)
 
     return ped:IsEnemy()
 end
+
+-- A helper method to quickly remove player attachments
+---@param lookup_table? table
+function Self:RemoveAttachments(lookup_table)
+    script.run_in_fiber(function()
+        local had_attachments = false
+
+        local function _detach(entity)
+            if ENTITY.IS_ENTITY_ATTACHED_TO_ENTITY(entity, Self:GetHandle()) then
+                had_attachments = true
+                ENTITY.DETACH_ENTITY(entity, true, true)
+                ENTITY.SET_ENTITY_AS_NO_LONGER_NEEDED(entity)
+            end
+        end
+
+        if lookup_table then
+            for i = table.getlen(lookup_table), 1, -1 do
+                _detach(lookup_table[i])
+                table.remove(lookup_table, i)
+                yield()
+            end
+
+            return
+        end
+
+        local mass_lookup = {
+            entities.get_all_objects_as_handles(),
+            entities.get_all_peds_as_handles(),
+            entities.get_all_vehicles_as_handles()
+        }
+
+        for _, group in ipairs(mass_lookup) do
+            for _, entity in ipairs(group) do
+                _detach(entity)
+                yield()
+            end
+        end
+
+        if not had_attachments then
+            YimToast:ShowMessage(
+                "SmallBase",
+                "There doesn't seem to be anything attached to us."
+            )
+        else
+            YimToast:ShowSuccess(
+                "SmallBase",
+                "Attachments dropped."
+            )
+        end
+    end)
+end
+
+-- inline
+Self.SwitchHandler = function()
+    Self:Destroy()
+end
+
+Backend:RegisterEventCallback(eBackendEvent.PLAYER_SWITCH, Self.SwitchHandler)
+Backend:RegisterEventCallback(eBackendEvent.SESSION_SWITCH, Self.SwitchHandler)

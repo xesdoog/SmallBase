@@ -271,7 +271,7 @@ function Vehicle:HasABS()
         local pModelFlags = self.layout.m_model_flags
         if pModelFlags:is_valid() then
             local iModelFlags = pModelFlags:get_dword()
-            return Lua_fn.has_bit(iModelFlags, eVehicleModelFlags.ABS_STD)
+            return Bit.is_set(iModelFlags, eVehicleModelFlags.ABS_STD)
         end
     end
 
@@ -402,7 +402,7 @@ function Vehicle:SetCustomPaint(hex, p, m, is_primary, is_secondary)
     end)
 end
 
-function Vehicle:RepairVehicle()
+function Vehicle:Repair()
     local handle = self:GetHandle()
 
     if not self:IsValid() then
@@ -412,12 +412,6 @@ function Vehicle:RepairVehicle()
     VEHICLE.SET_VEHICLE_FIXED(handle)
     VEHICLE.SET_VEHICLE_DEFORMATION_FIXED(handle)
     VEHICLE.SET_VEHICLE_DIRT_LEVEL(handle, 0)
-
-    local pCVehicle = memory.handle_to_ptr(handle)
-
-    if pCVehicle:is_null() then
-        return
-    end
 
     self:ReadMemoryLayout()
     if not self.layout then
@@ -431,7 +425,7 @@ function Vehicle:RepairVehicle()
 
     local m_damage_bits = pWaterDamage:get_int()
     if m_damage_bits and type(m_damage_bits) == "number" then
-        pWaterDamage:set_int(Lua_fn.clear_bit(m_damage_bits, 0))
+        pWaterDamage:set_int(Bit.clear(m_damage_bits, 0))
     end
 end
 
@@ -905,7 +899,7 @@ function Vehicle:GetHandlingFlag(flag)
     end
 
     local flag_bits = m_handling_flags:get_dword()
-    return Lua_fn.has_bit(flag_bits, flag)
+    return Bit.is_set(flag_bits, flag)
 end
 
 -- Enables or disables a vehicle's handling flag.
@@ -928,7 +922,7 @@ function Vehicle:SetHandlingFlag(flag, toggle)
     end
 
     local flag_bits = m_handling_flags:get_dword()
-    local Bitwise   = toggle and Lua_fn.set_bit or Lua_fn.clear_bit
+    local Bitwise   = toggle and Bit.set or Bit.clear
     local new_bits  = Bitwise(flag_bits, flag)
     m_handling_flags:set_dword(new_bits)
 end
@@ -959,7 +953,7 @@ function Vehicle:GetModelInfoFlag(flag)
     local flag_ptr  = base_ptr:add(index * 4)
     local flag_bits = flag_ptr:get_dword()
 
-    return Lua_fn.has_bit(flag_bits, bit_pos)
+    return Bit.is_set(flag_bits, bit_pos)
 end
 
 -- Enables or disables a vehicle's model info flag.
@@ -988,7 +982,7 @@ function Vehicle:SetModelInfoFlag(flag, toggle)
     end
 
     local flag_bits = flag_ptr:get_dword()
-    local Bitwise   = toggle and Lua_fn.set_bit or Lua_fn.clear_bit
+    local Bitwise   = toggle and Bit.set or Bit.clear
     local new_bits  = Bitwise(flag_bits, bit_pos)
     flag_ptr:set_dword(new_bits)
 end

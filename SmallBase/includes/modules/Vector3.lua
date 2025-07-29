@@ -223,7 +223,7 @@ function vec3:serialize()
     }
 end
 
-function vec3.from_table(t)
+function vec3.deserialize(t)
     if (type(t) ~= "table" or not (t.x and t.y and t.z)) then
         return vec3:zero()
     end
@@ -232,7 +232,7 @@ function vec3.from_table(t)
 end
 
 if Serializer and not Serializer.class_types["vec3"] then
-    Serializer:RegisterNewType("vec3", vec3.serialize, vec3.from_table)
+    Serializer:RegisterNewType("vec3", vec3.serialize, vec3.deserialize)
 end
 
 if vec2 then

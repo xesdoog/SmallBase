@@ -1,13 +1,8 @@
 ---@class Game
 Game = {}
 Game.__index = Game
-Game.Version = Memory.GetGameVersion()
-Game.ScreenResolution = Memory.GetScreenResolution()
-Game.MaxEntities = {
-    objects = 75,
-    peds = 50,
-    vehicles = 25,
-}
+Game.Version = Memory and Memory.GetGameVersion() or { _build = "nil", _online = "nil" }
+Game.ScreenResolution = Memory and Memory.GetScreenResolution() or vec2:zero()
 
 ---@return string, string
 Game.GetLanguage = function()
@@ -90,24 +85,13 @@ Game.EnsureModelHash = function(input)
     return 0
 end
 
----@param category string
-Game.CanCreateEntity = function(category)
-    local currentCount = 0
-
-    for _ in pairs(Backend.SpawnedEntities[category]) do
-        currentCount = currentCount + 1
-    end
-
-    return currentCount < (Game.MaxEntities[category] or math.huge)
-end
-
----@param i_ModelHash integer
----@param v_SpawnPos vec3
----@param i_Heading? integer
----@param b_Networked? boolean
----@param b_SriptHostPed? boolean
-Game.CreatePed = function(i_ModelHash, v_SpawnPos, i_Heading, b_Networked, b_SriptHostPed)
-    if not Game.CanCreateEntity("peds") then
+---@param model_hash integer
+---@param spawn_pos vec3
+---@param heading? integer
+---@param is_networked? boolean
+---@param is_sripthost_ped? boolean
+Game.CreatePed = function(model_hash, spawn_pos, heading, is_networked, is_sripthost_ped)
+    if not Backend:CanCreateEntity(eEntityTypes.Ped) then
         if not GVars.b_AutoCleanupEntities then
             YimToast:ShowError(
                 "SmallBase",
@@ -118,33 +102,36 @@ Game.CreatePed = function(i_ModelHash, v_SpawnPos, i_Heading, b_Networked, b_Sri
             return 0
         end
 
+        -- Not sure why this code even exists. SpawnedEntities is a dict, not an array.
+
+        -- TODO: Fix this by keeping a reference to the last spawned entity in eah category and move the logic to Backend
         local oldest = table.remove(Backend.SpawnedEntities.peds, 1)
-        Game.DeleteEntity(oldest, "peds")
+        Game.DeleteEntity(oldest, eEntityTypes.Ped)
     end
 
-    Await(Game.RequestModel, i_ModelHash)
+    Await(Game.RequestModel, model_hash)
     local i_Handle = PED.CREATE_PED(
-        Game.GetPedTypeFromModel(i_ModelHash),
-        i_ModelHash,
-        v_SpawnPos.x,
-        v_SpawnPos.y,
-        v_SpawnPos.z,
-        i_Heading or math.random(1, 180),
-        b_Networked or false,
-        b_SriptHostPed or false
+        Game.GetPedTypeFromModel(model_hash),
+        model_hash,
+        spawn_pos.x,
+        spawn_pos.y,
+        spawn_pos.z,
+        heading or math.random(1, 180),
+        is_networked or false,
+        is_sripthost_ped or false
     )
 
-    Backend.SpawnedEntities.peds[i_Handle] = i_Handle
+    Backend:RegisterEntity(i_Handle, eEntityTypes.Ped)
     return i_Handle
 end
 
----@param i_ModelHash integer
----@param v_SpawnPos vec3
----@param i_Heading? integer
----@param b_Networked? boolean
----@param b_SriptHostVehicle? boolean
-Game.CreateVehicle = function(i_ModelHash, v_SpawnPos, i_Heading, b_Networked, b_SriptHostVehicle)
-    if not Game.CanCreateEntity("vehicles") then
+---@param model_hash integer
+---@param spawn_pos vec3
+---@param heading? integer
+---@param is_networked? boolean
+---@param is_scripthost_veh? boolean
+Game.CreateVehicle = function(model_hash, spawn_pos, heading, is_networked, is_scripthost_veh)
+    if not Backend:CanCreateEntity(eEntityTypes.Vehicle) then
         if not GVars.b_AutoCleanupEntities then
             YimToast:ShowError(
                 "SmallBase",
@@ -156,18 +143,18 @@ Game.CreateVehicle = function(i_ModelHash, v_SpawnPos, i_Heading, b_Networked, b
         end
 
         local oldest = table.remove(Backend.SpawnedEntities.vehicles, 1)
-        Game.DeleteEntity(oldest, "vehicles")
+        Game.DeleteEntity(oldest, eEntityTypes.Vehicle)
     end
 
-    Await(Game.RequestModel, i_ModelHash)
+    Await(Game.RequestModel, model_hash)
     local i_Handle = VEHICLE.CREATE_VEHICLE(
-        i_ModelHash,
-        v_SpawnPos.x,
-        v_SpawnPos.y,
-        v_SpawnPos.z,
-        i_Heading or math.random(1, 180),
-        b_Networked or false,
-        b_SriptHostVehicle or false,
+        model_hash,
+        spawn_pos.x,
+        spawn_pos.y,
+        spawn_pos.z,
+        heading or math.random(1, 180),
+        is_networked or false,
+        is_scripthost_veh or false,
         false
     )
 
@@ -177,23 +164,20 @@ Game.CreateVehicle = function(i_ModelHash, v_SpawnPos, i_Heading, b_Networked, b
     if Game.IsOnline() then
         DECORATOR.DECOR_SET_INT(i_Handle, "MPBitset", 0)
     end
-
-    if i_Handle ~= 0 then
-        Backend.SpawnedEntities.vehicles[i_Handle] = i_Handle
-    end
+    Backend:RegisterEntity(i_Handle, eEntityTypes.Vehicle)
 
     return i_Handle
 end
 
----@param i_ModelHash integer
----@param v_SpawnPos vec3
----@param b_Networked? boolean
----@param b_SriptHostPed? boolean
----@param b_Dynamic? boolean
----@param bPlaceOnGround? boolean
----@param i_Heading? integer
-Game.CreateObject = function(i_ModelHash, v_SpawnPos, b_Networked, b_SriptHostPed, b_Dynamic, bPlaceOnGround, i_Heading)
-    if not Game.CanCreateEntity("objects") then
+---@param model_hash integer
+---@param spawn_pos vec3
+---@param is_networked? boolean
+---@param is_scripthost_obj? boolean
+---@param is_dynamic? boolean
+---@param should_place_on_ground? boolean
+---@param heading? integer
+Game.CreateObject = function(model_hash, spawn_pos, is_networked, is_scripthost_obj, is_dynamic, should_place_on_ground, heading)
+    if not Backend:CanCreateEntity(eEntityTypes.Object) then
         if not GVars.b_AutoCleanupEntities then
             YimToast:ShowError(
                 "SmallBase",
@@ -205,31 +189,28 @@ Game.CreateObject = function(i_ModelHash, v_SpawnPos, b_Networked, b_SriptHostPe
         end
 
         local oldest = table.remove(Backend.SpawnedEntities.objects, 1)
-        Game.DeleteEntity(oldest, "objects")
+        Game.DeleteEntity(oldest, eEntityTypes.Object)
     end
 
-    Await(Game.RequestModel, i_ModelHash)
+    Await(Game.RequestModel, model_hash)
     local i_Handle = OBJECT.CREATE_OBJECT(
-        i_ModelHash,
-        v_SpawnPos.x,
-        v_SpawnPos.y,
-        v_SpawnPos.z,
-        b_Networked or false,
-        b_SriptHostPed or false,
-        (b_Dynamic ~= nil) and b_Dynamic or true
+        model_hash,
+        spawn_pos.x,
+        spawn_pos.y,
+        spawn_pos.z,
+        is_networked or false,
+        is_scripthost_obj or false,
+        (is_dynamic ~= nil) and is_dynamic or true
     )
 
-    if bPlaceOnGround then
+    if should_place_on_ground then
         OBJECT.PLACE_OBJECT_ON_GROUND_OR_OBJECT_PROPERLY(i_Handle)
     end
 
-    if i_Heading then
-        ENTITY.SET_ENTITY_HEADING(i_Handle, i_Heading)
+    if heading then
+        ENTITY.SET_ENTITY_HEADING(i_Handle, heading)
     end
-
-    if i_Handle ~= 0 then
-        Backend.SpawnedEntities.objects[i_Handle] = i_Handle
-    end
+    Backend:RegisterEntity(i_Handle, eEntityTypes.Object)
 
     return i_Handle
 end
@@ -242,15 +223,21 @@ Game.SafeRemovePedFromGroup = function(ped)
 end
 
 ---@param entity integer
----@param category string | number
+---@param category? string|number
 Game.DeleteEntity = function(entity, category)
     script.run_in_fiber(function(del)
-        if not entity or (entity == 0) or (entity == self.get_ped()) or not ENTITY.DOES_ENTITY_EXIST(entity) then
+        if not Game.IsScriptHandle(entity) or (entity == self.get_ped()) then
             return
         end
 
+        category = category or Game.GetCategoryNameFromEntity(entity)
+
         if ENTITY.IS_ENTITY_A_PED(entity) then
             Game.SafeRemovePedFromGroup(entity)
+        end
+
+        if Backend:IsBlipRegistered(entity) then
+            Game.RemoveBlipFromEntity(entity)
         end
 
         ENTITY.DELETE_ENTITY(entity)
@@ -262,9 +249,8 @@ Game.DeleteEntity = function(entity, category)
             del:sleep(50)
 
             if ENTITY.DOES_ENTITY_EXIST(entity) and Game.IsOnline() then
-                if entities.take_control_of(entity, 300) then
-                    ENTITY.DELETE_ENTITY(entity)
-                end
+                Await(entities.take_control_of, entity)
+                ENTITY.DELETE_ENTITY(entity)
             end
             del:sleep(50)
 
@@ -277,24 +263,20 @@ Game.DeleteEntity = function(entity, category)
             end
         end
 
-        if not category or (type(category) == "number" and (category <= 0 or category > 3)) then
+        if not category or (type(category) == "number" and not eEntityTypes[category]) then
             return
         end
 
-        if Backend.SpawnedEntities[category] and Backend.SpawnedEntities[category][entity] then
-            Backend.SpawnedEntities[category][entity] = nil
-        end
-
-        Game.RemoveBlip(entity)
+        Backend:RemoveEntity(entity, category)
     end)
 end
 
 ---@param text string
----@param type integer
-Game.BusySpinnerOn = function(text, type)
+---@param spinner_type integer
+Game.BusySpinnerOn = function(text, spinner_type)
     HUD.BEGIN_TEXT_COMMAND_BUSYSPINNER_ON("STRING")
     HUD.ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(text)
-    HUD.END_TEXT_COMMAND_BUSYSPINNER_ON(type)
+    HUD.END_TEXT_COMMAND_BUSYSPINNER_ON(spinner_type)
 end
 
 Game.BusySpinnerOff = function()
@@ -313,26 +295,17 @@ end
 ---@param position vec2
 ---@param width float
 ---@param height float
----@param fgCol Color | table
----@param bgCol Color | table
+---@param fgCol Color
+---@param bgCol Color
 ---@param value number
-Game.DrawBar = function(position, width, height, fgCol, bgCol, value)
+Game.DrawProgressBar = function(position, width, height, fgCol, bgCol, value)
     local bgPaddingX = 0.005
     local bgPaddingY = 0.01
     local fg = {}
     local bg = {}
 
-    if type(fgCol) == "table" and fgCol.r then
-        fg = fgCol
-    else
-        fg.r, fg.g, fg.b, fg.a = fgCol:AsRGBA()
-    end
-
-    if type(bgCol) == "table" and bgCol.r then
-        bg = bgCol
-    else
-        bg.r, bg.g, bg.b, bg.a = bgCol:AsRGBA()
-    end
+    fg.r, fg.g, fg.b, fg.a = fgCol:AsRGBA()
+    bg.r, bg.g, bg.b, bg.a = bgCol:AsRGBA()
 
     -- background
     GRAPHICS.DRAW_RECT(
@@ -392,12 +365,13 @@ Game.DrawText = function(position, text, color, scale, font, center)
     HUD.END_TEXT_COMMAND_DISPLAY_TEXT(position.x, position.y, 0)
 end
 
----@param entity integer
+---@param entity number
 ---@param scale? float
 ---@param isFriendly? boolean
 ---@param showHeading? boolean
 ---@param name? string
-Game.AddBlipForEntity = function(entity, scale, isFriendly, showHeading, name)
+---@param alpha? number
+Game.AddBlipForEntity = function(entity, scale, isFriendly, showHeading, name, alpha)
     local blip = HUD.ADD_BLIP_FOR_ENTITY(entity)
 
     if not blip or not HUD.DOES_BLIP_EXIST(blip) then
@@ -412,18 +386,29 @@ Game.AddBlipForEntity = function(entity, scale, isFriendly, showHeading, name)
         Game.SetBlipName(blip, name)
     end
 
-    Backend.CreatedBlips[entity] = {
-        handle = blip,
-        owner = entity,
-        alpha = 255
-    }
+    if alpha then
+        HUD.SET_BLIP_ALPHA(blip, alpha)
+    end
 
+    Backend:RegisterBlip(blip, entity, alpha)
     return blip
 end
 
+---@param handle integer
+Game.RemoveBlipFromEntity = function(handle)
+    local blip = Backend.CreatedBlips[handle]
+
+    if not blip or not HUD.DOES_BLIP_EXIST(blip.handle) then
+        return
+    end
+
+    HUD.REMOVE_BLIP(blip.handle)
+    Backend:RemoveBlip(handle)
+end
+
 -- Blip Sprites: https://wiki.rage.mp/index.php?title=Blips
----@param blip integer
----@param icon integer
+---@param blip number
+---@param icon number
 Game.SetBlipSprite = function(blip, icon)
     if not blip or not HUD.DOES_BLIP_EXIST(blip) then
         return
@@ -445,15 +430,6 @@ Game.SetBlipName = function(blip, name)
     HUD.END_TEXT_COMMAND_SET_BLIP_NAME(blip)
 end
 
----@param handle integer
-Game.RemoveBlip = function(handle)
-    local blip = Backend.CreatedBlips[handle]
-    if blip and HUD.DOES_BLIP_EXIST(blip.handle) then
-        HUD.REMOVE_BLIP(blip.handle)
-        Backend.CreatedBlips[handle] = nil
-    end
-end
-
 ---@param i_entity integer
 ---@param i_heading integer
 Game.SetEntityHeading = function(i_entity, i_heading)
@@ -464,42 +440,42 @@ Game.SetEntityHeading = function(i_entity, i_heading)
     ENTITY.SET_ENTITY_HEADING(i_entity, i_heading)
 end
 
----@param i_entity integer
----@param v_coords vec3
----@param b_xAxis? boolean
----@param b_yAxis? boolean
----@param b_zAxis? boolean
----@param b_clearArea? boolean
-Game.SetEntityCoords = function(i_entity, v_coords, b_xAxis, b_yAxis, b_zAxis, b_clearArea)
+---@param handle integer
+---@param coords vec3
+---@param x_axis? boolean
+---@param y_axis? boolean
+---@param z_axis? boolean
+---@param should_clear_area? boolean
+Game.SetEntityCoords = function(handle, coords, x_axis, y_axis, z_axis, should_clear_area)
     script.run_in_fiber(function()
         ENTITY.SET_ENTITY_COORDS(
-            i_entity,
-            v_coords.x,
-            v_coords.y,
-            v_coords.z,
-            b_xAxis or false,
-            b_yAxis or false,
-            b_zAxis or false,
-            b_clearArea or false
+            handle,
+            coords.x,
+            coords.y,
+            coords.z,
+            x_axis or false,
+            y_axis or false,
+            z_axis or false,
+            should_clear_area or false
         )
     end)
 end
 
----@param i_entity integer
----@param v_coords vec3
----@param b_xAxis? boolean
----@param b_yAxis? boolean
----@param b_zAxis? boolean
-Game.SetEntityCoordsNoOffset = function(i_entity, v_coords, b_xAxis, b_yAxis, b_zAxis)
+---@param handle integer
+---@param coords vec3
+---@param x_axis? boolean
+---@param y_axis? boolean
+---@param z_axis? boolean
+Game.SetEntityCoordsNoOffset = function(handle, coords, x_axis, y_axis, z_axis)
     script.run_in_fiber(function()
         ENTITY.SET_ENTITY_COORDS_NO_OFFSET(
-            i_entity,
-            v_coords.x,
-            v_coords.y,
-            v_coords.z,
-            b_xAxis or false,
-            b_yAxis or false,
-            b_zAxis or false
+            handle,
+            coords.x,
+            coords.y,
+            coords.z,
+            x_axis or false,
+            y_axis or false,
+            z_axis or false
         )
     end)
 end
@@ -557,17 +533,17 @@ Game.RequestScript = function(scr)
 end
 
 ---@param entity integer
----@param isAlive boolean
+---@param is_alive boolean
 ---@return vec3
-Game.GetEntityCoords = function(entity, isAlive)
-    return vec3(ENTITY.GET_ENTITY_COORDS(entity, isAlive))
+Game.GetEntityCoords = function(entity, is_alive)
+    return ENTITY.GET_ENTITY_COORDS(entity, is_alive)
 end
 
 ---@param entity integer
 ---@param order? integer
 ---@return vec3
 Game.GetEntityRotation = function(entity, order)
-   return vec3(ENTITY.GET_ENTITY_ROTATION(entity, order or 2))
+   return ENTITY.GET_ENTITY_ROTATION(entity, order or 2)
 end
 
 ---@param entity integer
@@ -591,7 +567,7 @@ end
 ---@param entity integer
 ---@return vec3
 Game.GetForwardVector = function(entity)
-    return vec3(ENTITY.GET_ENTITY_FORWARD_VECTOR(entity))
+    return ENTITY.GET_ENTITY_FORWARD_VECTOR(entity)
 end
 
 ---@param ped integer
@@ -605,7 +581,7 @@ end
 ---@param boneID integer
 ---@return vec3
 Game.GetPedBoneCoords = function(ped, boneID)
-    return vec3(PED.GET_PED_BONE_COORDS(ped, boneID, 0, 0, 0))
+    return PED.GET_PED_BONE_COORDS(ped, boneID, 0, 0, 0)
 end
 
 ---@param entity integer
@@ -627,7 +603,7 @@ Game.GetWorldPositionOfEntityBone = function(entity, bone)
         boneIndex = bone
     end
 
-    return vec3(ENTITY.GET_WORLD_POSITION_OF_ENTITY_BONE(entity, boneIndex))
+    return ENTITY.GET_WORLD_POSITION_OF_ENTITY_BONE(entity, boneIndex)
 end
 
 ---@param entity integer
@@ -686,22 +662,12 @@ end
 ---@param entity integer
 ---@return string
 Game.GetEntityTypeString = function(entity)
-    local iType = Game.GetEntityType(entity)
-
-    if iType == 1 then
-        return "Ped"
-    elseif iType == 2 then
-        return "Vehicle"
-    elseif iType == 3 then
-        return "Object"
-    else
-        return "Unknown"
-    end
+    return EnumTostring(eEntityTypes, Game.GetEntityType(entity)) or "Unknown"
 end
 
 ---@param entity integer
 ---@return string
-Game.GetCategoryFromEntityType = function(entity)
+Game.GetCategoryNameFromEntity = function(entity)
     local sType = Game.GetEntityTypeString(entity)
     return sType:lower() .. "s"
 end
@@ -1294,169 +1260,4 @@ Game.FadeInEntity = function(entity)
             end
         end
     end
-end
-
----@class Game.Audio
----@field Emitters table Static Emitters.
----@field ActiveEmitters table A list of enabled emitters and the entities they are linked to.
-Game.Audio = {}
-Game.Audio.__index = Game.Audio
-Game.Audio.ActiveEmitters = {}
-Game.Audio.Emitters = {
-    rave_1 = {
-        name = "SE_DLC_HEI4_ISLAND_BEACH_PARTY_MUSIC_NEW_01_LEFT",
-        default_station = "RADIO_30_DLC_HEI4_MIX1_REVERB"
-    },
-    rave_2 = {
-        name = "SE_DLC_HEI4_ISLAND_BEACH_PARTY_MUSIC_NEW_02_RIGHT",
-        default_station = "RADIO_30_DLC_HEI4_MIX1_REVERB"
-    },
-    rave_3 = {
-        name = "SE_DLC_HEI4_ISLAND_BEACH_PARTY_MUSIC_NEW_03_REVERB",
-        default_station = "RADIO_30_DLC_HEI4_MIX1_REVERB"
-    },
-    rave_4 = {
-        name = "SE_DLC_HEI4_ISLAND_BEACH_PARTY_MUSIC_NEW_04_REVERB",
-        default_station = "RADIO_30_DLC_HEI4_MIX1_REVERB"
-    },
-    muffled = {
-        name = "SE_BA_DLC_CLUB_EXTERIOR",
-        default_station = "RADIO_22_DLC_BATTLE_MIX1_CLUB"
-    },
-    muffled_2 = {
-        name = "DLC_TUNER_MEET_BUILDING_MUSIC",
-        default_station = "RADIO_07_DANCE_01"
-    },
-    muffled_3 = {
-        name = "SE_DLC_BIKER_TEQUILALA_EXTERIOR_EMITTER",
-        default_station = "HIDDEN_RADIO_04_PUNK"
-    },
-    radio_low = {
-        name = "DLC_MPSUM2_AUTO_STORE_MUSIC",
-        default_station = "RADIO_22_DLC_BATTLE_MIX1_RADIO"
-    },
-    radio_medium = {
-        name = "SE_DLC_FIXER_INVESTIGATION_WAY_IN_MUSIC_01",
-        default_station = "HIDDEN_RADIO_09_HIPHOP_OLD"
-    },
-    radio_high = {
-        name = "SE_DLC_FIXER_DATA_LEAK_MANSION_SPEAKER_09",
-        default_station = "RADIO_07_DANCE_01"
-    },
-    special = {
-        name = "DLC_TUNER_MEET_BUILDING_ENGINES",
-        default_station = ""
-    },
-    test = {
-        name = "SE_DLC_BTL_YACHT_EXTERIOR_01",
-        default_station = "HIDDEN_RADIO_07_DANCE_01"
-    },
-    test_2 = {
-        name = "se_dlc_hei4_island_beach_party_music_new_03_reverb",
-        default_station = "RADIO_30_DLC_HEI4_MIX1_REVERB"
-    },
-}
-
----@param emitter table
----@param toggle boolean
----@param entity? integer
----@param station? string
-function Game.Audio:ToggleEmitter(emitter, toggle, entity, station)
-    script.run_in_fiber(function(s)
-        if emitter and self.ActiveEmitters[emitter.name] then
-            AUDIO.SET_EMITTER_RADIO_STATION(emitter.name, self.ActiveEmitters[emitter.name].default_station)
-            AUDIO.SET_STATIC_EMITTER_ENABLED(emitter.name, false)
-            self.ActiveEmitters[emitter.name] = nil
-            s:sleep(250)
-        end
-
-        if not toggle then
-            return
-        end
-
-        if not Game.IsOnline() then
-            AUDIO.SET_AUDIO_FLAG("LoadMPData", true)
-        end
-
-        if type(emitter) == "string" then
-            emitter = self.Emitters[emitter] or { name = emitter, default_station = station }
-        end
-
-        entity  = entity or Self:GetHandle()
-        emitter = emitter or self.Emitters.rave_1
-        station = station or emitter.default_station
-
-        AUDIO.SET_STATIC_EMITTER_ENABLED(emitter.name, true)
-        ---@diagnostic disable-next-line: param-type-mismatch -- 3 lines above, breh! jeesus
-        AUDIO.SET_EMITTER_RADIO_STATION(emitter.name, station)
-        AUDIO.LINK_STATIC_EMITTER_TO_ENTITY(emitter.name, entity)
-
-        self.ActiveEmitters[emitter.name] = {
-            name = emitter.name,
-            default_station = emitter.default_station,
-            current_station = station,
-            source = entity,
-            coords = Game.GetEntityCoords(entity, false)
-        }
-    end)
-end
-
----@param toggle boolean
----@param station? string
-function Game.Audio:BlastRadio(toggle, station)
-    Game.Audio:ToggleEmitter(
-        self.Emitters.radio_high,
-        toggle,
-        Self:GetHandle(),
-        station
-    )
-end
-
----@param toggle boolean
----@param entity? integer
-function Game.Audio:PartyMode(toggle, entity)
-    for i = 1, 4 do
-        Game.Audio:ToggleEmitter(
-            self.Emitters["rave_" .. i],
-            toggle,
-            entity,
-            "RADIO_30_DLC_HEI4_MIX1_REVERB"
-        )
-    end
-end
-
----@return boolean
-function Game.Audio:AreAnyEmittersEnabled()
-    return next(self.ActiveEmitters) ~= nil
-end
-
-function Game.Audio:StopAllEmitters()
-    if self:AreAnyEmittersEnabled() then
-        for _, emitter in pairs(self.ActiveEmitters) do
-            AUDIO.SET_EMITTER_RADIO_STATION(emitter.name, emitter.default_station)
-            AUDIO.SET_STATIC_EMITTER_ENABLED(emitter.name, false)
-        end
-
-        self.ActiveEmitters = {}
-    end
-end
-
----@param vehicle integer
----@param isLoud? boolean
-function Game.Audio.PlayExhaustPop(vehicle, isLoud)
-    if not vehicle or not ENTITY.DOES_ENTITY_EXIST(vehicle) then
-        return
-    end
-
-    local soundName = isLoud and "SNIPER_FIRE" or "BOOT_POP"
-    local soundRef = isLoud and "DLC_BIKER_RESUPPLY_MEET_CONTACT_SOUNDS" or "DLC_VW_BODY_DISPOSAL_SOUNDS"
-
-    AUDIO.PLAY_SOUND_FROM_ENTITY(
-        -1,
-        soundName,
-        vehicle,
-        soundRef,
-        true,
-        0
-    )
 end

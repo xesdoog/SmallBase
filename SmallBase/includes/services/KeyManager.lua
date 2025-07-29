@@ -216,15 +216,22 @@ function Key:UpdateState(keydown, keyup)
 end
 
 ---@class KeyManager
-KeyManager = {}
-KeyManager.__index = KeyManager
+KeyManager = Class("KeyManager")
 KeyManager.keys = {}
 
-function KeyManager:Init()
+function KeyManager:init()
     local instance = setmetatable({}, KeyManager)
     for _, k in ipairs(VIRTUAL_KEYCODES) do
         table.insert(instance.keys, Key:New(k.code, k.name))
     end
+
+    event.register_handler(menu_event.Wndproc, function(_, msg, wParam, _)
+        instance:EventHandler(_, msg, wParam, _)
+    end)
+
+    script.register_looped("SB_KEYMGR", function()
+        instance:HandleCallbacks()
+    end)
 
     return instance
 end
@@ -289,7 +296,7 @@ end
 
 ---@param msg integer
 ---@param wParam integer
-function KeyManager:HandleEvent(msg, wParam)
+function KeyManager:OnEvent(msg, wParam)
     local key = self:GetKeyByCode(wParam)
 
     if not key then
@@ -364,10 +371,8 @@ function KeyManager:HandleCallbacks()
     end
 end
 
-
-local KeyMgr = KeyManager:Init()
-event.register_handler(menu_event.Wndproc, function(_, msg, wParam, _)
-    if msg == WM_XBUTTONDOWN or msg == WM_XBUTTONUP then
+function KeyManager:EventHandler(_, msg, wParam, _)
+    if (msg == WM_XBUTTONDOWN or msg == WM_XBUTTONUP) then
         -- the value for secondary mouse buttons is different between keydown and keyup events
         local xButton = (wParam >> 16)
         if xButton == 1 then
@@ -377,11 +382,7 @@ event.register_handler(menu_event.Wndproc, function(_, msg, wParam, _)
         end
     end
 
-    KeyManager:HandleEvent(msg, wParam)
-end)
+    self:OnEvent(msg, wParam)
+end
 
--- script.register_looped("SS_KEYMANAGER", function()
---     KeyMgr:HandleCallbacks()
--- end)
-
-return KeyMgr
+return KeyManager

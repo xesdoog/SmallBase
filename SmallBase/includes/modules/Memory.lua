@@ -135,7 +135,7 @@ Memory.GetVehicleHandlingFlag = function(vehicle, flag)
 
     local m_handling_flags = Memory.GetVehicleInfo(vehicle).m_handling_flags
     if m_handling_flags:is_valid() then
-        return Lua_fn.has_bit(m_handling_flags:get_dword(), flag)
+        return Bit.is_set(m_handling_flags:get_dword(), flag)
     end
 end
 
@@ -161,7 +161,7 @@ Memory.GetVehicleModelFlag = function(vehicle, flag)
     local flag_ptr = base_ptr:add(index * 4)
     local dword    = flag_ptr:get_dword()
 
-    return Lua_fn.has_bit(dword, bitPos)
+    return Bit.is_set(dword, bitPos)
 end
 
 -- ### Unsafe for non-scripted entities.

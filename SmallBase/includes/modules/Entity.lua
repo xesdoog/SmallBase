@@ -24,6 +24,12 @@ function Entity.new(handle)
     )
 end
 
+function Entity:Destroy()
+    self.m_handle    = nil
+    self.m_modelhash = nil
+    self.layout      = nil
+end
+
 ---@param modelHash number
 ---@param entityType eEntityTypes
 ---@param pos? vec3
@@ -47,6 +53,14 @@ function Entity:Create(modelHash, entityType, pos, heading, isNetwork, isScriptH
     end
 end
 
+function Entity:Delete()
+    if self:Exists() then
+        Game.DeleteEntity(self:GetHandle())
+    end
+
+    self:Destroy()
+end
+
 
 --[[
 -- I would rather repeat code and have clear return types as opposed to this
@@ -62,12 +76,6 @@ function Entity:CallFunc(func, ...)
     return func(table.unpack(args))
 end
 ]]
-
-function Entity:Destroy()
-    self.m_handle = nil
-    self.m_modelhash = nil
-    self.layout = nil
-end
 
 ---@return boolean
 function Entity:Exists()
@@ -267,6 +275,57 @@ function Entity:GetModelDimensions()
     return Game.GetModelDimensions(self:GetModelHash())
 end
 
+---@param keep_physics? boolean
+function Entity:EnableCollision(keep_physics)
+    if not self:Exists() then
+        return
+    end
+
+    if (type(keep_physics) ~= "boolean") then
+        keep_physics = true
+    end
+
+    ENTITY.SET_ENTITY_COLLISION(self:GetHandle(), true, keep_physics)
+end
+
+---@param keep_physics? boolean
+function Entity:DisableCollision(keep_physics)
+    if not self:Exists() then
+        return
+    end
+
+    if (type(keep_physics) ~= "boolean") then
+        keep_physics = false
+    end
+
+    ENTITY.SET_ENTITY_COLLISION(self:GetHandle(), false, keep_physics)
+end
+
+---@param toggle boolean
+function Entity:ToggleInvincibility(toggle)
+    if not self:Exists() then
+        return
+    end
+
+    ENTITY.SET_ENTITY_INVINCIBLE(self:GetHandle(), toggle)
+end
+
+function Entity:Freeze()
+    if not self:Exists() then
+        return
+    end
+
+    ENTITY.FREEZE_ENTITY_POSITION(self:GetHandle(), true)
+end
+
+function Entity:Unfreeze()
+    if not self:Exists() then
+        return
+    end
+
+    ENTITY.FREEZE_ENTITY_POSITION(self:GetHandle(), false)
+end
+
 function Entity:GetBoxCorners()
     if not self:Exists() then
         return {}
@@ -278,18 +337,18 @@ function Entity:GetBoxCorners()
     for x = 0, 1 do
         for y = 0, 1 do
             for z = 0, 1 do
-                local v_Offset = vec3:new(
+                local offset_vector = vec3:new(
                     x == 0 and vmin.x or vmax.x,
                     y == 0 and vmin.y or vmax.y,
                     z == 0 and vmin.z or vmax.z
                 )
 
-                local v_WorldPos = self:GetOffsetInWorldCoords(
-                    v_Offset.x,
-                    v_Offset.y,
-                    v_Offset.z
+                local world_pos = self:GetOffsetInWorldCoords(
+                    offset_vector.x,
+                    offset_vector.y,
+                    offset_vector.z
                 )
-                table.insert(corners, v_WorldPos)
+                table.insert(corners, world_pos)
             end
         end
     end

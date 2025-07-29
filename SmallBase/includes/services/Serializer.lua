@@ -28,7 +28,7 @@
 local Serializer = Class("Serializer")
 Serializer.class_types = {}
 Serializer.deferred_objects = {}
-Serializer.json = require("includes.lib.Json")()
+Serializer.json = require("includes.lib.json")()
 Serializer.default_xor_key = "\xA3\x4F\xD2\x9B\x7E\xC1\xE8\x36\x5D\x0A\xF7\xB4\x6C\x2D\x89\x50\x1E\x73\xC9\xAF\x3B\x92\x58\xE0\x14\x7D\xA6\xCB\x81\x3F\xD5\x67"
 Serializer.b64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 Serializer.__version = "1.0.0"
@@ -113,22 +113,20 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
                 return nil
             end,
             __newindex = function(_, k, v)
-                if type(v) == "table" and getmetatable(v) == nil and type(v.serialize) ~= "function" then
+                if (type(v) == "table" and getmetatable(v) == nil and type(v.serialize) ~= "function") then
                     v = table.copy(v)
                 end
 
-                if (k ~= "__version") then
-                    if (instance.default_config[k] == nil) then
-                        local value = config_data[k] ~= nil and config_data[k] or v -- first seen
-                        instance.default_config[k] = value
-                        instance.m_key_states[k] = value
-                        return
-                    end
+                if (instance.default_config[k] == nil) then
+                    local value = config_data[k] ~= nil and config_data[k] or v -- first seen
+                    instance.default_config[k] = value
+                    instance.m_key_states[k] = value
+                    return
+                end
 
-                    if (instance.m_key_states[k] ~= v) then
-                        instance.m_key_states[k] = v
-                        instance.m_dirty = true
-                    end
+                if (instance.m_key_states[k] ~= v) then
+                    instance.m_key_states[k] = v
+                    instance.m_dirty = true
                 end
             end
         }
@@ -143,7 +141,7 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
         runtime_vars[key] = saved_value
     end
 
-    -- static one liners
+    -- inline
     instance.TickHandler = function()
         instance:OnTick()
     end
@@ -158,21 +156,20 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
     end
 
     script.register_looped("SB_SERIALIZER", instance.TickHandler)
-    event.register_handler(menu_event.ScriptsReloaded, instance.ShutdownHandler)
-    event.register_handler(menu_event.MenuUnloaded, instance.ShutdownHandler)
+    Backend:RegisterEventCallback(eBackendEvent.RELOAD_UNLOAD, instance.ShutdownHandler)
 
     return instance
 end
 
 ---@param typename string
 ---@param serializer function
----@param constructor function
-function Serializer:RegisterNewType(typename, serializer, constructor)
+---@param deserializer function
+function Serializer:RegisterNewType(typename, serializer, deserializer)
     assert(type(typename) == "string", "Attempt to register an invalid type. Type name should be string.")
     typename = typename:lower():trim()
     self.class_types[typename] = {
         serializer  = serializer,
-        constructor = constructor
+        constructor = deserializer
     }
 end
 

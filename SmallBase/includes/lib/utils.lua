@@ -2,57 +2,6 @@
 
 --#region Global functions
 
-if (event and menu_event) then
-    print = function(...)
-        local out = {}
-
-        for i = 1, select("#", ...) do
-            local v = select(i, ...)
-            local str
-
-            if (type(v) == "table") then
-                if v.__tostring then -- custom classes
-                    str = v.__tostring(v)
-                elseif (type(table.serialize) == "function") then
-                    local ok, result = pcall(table.serialize, v)
-                    str = ok and result or "<serialization error!>"
-                end
-            else
-                local ok, result = pcall(tostring, v)
-                str = ok and result or "<tostring error!>"
-            end
-
-            out[i] = str
-        end
-
-        log.info(table.concat(out, "\t"))
-    end
-
-    do
-        local levels = {
-            debug   = log.debug,
-            info    = log.info,
-            warning = log.warning,
-        }
-
-        for level, func in pairs(levels) do
-            local fname = "f" .. level
-            log[fname] = function(fmt, ...)
-                local ok, msg = pcall(string.format, fmt, ...)
-                if not ok then
-                    msg = string.format("<format error: %s> %s", tostring(msg), tostring(fmt))
-                end
-
-                func(msg)
-            end
-        end
-    end
-end
-
-printf = function(fmt, ...)
-    log.finfo(fmt, ...)
-end
-
 function IsInstance(object, class)
     local mt = getmetatable(object)
     while mt do
@@ -68,46 +17,76 @@ end
 ---@param t table
 ---@return table
 function ConstEnum(t)
-    return setmetatable({}, {
-        __index = t,
-        __newindex = function(_, key)
-            log.warning(
-                string.format(
-                    "Attempt to modify read-only enum: '%s'", key
-                )
-            )
-            ---@diagnostic disable-next-line
-            return key
-        end,
-        __metatable = false
-    })
+    return setmetatable({},
+        {
+            __index = t,
+            __newindex = function(_, key)
+                error(("Attempt to modify read-only enum: '%s'"):format(key))
+            end,
+            __metatable = false
+        }
+    )
 end
 
----@param runnable function
+---@param t table
+---@param enum number
+function EnumTostring(t, enum)
+    if (type(t) ~= "table") then
+        return ""
+    end
+
+    for k, v in pairs(t) do
+        if (v == enum) then
+            return tostring(k)
+        end
+    end
+
+    return ""
+end
+
+-- Lua version of Bob Jenskins' "Jenkins One At A Time" hash function
+--
+-- https://en.wikipedia.org/wiki/Jenkins_hash_function
+---@param key string
+---@return integer
+function Joaat(key)
+    local hash = 0
+    key = key:lower()
+
+    for i = 1, #key do
+        hash = hash + string.byte(key, i)
+        hash = hash + (hash << 10)
+        hash = hash & 0xFFFFFFFF
+        hash = hash ~ (hash >> 6)
+    end
+
+    hash = hash + (hash << 3)
+    hash = hash & 0xFFFFFFFF
+    hash = hash ~ (hash >> 11)
+    hash = hash + (hash << 15)
+    hash = hash & 0xFFFFFFFF
+    return hash
+end
+
+---@param func function
 ---@param _args any
 ---@param timeout? number | nil  -- Optional timeout in milliseconds.
-function Await(runnable, _args, timeout)
-    if type(runnable) ~= "function" then
-        error(
-            string.format(
-                "Invalid argument! Function expected, got %s instead.",
-                type(runnable)
-            )
-        )
-        return false
+function Await(func, _args, timeout)
+    if (type(func) ~= "function") then
+        error(("Invalid argument! Function expected, got %s instead"):format(type(func)), 0)
     end
 
     if type(_args) ~= "table" then
         _args = { _args }
     end
 
-    if not timeout then
+    if (not timeout) then
         timeout = 3000
     end
 
     local startTime = Time.millis()
-    while not runnable(table.unpack(_args)) do
-        if timeout and (Time.millis() - startTime) > timeout then
+    while not func(table.unpack(_args)) do
+        if (timeout and (Time.millis() - startTime) > timeout) then
             log.warning("[Await Error]: timeout reached!")
             return false
         end
@@ -117,21 +96,22 @@ function Await(runnable, _args, timeout)
     return true
 end
 
----@param ... number
+--#region stdlib extensions
+
 ---@return number
-function Sum(...)
+math.sum = function(...)
     local result = 0
     local args = type(...) == "table" and ... or { ... }
 
-    for i = 1, #args do
+    for i = 1, table.getlen(args) do
         if type(args[i]) == "number" then
             result = result + args[i]
         end
     end
+
     return result
 end
 
---#region stdlib extensions
 ---@param t_LookupTable table
 ---@param key string | number
 ---@param value any
@@ -198,11 +178,11 @@ table.serialize = function(tbl, indent, key_order, seen)
     end
 
     local function serialize_value(v, depth)
-        if type(v) == "string" then
+        if (type(v) == "string") then
             return string.format("%q", v)
-        elseif type(v) == "number" or type(v) == "boolean" then
+        elseif (type(v) == "number" or type(v) == "boolean" or type(v) == "function") then
             return tostring(v)
-        elseif type(v) == "table" then
+        elseif (type(v) == "table") then
             if is_empty_table(v) then
                 return "{}"
             elseif seen[v] then
@@ -210,9 +190,9 @@ table.serialize = function(tbl, indent, key_order, seen)
             else
                 return table.serialize(v, depth, key_order, seen)
             end
-        elseif getmetatable(v) and v.__type then
+        elseif (getmetatable(v) and v.__type) then
             return tostring(v.__type)
-        elseif type(v) == "userdata" then
+        elseif (type(v) == "userdata") then
             if (v.rip and v.get_address) then
                 return string.format("<pointer@0x%X>", v:get_address())
             end
@@ -284,9 +264,11 @@ end
 ---@return number
 table.getlen = function(t)
     local count = 0
+
     for _ in pairs(t) do
         count = count + 1
     end
+
     return count
 end
 
@@ -295,11 +277,13 @@ end
 ---@param value string | number | integer | table
 table.getduplicates = function(t, value)
     local count = 0
+
     for _, v in ipairs(t) do
-        if value == v then
+        if (value == v) then
             count = count + 1
         end
     end
+
     return count
 end
 
@@ -315,7 +299,7 @@ table.copy = function(t, seen)
     seen[t] = out
 
     for k, v in pairs(t) do
-        if type(v) == "table" then
+        if (type(v) == "table") then
             out[k] = table.copy(v, seen)
         else
             out[k] = v
@@ -586,67 +570,44 @@ end
 
 
 --#region Helpers
--- Lua helpers.
----@class Lua_fn
-Lua_fn = {}
-Lua_fn.__index = Lua_fn
 
---
--- Bitwise Operations
---
+---@class Bit
+Bit = {}
 
----@param num number
----@param pos number
-Lua_fn.get_bit = function(num, pos)
-    return (num & (1 << pos)) >> pos
+Bit.get = function(n, pos)
+    return (n >> pos) & 1
 end
 
----@param num number
----@param pos number
-Lua_fn.has_bit = function(num, pos)
-    return (num & (1 << pos)) ~= 0
+Bit.set = function(n, pos)
+    return n | (1 << pos)
 end
 
----@param num number
----@param pos number
----@return number
-Lua_fn.set_bit = function(num, pos)
-    return num | (1 << pos)
+Bit.clear = function(n, pos)
+    return n & ~(1 << pos)
 end
 
----@param num number
----@param pos number
----@return number
-Lua_fn.clear_bit = function(num, pos)
-    return num & ~(1 << pos)
+Bit.is_set = function(n, pos)
+    return (n & (1 << pos)) ~= 0
 end
 
+Bit.lshift = function(n, s)
+    return n << s
+end
 
--- Lua version of Bob Jenskins' "Jenkins One At A Time" hash function
---
--- https://en.wikipedia.org/wiki/Jenkins_hash_function
----@param key string
----@return integer
-Lua_fn.Joaat = function(key)
-    local hash = 0
-    key = key:lower()
+Bit.rshift = function(n, s)
+    return n >> s
+end
 
-    for i = 1, #key do
-        hash = hash + string.byte(key, i)
-        hash = hash + (hash << 10)
-        hash = hash & 0xFFFFFFFF
-        hash = hash ~ (hash >> 6)
-    end
+Bit.rrotate = function(n, bits)
+    return ((n >> bits) | (n << (32 - bits))) & 0xFFFFFFFF
+end
 
-    hash = hash + (hash << 3)
-    hash = hash & 0xFFFFFFFF
-    hash = hash ~ (hash >> 11)
-    hash = hash + (hash << 15)
-    hash = hash & 0xFFFFFFFF
-    return hash
+Bit.lrotate = function(n, bits)
+    return ((n << bits) | (n >> (32 - bits))) & 0xFFFFFFFF
 end
 
 
+-- TODO: Write an actual UI module.
 -- ImGui helpers.
 ---@class UI
 UI = {}
@@ -792,54 +753,4 @@ UI.WidgetSound = function(sound)
     script.run_in_fiber(function()
         AUDIO.PLAY_SOUND_FRONTEND(-1, t_UISounds[sound].soundName, t_UISounds[sound].soundRef, false)
     end)
-end
-
----@param window_name string
----@param keybind table
----@param isController? boolean
-UI.HotkeyPrompt = function(window_name, keybind, isController)
-    ImGui.BulletText(window_name)
-
-    local avail_x, _ = ImGui.GetContentRegionAvail()
-    local configVal  = isController and gpad_keybinds or keybinds
-    local configName = isController and "gpad_keybinds" or "keybinds"
-
-    ImGui.SameLine(avail_x / 1.7)
-    ImGui.SetNextItemWidth(120)
-    keybind.name, _ = ImGui.InputText(
-        string.format(
-            "##",
-            window_name
-        ),
-        keybind.name,
-        32,
-        ImGuiInputTextFlags.ReadOnly
-    )
-
-    if UI.IsItemClicked('lmb') then
-        UI.WidgetSound("Select2")
-        ImGui.OpenPopup(window_name)
-        GVars.b_IsSettingHotkeys = true
-    end
-
-    ImGui.SameLine()
-    ImGui.BeginDisabled(keybind.code == 0)
-    if ImGui.Button(string.format("%s##%s", _T("GENERIC_UNBIND_LABEL_"), window_name)) then
-        UI.WidgetSound("Delete")
-        keybind.code, keybind.name = 0, "[Unbound]"
-        Serializer:SaveItem(configName, configVal)
-    end
-    ImGui.EndDisabled()
-    ImGui.SetNextWindowPos(780, 400, ImGuiCond.Appearing)
-    ImGui.SetNextWindowSizeConstraints(240, 60, 600, 400)
-    ImGui.SetNextWindowBgAlpha(0.8)
-    if ImGui.BeginPopupModal(
-            window_name,
-            true,
-            ImGuiWindowFlags.AlwaysAutoResize |
-            ImGuiWindowFlags.NoTitleBar
-        ) then
-        Backend:SetHotkey(keybind, isController)
-        ImGui.EndPopup()
-    end
 end
