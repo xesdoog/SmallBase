@@ -19,32 +19,40 @@ eBackendEvent = {
     PLAYER_SWITCH  = 3,
 }
 
+---@enum eEntityTypes
+eEntityTypes = {
+    Ped     = 1,
+    Vehicle = 2,
+    Object  = 3
+}
+
+-- Global singleton
 ---@class Backend
 ---@field private api_version eAPIVersion
 Backend = {
-    debug_mode = true,
-    __version = "",
-    target_build = "",
-    target_version = "",
+    __version          = "",
+    target_build       = "",
+    target_version     = "",
+    disable_input      = false, -- Never serialize this runtime variable!
 
     ---@type table<integer, table<integer, function>>
-    EventCallbacks = {
+    EventCallbacks     = {
         [eBackendEvent.RELOAD_UNLOAD]  = {},
         [eBackendEvent.SESSION_SWITCH] = {},
         [eBackendEvent.PLAYER_SWITCH]  = {}
     },
     ---@type table<integer, BlipData>
-    CreatedBlips = {},
-    AttachedEntities = {},
-    SpawnedEntities = {
-        peds     = {},
-        vehicles = {},
-        objects  = {},
+    CreatedBlips       = {},
+    AttachedEntities   = {},
+    SpawnedEntities    = {
+        [eEntityTypes.Ped]     = {},
+        [eEntityTypes.Vehicle] = {},
+        [eEntityTypes.Object]  = {},
     },
     MaxAllowedEntities = {
-        peds     = 50,
-        vehicles = 25,
-        objects  = 75,
+        [eEntityTypes.Ped]     = 50,
+        [eEntityTypes.Vehicle] = 25,
+        [eEntityTypes.Object]  = 75,
     },
 }
 Backend.__index = Backend
@@ -70,7 +78,7 @@ function Backend:GetAPIVersion()
     end
 
     if (script and (type(script) == "table")) then
-        if (event and menu_event) then
+        if (menu_event and menu_event.Wndproc) then
             return eAPIVersion.V1
         end
 
@@ -109,30 +117,30 @@ function Backend:IsPlayerSwitchInProgress()
     return STREAMING.IS_PLAYER_SWITCH_IN_PROGRESS()
 end
 
----@param category string|number
+---@param entity_type eEntityTypes
 ---@return number
-function Backend:GetMaxAllowedEntities(category)
-    if not self.MaxAllowedEntities[category] then
+function Backend:GetMaxAllowedEntities(entity_type)
+    if not self.MaxAllowedEntities[entity_type] then
         return 0
     end
 
-    return self.MaxAllowedEntities[category]
+    return self.MaxAllowedEntities[entity_type]
 end
 
 ---@param value number
----@param category string|number
-function Backend:SetMaxAllowedEntities(category, value)
-    if not self.MaxAllowedEntities[category] then
+---@param entity_type eEntityTypes
+function Backend:SetMaxAllowedEntities(entity_type, value)
+    if not self.MaxAllowedEntities[entity_type] then
         return
     end
 
-    self.MaxAllowedEntities[category] = value
+    self.MaxAllowedEntities[entity_type] = value
 end
 
----@param category string|number
-function Backend:CanCreateEntity(category)
-    local currentCount = table.getlen(self.SpawnedEntities[category])
-    return currentCount < (self:GetMaxAllowedEntities(category))
+---@param entity_type eEntityTypes
+function Backend:CanCreateEntity(entity_type)
+    local currentCount = table.getlen(self.SpawnedEntities[entity_type])
+    return currentCount < (self:GetMaxAllowedEntities(entity_type))
 end
 
 function Backend:IsEntityRegistered(handle)
@@ -151,31 +159,29 @@ function Backend:IsBlipRegistered(handle)
 end
 
 ---@param handle integer
----@param category? string|number
+---@param entity_type? eEntityTypes
 ---@param etc? table -- metadata
-function Backend:RegisterEntity(handle, category, etc)
+function Backend:RegisterEntity(handle, entity_type, etc)
     if not Game.IsScriptHandle(handle) then
         return
     end
 
-    category = category or Game.GetCategoryNameFromEntity(handle)
-    if not self.SpawnedEntities[category] then
-        log.fwarning("Attempt to register an entity to an unknown category: %s", category)
+    if (not self.SpawnedEntities[entity_type]) then
+        log.fwarning("Attempt to register an entity to an unknown type: %s", entity_type)
         return
     end
 
-    self.SpawnedEntities[category][handle] = etc or handle
+    self.SpawnedEntities[entity_type][handle] = etc or handle
 end
 
 ---@param handle number
----@param category string|number
-function Backend:RemoveEntity(handle, category)
-    category = category or Game.GetCategoryNameFromEntity(handle)
-    if not self.SpawnedEntities[category] or not self.SpawnedEntities[category][handle] then
+---@param entity_type eEntityTypes
+function Backend:RemoveEntity(handle, entity_type)
+    if not (self.SpawnedEntities[entity_type] or self.SpawnedEntities[entity_type][handle]) then
         return
     end
 
-    self.SpawnedEntities[category][handle] = nil
+    self.SpawnedEntities[entity_type][handle] = nil
 end
 
 -- TODO: add a simple blip struct for IntelliSense
@@ -205,7 +211,7 @@ end
 
 -- TODO: Refactor this
 function Backend:EntitySweep()
-    for _, category in ipairs({self.SpawnedEntities.objects, self.SpawnedEntities.peds, self.SpawnedEntities.vehicles}) do
+    for _, category in ipairs(self.SpawnedEntities) do
         if next(category) ~= nil then
             for handle in pairs(category) do
                 if ENTITY.DOES_ENTITY_EXIST(category[handle]) then
@@ -232,7 +238,7 @@ end
 ---@param func function
 function Backend:RegisterEventCallback(event, func)
     if ((type(func) ~= "function") or not self.EventCallbacks[event]) then
-        log.debug("failed to register event")
+        log.fdebug("Failed to register event: %s", EnumTostring(eBackendEvent, event))
         return
     end
 
@@ -259,8 +265,7 @@ function Backend:Cleanup()
     self:TriggerEventCallbacks(eBackendEvent.RELOAD_UNLOAD)
 end
 
----@param s script_util
-function Backend:OnSessionSwitch(s)
+function Backend:OnSessionSwitch()
     if (not script.is_active("maintransition")) then
         return
     end
@@ -268,13 +273,12 @@ function Backend:OnSessionSwitch(s)
     self:TriggerEventCallbacks(eBackendEvent.SESSION_SWITCH)
 
     repeat
-        s:sleep(100)
+        sleep(100)
     until not script.is_active("maintransition")
-    s:sleep(1000)
+    sleep(1000)
 end
 
----@param s script_util
-function Backend:OnPlayerSwitch(s)
+function Backend:OnPlayerSwitch()
     if (not self:IsPlayerSwitchInProgress()) then
         return
     end
@@ -282,23 +286,53 @@ function Backend:OnPlayerSwitch(s)
     self:TriggerEventCallbacks(eBackendEvent.PLAYER_SWITCH)
 
     repeat
-        s:sleep(100)
+        sleep(100)
     until not self:IsPlayerSwitchInProgress()
-    s:sleep(1000)
+    sleep(1000)
 end
 
 function Backend:RegisterHandlers()
-    event.register_handler(menu_event.MenuUnloaded, function()
-        self:Cleanup()
+    self.debug_mode = GVars.backend.debug_mode or false
+
+    ThreadManager:StartNewThread("SB_BACKEND", function(s)
+        self:OnPlayerSwitch()
+        self:OnSessionSwitch()
+        yield()
     end)
 
-    event.register_handler(menu_event.ScriptsReloaded, function()
-        self:Cleanup()
+    ThreadManager:StartNewThread("SB_CTRLS", function()
+        if (self.disable_input) then
+            PAD.DISABLE_ALL_CONTROL_ACTIONS(0)
+        end
     end)
 
-    script.register_looped("SB_BACKEND", function(s)
-        self:OnPlayerSwitch(s)
-        self:OnSessionSwitch(s)
-        s:yield()
+    if (self:GetAPIVersion() == eAPIVersion.V1) then
+        event.register_handler(menu_event.MenuUnloaded, function() self:Cleanup() end)
+        event.register_handler(menu_event.ScriptsReloaded, function() self:Cleanup() end)
+    end
+end
+
+-- ### Baguette
+------
+-- Note: This **will remove** all registered threads and not just stop or suspend them.
+--
+-- You can only restart (re-register) them by reloading the script.
+function Backend:PANIQUE()
+    ThreadManager:RunInFiber(function()
+        self:Cleanup()
+        for i = eBackendEvent.SESSION_SWITCH, eBackendEvent.PLAYER_SWITCH do
+            self:TriggerEventCallbacks(i)
+        end
+
+        local pos = Self:GetPos()
+        AUDIO.PLAY_AMBIENT_SPEECH_FROM_POSITION_NATIVE(
+            "ELECTROCUTION",
+            "MISTERK",
+            pos.x,
+            pos.y,
+            pos.z,
+            "SPEECH_PARAMS_FORCE"
+        )
+        gui.show_warning("PANIQUE!", "(Ó _ Ò )!!")
     end)
 end

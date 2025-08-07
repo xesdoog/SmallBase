@@ -89,7 +89,7 @@ Toast.ui_pos_y = -200.0
 function Toast.new(caller, message, level, duration, log)
     return setmetatable(
         {
-            caller      = caller or "YimToast",
+            caller      = caller or "Toast",
             message     = message,
             level       = level or 0,
             duration    = duration or 3.0,
@@ -138,7 +138,7 @@ function Toast:Draw(notifier)
         textCol.b,
         textCol.a
     )
-    if ImGui.Begin(("YimToast%s"):format(self.start_time),
+    if ImGui.Begin(("Toast##%s"):format(self.start_time),
             ImGuiWindowFlags.AlwaysAutoResize |
             ImGuiWindowFlags.NoTitleBar |
             ImGuiWindowFlags.NoMove |
@@ -185,13 +185,13 @@ function Notifier.new()
         Notifier
     )
 
-    gui.add_always_draw_imgui(function()
+    GUI:RegisterIndependentGUI(function()
         instance:Draw()
     end)
 
-    script.register_looped("YimToast", function(s)
+    ThreadManager:StartNewThread("SB_TOAST", function()
         instance:Update()
-        s:sleep(1)
+        sleep(1)
     end)
 
     return instance
@@ -289,14 +289,7 @@ function Notifier:Update()
         self.active.should_draw = true
         self.should_draw = true
 
-        script.run_in_fiber(function()
-            AUDIO.PLAY_SOUND_FRONTEND(
-                -1,
-                frontendSounds[self.active.level].soundName,
-                frontendSounds[self.active.level].soundRef,
-                false
-            )
-        end)
+        GUI:PlaySound(frontendSounds[self.active.level])
 
         if self.active.should_log then
             if self.active.level < 3 then
@@ -314,11 +307,16 @@ function Notifier:Update()
                 self.active.ui_pos_y = self.active.ui_pos_y + 20
             end
         end
+
         if (Time.now() - self.active.start_time) >= (self.active.duration * 0.95) then
             if self.active.ui_pos_y > -200 then
                 self.active.ui_pos_y = self.active.ui_pos_y - 20
+                if self.active.ui_pos_y <= -100 then
+                    self.active.message = ""
+                end
             end
         end
+
         if (Time.now() - self.active.start_time) >= self.active.duration then
             self.active.should_draw = false
             self.active = nil

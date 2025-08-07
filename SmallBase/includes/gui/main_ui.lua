@@ -1,4 +1,4 @@
-local debug_counter = not Backend.debug_mode and 0 or 7
+local debug_counter = GVars.backend.debug_mode and 7 or 0
 local function DrawClock()
     local now = os.date("*t")
     local month = os.date("%b")
@@ -137,61 +137,33 @@ local function DrawClock()
     ImGui.Dummy(size, size)
 end
 
-function MainUI()
+GUI:GetMainTab():RegisterGUI(function()
     DrawClock()
     ImGui.Dummy(1, 10)
     ImGui.SeparatorText("About")
 
-    if UI.IsItemClicked("lmb") then
+    if GUI:IsItemClicked(GUI.MouseButtons.LEFT) then
         debug_counter = debug_counter + 1
         if (debug_counter == 7) then
-            UI.WidgetSound("Nav")
+            GUI:PlaySound(GUI.Sounds.Nav)
             log.debug("Debug mode activated.")
-            Backend.debug_mode = true
+            GVars.backend.debug_mode = true
         elseif debug_counter > 7 then
-            UI.WidgetSound("Cancel")
+            GUI:PlaySound(GUI.Sounds.Cancel)
             log.debug("Debug mode deactivated.")
-            Backend.debug_mode = false
+            GVars.backend.debug_mode = false
             debug_counter = 0
         end
     end
 
-    UI.WrappedText("A Lua base for YimMenu V1. Support for cross-compatibility with V2 may be added later.", 25)
+    ImGui.Text("A Lua base for YimMenu V1.\nSupport for cross-compatibility with V2 may be added in the future.")
     ImGui.Dummy(1, 10)
     ImGui.Separator()
 
     ImGui.SetNextWindowBgAlpha(0)
-    if ImGui.BeginChild("footer", -1, 120, false) then
-        if ImGui.Button("Test Read Global") then
-            local fKickVotesNeededRatio = ScriptGlobal(262145):At(6)
-            print(fKickVotesNeededRatio, fKickVotesNeededRatio:ReadFloat())
-        end
-
-        ImGui.SameLine()
-
-        if ImGui.Button("Test Random Local") then
-            local fEntryPointLocal = ScriptLocal("main_persistent", 23)
-            print(fEntryPointLocal, fEntryPointLocal:ReadFloat())
-        end
-
-        if Backend.debug_mode then
-            ImGui.SameLine()
-
-            if ImGui.Button("Dump Serializer") then
-                Serializer:DebugDump()
-            end
-
-            GVars.drawbox, _ = ImGui.Checkbox("Draw Box", GVars.drawbox)
-
-            if GVars.drawbox then
-                script.run_in_fiber(function()
-                    Self:DrawBoundingBox(Color("red"))
-                end)
-            end
-        end
-
+    if ImGui.BeginChild("footer", -1, 40, false) then
         ImGui.Spacing()
         ImGui.TextDisabled(("v%s"):format(Backend.__version))
         ImGui.EndChild()
     end
-end
+end)

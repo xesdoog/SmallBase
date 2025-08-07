@@ -117,6 +117,9 @@ if not gui then
         add_tab = function(name)
             print("[mock gui.add_tab]", name)
             return { add_imgui = function(_) end }
+        end,
+        add_always_draw_imgui = function()
+            print("[mock gui.add_always_draw_imgui]")
         end
     }
 end

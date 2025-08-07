@@ -2,6 +2,7 @@
 
 ---@class Self: Player
 Self = Class("Self", Player)
+Self.new = nil
 
 -- override
 ---@return number
@@ -74,19 +75,19 @@ end
 ---@param where integer|vec3 -- blip or coordinates
 ---@param keepVehicle? boolean
 function Self:Teleport(where, keepVehicle)
-    script.run_in_fiber(function(selftp)
+    ThreadManager:RunInFiber(function()
         local coords
 
         if not keepVehicle and not Self:IsOnFoot() then
             TASK.CLEAR_PED_TASKS_IMMEDIATELY(Self:GetHandle())
-            selftp:sleep(50)
+            sleep(50)
         end
 
         if (type(where) == "number") then
             local blip = HUD.GET_FIRST_BLIP_INFO_ID(where)
 
             if not HUD.DOES_BLIP_EXIST(blip) then
-                YimToast:ShowError(
+                Toast:ShowError(
                     "SmallBase",
                     "Invalid teleport coordinates!"
                 )
@@ -97,7 +98,7 @@ function Self:Teleport(where, keepVehicle)
         elseif ((type(where) == "table") or (type(where) == "userdata")) and where.x then
             coords = where
         else
-            YimToast:ShowError(
+            Toast:ShowError(
                 "SmallBase",
                 "Invalid teleport coordinates!"
             )
@@ -105,7 +106,7 @@ function Self:Teleport(where, keepVehicle)
         end
 
         STREAMING.REQUEST_COLLISION_AT_COORD(coords.x, coords.y, coords.z)
-        selftp:sleep(200)
+        sleep(200)
         PED.SET_PED_COORDS_KEEP_VEHICLE(Self:GetHandle(), coords.x, coords.y, coords.z)
     end)
 end
@@ -147,7 +148,7 @@ end
 -- A helper method to quickly remove player attachments
 ---@param lookup_table? table
 function Self:RemoveAttachments(lookup_table)
-    script.run_in_fiber(function()
+    ThreadManager:RunInFiber(function()
         local had_attachments = false
 
         local function _detach(entity)
@@ -182,12 +183,12 @@ function Self:RemoveAttachments(lookup_table)
         end
 
         if not had_attachments then
-            YimToast:ShowMessage(
+            Toast:ShowMessage(
                 "SmallBase",
                 "There doesn't seem to be anything attached to us."
             )
         else
-            YimToast:ShowSuccess(
+            Toast:ShowSuccess(
                 "SmallBase",
                 "Attachments dropped."
             )

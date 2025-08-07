@@ -2,6 +2,10 @@
 
 --#region Global functions
 
+function DummyFunc()
+    do return end
+end
+
 function IsInstance(object, class)
     local mt = getmetatable(object)
     while mt do
@@ -96,21 +100,33 @@ function Await(func, _args, timeout)
     return true
 end
 
---#region stdlib extensions
-
----@return number
-math.sum = function(...)
-    local result = 0
-    local args = type(...) == "table" and ... or { ... }
-
-    for i = 1, table.getlen(args) do
-        if type(args[i]) == "number" then
-            result = result + args[i]
+---@param t table
+---@param mt table|metatable
+function recursive_setmetatable(t, mt)
+    for _, v in pairs(t) do
+        if type(v) == "table" and getmetatable(v) == nil then
+            recursive_setmetatable(v, mt)
         end
     end
-
-    return result
+    return setmetatable(t, mt)
 end
+
+-- Simply adds a number suffix if a file with the same name and extension already exists.
+---@param base_name string
+---@param extension string
+---@return string
+function generate_unique_filename(base_name, extension)
+    local filename = string.format("%s%s", base_name, extension)
+    local suffix = 0
+    while (io.exists(filename)) do
+        suffix = suffix + 1
+        filename = string.format("%s_%d%s", base_name, suffix, extension)
+    end
+
+    return filename
+end
+
+--#region stdlib extensions
 
 ---@param t_LookupTable table
 ---@param key string | number
@@ -132,7 +148,7 @@ end
 ---@param t table
 ---@param value any
 table.find = function(t, value)
-    if #t == 0 then
+    if (#t == 0) then
         return false
     end
 
@@ -263,6 +279,10 @@ end
 ---@param t table
 ---@return number
 table.getlen = function(t)
+    if not t then
+        return 0
+    end
+
     local count = 0
 
     for _ in pairs(t) do
@@ -285,28 +305,6 @@ table.getduplicates = function(t, value)
     end
 
     return count
-end
-
----@param t table
----@param seen? table
-table.copy = function(t, seen)
-    seen = seen or {}
-    if seen[t] then
-        return seen[t]
-    end
-
-    local out = {}
-    seen[t] = out
-
-    for k, v in pairs(t) do
-        if (type(v) == "table") then
-            out[k] = table.copy(v, seen)
-        else
-            out[k] = v
-        end
-    end
-
-    return out
 end
 
 -- Removes duplicate items from a table and returns a new one with the results.
@@ -336,6 +334,67 @@ table.removeduplicates = function(t, debug)
     return debug and t_result or t_clean
 end
 
+---@param t table
+---@param seen? table
+table.copy = function(t, seen)
+    seen = seen or {}
+    if seen[t] then
+        return seen[t]
+    end
+
+    local out = {}
+    seen[t] = out
+
+    for k, v in pairs(t) do
+        if (type(v) == "table") then
+            out[k] = table.copy(v, seen)
+        else
+            out[k] = v
+        end
+    end
+
+    return out
+end
+
+---@param a any
+---@param b any
+---@param seen? table<table, true> Used internally to handle circular reference
+---@return boolean
+function table.is_equal(a, b, seen)
+    if (a == b) then
+        return true
+    end
+
+    if type(a) ~= type(b) then
+        return false
+    end
+
+    if type(a) ~= "table" then
+        return false
+    end
+
+    seen = seen or {}
+    if seen[a] and seen[b] then
+        return true
+    end
+    seen[a], seen[b] = true, true
+
+    for k, v in pairs(a) do
+        if not table.is_equal(v, b[k], seen) then
+            return false
+        end
+    end
+
+    for k in pairs(b) do
+        if a[k] == nil then
+            return false
+        end
+    end
+
+    return true
+end
+
+
 -- Returns whether a string is alphabetic.
 ---@param str string
 ---@return boolean
@@ -355,6 +414,24 @@ end
 ---@return boolean
 string.isalnum = function(str)
     return str:match("^%w+$") ~= nil
+end
+
+---@param str string
+---@return boolean
+string.iswhitespace = function(str)
+    return str:match("^%s*$") ~= nil
+end
+
+---@param str? string
+---@return boolean
+string.isnull = function(str)
+    return (str == nil or str == "")
+end
+
+---@param str string?
+---@return boolean
+string.isnullorwhitespace = function(str)
+    return str and (str:isnull() or str:iswhitespace()) or true
 end
 
 -- Returns whether a string starts with the provided prefix.
@@ -566,6 +643,20 @@ math.round = function(n, x)
     return tonumber(string.format("%." .. (x or 0) .. "f", n))
 end
 
+---@return number
+math.sum = function(...)
+    local result = 0
+    local args = type(...) == "table" and ... or { ... }
+
+    for i = 1, table.getlen(args) do
+        if type(args[i]) == "number" then
+            result = result + args[i]
+        end
+    end
+
+    return result
+end
+
 --#endregion
 
 
@@ -604,153 +695,4 @@ end
 
 Bit.lrotate = function(n, bits)
     return ((n << bits) | (n >> (32 - bits))) & 0xFFFFFFFF
-end
-
-
--- TODO: Write an actual UI module.
--- ImGui helpers.
----@class UI
-UI = {}
-UI.__index = UI
-
--- Creates a text wrapped around the provided size. (We can use coloredText() and set the color to white but this is simpler.)
----@param text string
----@param wrap_size integer
-UI.WrappedText = function(text, wrap_size)
-    ImGui.PushTextWrapPos(ImGui.GetFontSize() * wrap_size)
-    ImGui.TextWrapped(text)
-    ImGui.PopTextWrapPos()
-end
-
--- Creates a colored ImGui text.
----@param text string
----@param color any
----@param wrap_size? number
-UI.ColoredText = function(text, color, wrap_size)
-    local r, g, b, a = Color(color):AsFloat()
-    ImGui.PushStyleColor(ImGuiCol.Text, r, g, b, a or 1)
-
-    if wrap_size then
-        ImGui.PushTextWrapPos(ImGui.GetFontSize() * wrap_size)
-    end
-
-    ImGui.TextWrapped(text)
-
-    if wrap_size then
-        ImGui.PopTextWrapPos()
-    end
-    ImGui.PopStyleColor(1)
-end
-
--- Creates a help marker (?) symbol in front of the widget this function is called after.
---
--- When the symbol is hovered, it displays a tooltip.
----@param text string
----@param color? Color
----@param alpha? number
-UI.HelpMarker = function(text, color, alpha)
-    if not GVars.b_DisableTooltips then
-        ImGui.SameLine()
-        ImGui.TextDisabled("(?)")
-        if ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled) then
-            ImGui.SetNextWindowBgAlpha(0.75)
-            ImGui.BeginTooltip()
-            if color then
-                UI.ColoredText(text, color, 20)
-            else
-                ImGui.PushTextWrapPos(ImGui.GetFontSize() * 20)
-                ImGui.TextWrapped(text)
-                ImGui.PopTextWrapPos()
-            end
-            ImGui.EndTooltip()
-        end
-    end
-end
-
--- Displays a tooltip whenever the widget this function is called after is hovered.
----@param text string
----@param color? Color
-UI.Tooltip = function(text, color)
-    if not GVars.b_DisableTooltips then
-        if ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled) then
-            ImGui.SetNextWindowBgAlpha(0.75)
-            ImGui.BeginTooltip()
-            if color then
-                UI.ColoredText(text, color, 20)
-            else
-                ImGui.PushTextWrapPos(ImGui.GetFontSize() * 20)
-                ImGui.TextWrapped(text)
-                ImGui.PopTextWrapPos()
-            end
-            ImGui.EndTooltip()
-        end
-    end
-end
-
----@param name string
----@param callback function
----@param ... any
-UI.ConfirmPopup = function(name, callback, ...)
-    if ImGui.BeginPopupModal(
-            name,
-            ImGuiWindowFlags.NoTitleBar |
-            ImGuiWindowFlags.AlwaysAutoResize
-        ) then
-        UI.ColoredText(_T("CONFIRM_PROMPT_"), "yellow", 30)
-        ImGui.Spacing()
-
-        if ImGui.Button(_T("GENERIC_YES_"), 80, 30) then
-            UI.WidgetSound("Select")
-            callback(...)
-            ImGui.CloseCurrentPopup()
-        end
-
-        ImGui.SameLine()
-        ImGui.Spacing()
-        ImGui.SameLine()
-
-        if ImGui.Button(_T("GENERIC_NO_"), 80, 30) then
-            UI.WidgetSound("Cancel")
-            ImGui.CloseCurrentPopup()
-        end
-
-        ImGui.EndPopup()
-        return true
-    end
-end
-
--- Checks if an ImGui widget was clicked.
----@param button string A string representing a mouse button: `lmb` for Left Mouse Button or `rmb` for Right Mouse Button.
----@return boolean
-UI.IsItemClicked = function(button)
-    if button == "lmb" then
-        return (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled) and ImGui.IsItemClicked(0))
-    elseif button == "rmb" then
-        return (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled) and ImGui.IsItemClicked(1))
-    end
-
-    return false
-end
-
--- Sets the clipboard text.
----@param text string
----@param cond boolean
-UI.SetClipBoardText = function(text, cond)
-    if cond then
-        UI.WidgetSound("Click")
-        ImGui.SetClipboardText(text)
-        YimToast:ShowMessage("SmallBase", "Link copied to clipboard.")
-    end
-end
-
--- Plays a sound when an ImGui widget is clicked.
----@param sound string
-UI.WidgetSound = function(sound)
-    if GVars.b_DisableUISounds or not t_UISounds[sound] then
-        return
-    end
-
-    script.run_in_fiber(function()
-        AUDIO.PLAY_SOUND_FRONTEND(-1, t_UISounds[sound].soundName, t_UISounds[sound].soundRef, false)
-    end)
 end

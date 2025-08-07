@@ -92,8 +92,8 @@ end
 ---@param is_sripthost_ped? boolean
 Game.CreatePed = function(model_hash, spawn_pos, heading, is_networked, is_sripthost_ped)
     if not Backend:CanCreateEntity(eEntityTypes.Ped) then
-        if not GVars.b_AutoCleanupEntities then
-            YimToast:ShowError(
+        if not GVars.backend.auto_cleanup_entities then
+            Toast:ShowError(
                 "SmallBase",
                 "Ped spawn limit reached! Consider enabling 'Auto Replace Entities' in the Settings tab if you want to automatically replace old entities when you reach the limit.",
                 true,
@@ -103,7 +103,6 @@ Game.CreatePed = function(model_hash, spawn_pos, heading, is_networked, is_sript
         end
 
         -- Not sure why this code even exists. SpawnedEntities is a dict, not an array.
-
         -- TODO: Fix this by keeping a reference to the last spawned entity in eah category and move the logic to Backend
         local oldest = table.remove(Backend.SpawnedEntities.peds, 1)
         Game.DeleteEntity(oldest, eEntityTypes.Ped)
@@ -132,8 +131,8 @@ end
 ---@param is_scripthost_veh? boolean
 Game.CreateVehicle = function(model_hash, spawn_pos, heading, is_networked, is_scripthost_veh)
     if not Backend:CanCreateEntity(eEntityTypes.Vehicle) then
-        if not GVars.b_AutoCleanupEntities then
-            YimToast:ShowError(
+        if not GVars.backend.auto_cleanup_entities then
+            Toast:ShowError(
                 "SmallBase",
                 "Vehicle spawn limit reached! Consider enabling 'Auto Replace Entities' in the Settings tab if you want to automatically replace old entities when you reach the limit.",
                 true,
@@ -178,8 +177,8 @@ end
 ---@param heading? integer
 Game.CreateObject = function(model_hash, spawn_pos, is_networked, is_scripthost_obj, is_dynamic, should_place_on_ground, heading)
     if not Backend:CanCreateEntity(eEntityTypes.Object) then
-        if not GVars.b_AutoCleanupEntities then
-            YimToast:ShowError(
+        if not GVars.backend.auto_cleanup_entities then
+            Toast:ShowError(
                 "SmallBase",
                 "Object spawn limit reached! Consider enabling 'Auto Replace Entities' in the Settings tab if you want to automatically replace old entities when you reach the limit.",
                 true,
@@ -223,14 +222,13 @@ Game.SafeRemovePedFromGroup = function(ped)
 end
 
 ---@param entity integer
----@param category? string|number
-Game.DeleteEntity = function(entity, category)
-    script.run_in_fiber(function(del)
+---@param entity_type? eEntityTypes
+Game.DeleteEntity = function(entity, entity_type)
+    ThreadManager:RunInFiber(function()
+        entity_type = entity_type or Game.GetEntityType(entity)
         if not Game.IsScriptHandle(entity) or (entity == self.get_ped()) then
             return
         end
-
-        category = category or Game.GetCategoryNameFromEntity(entity)
 
         if ENTITY.IS_ENTITY_A_PED(entity) then
             Game.SafeRemovePedFromGroup(entity)
@@ -241,21 +239,21 @@ Game.DeleteEntity = function(entity, category)
         end
 
         ENTITY.DELETE_ENTITY(entity)
-        del:sleep(50)
+        sleep(50)
 
         if ENTITY.DOES_ENTITY_EXIST(entity) then
             ENTITY.SET_ENTITY_AS_MISSION_ENTITY(entity, true, true)
             ENTITY.DELETE_ENTITY(entity)
-            del:sleep(50)
+            sleep(50)
 
             if ENTITY.DOES_ENTITY_EXIST(entity) and Game.IsOnline() then
                 Await(entities.take_control_of, entity)
                 ENTITY.DELETE_ENTITY(entity)
             end
-            del:sleep(50)
+            sleep(50)
 
             if ENTITY.DOES_ENTITY_EXIST(entity) then
-                YimToast:ShowError(
+                Toast:ShowError(
                     "SmallBase",
                     ("Failed to delete entity: [%d]"):format(entity)
                 )
@@ -263,11 +261,7 @@ Game.DeleteEntity = function(entity, category)
             end
         end
 
-        if not category or (type(category) == "number" and not eEntityTypes[category]) then
-            return
-        end
-
-        Backend:RemoveEntity(entity, category)
+        Backend:RemoveEntity(entity, entity_type)
     end)
 end
 
@@ -447,7 +441,7 @@ end
 ---@param z_axis? boolean
 ---@param should_clear_area? boolean
 Game.SetEntityCoords = function(handle, coords, x_axis, y_axis, z_axis, should_clear_area)
-    script.run_in_fiber(function()
+    ThreadManager:RunInFiber(function()
         ENTITY.SET_ENTITY_COORDS(
             handle,
             coords.x,
@@ -467,7 +461,7 @@ end
 ---@param y_axis? boolean
 ---@param z_axis? boolean
 Game.SetEntityCoordsNoOffset = function(handle, coords, x_axis, y_axis, z_axis)
-    script.run_in_fiber(function()
+    ThreadManager:RunInFiber(function()
         ENTITY.SET_ENTITY_COORDS_NO_OFFSET(
             handle,
             coords.x,
@@ -663,13 +657,6 @@ end
 ---@return string
 Game.GetEntityTypeString = function(entity)
     return EnumTostring(eEntityTypes, Game.GetEntityType(entity)) or "Unknown"
-end
-
----@param entity integer
----@return string
-Game.GetCategoryNameFromEntity = function(entity)
-    local sType = Game.GetEntityTypeString(entity)
-    return sType:lower() .. "s"
 end
 
 ---@param model integer
@@ -1093,7 +1080,7 @@ end
 ---@param entity integer
 ---@param offset? float
 Game.World.MarkSelectedEntity = function(entity, offset)
-    script.run_in_fiber(function()
+    ThreadManager:RunInFiber(function()
         local entity_hash  = ENTITY.GET_ENTITY_MODEL(entity)
         local entity_pos   = ENTITY.GET_ENTITY_COORDS(entity, false)
         local min, max     = Game.GetModelDimensions(entity_hash)

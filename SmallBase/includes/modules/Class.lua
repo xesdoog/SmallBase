@@ -6,6 +6,7 @@
 ---@field extend fun(self: T, subclassName: string): T
 ---@field super fun(self: T): T
 ---@field isinstance fun(self: any, class: any): boolean
+---@field notify fun(_, fmt: string, ...?: any) : nil
 
 -- All class-level helper methods use lowercase: new, init, extend, serialize, isinstance, super, etc.
 --
@@ -29,7 +30,6 @@ function Class(name, base)
             end
         end
 
-        setmetatable(cls, { __index = base })
         cls.__base = base
     end
 
@@ -84,6 +84,18 @@ function Class(name, base)
         local typename = cls.__type:lower():trim()
         if not Serializer.class_types[typename] then
             Serializer:RegisterNewType(typename, cls.serialize, cls.deserialize)
+        end
+    end
+
+    -- If ToastNotifier is available, calls `ToastNotifier:ShowMessage`. Otherwise logs to console.
+    function cls:notify(fmt, ...)
+        local msg = (... ~= nil) and string.format(fmt, ...) or fmt
+        local caller = name:gsub("_", " "):titlecase()
+
+        if Toast then
+            Toast:ShowMessage(caller, msg)
+        else
+            log.info("[" .. caller .. "]: " .. msg)
         end
     end
 

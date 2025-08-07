@@ -1,172 +1,175 @@
-local VIRTUAL_KEYCODES <const> = {
-    { code = 0x08,    name = "BACKSPACE", },
-    { code = 0x09,    name = "TAB", },
-    { code = 0x0C,    name = "CLEAR", },
-    { code = 0x0D,    name = "ENTER", },
-    { code = 0x10,    name = "SHIFT", },
-    { code = 0x11,    name = "CTRL", },
-    { code = 0x12,    name = "ALT", },
-    { code = 0x13,    name = "PAUSE", },
-    { code = 0x14,    name = "CAPS_LOCK", },
-    { code = 0x1B,    name = "ESC", },
-    { code = 0x20,    name = "SPACEBAR", },
-    { code = 0x21,    name = "PAGE_UP", },
-    { code = 0x22,    name = "PAGE_DOWN", },
-    { code = 0x23,    name = "END", },
-    { code = 0x24,    name = "HOME", },
-    { code = 0x25,    name = "LEFT_ARROW", },
-    { code = 0x26,    name = "UP_ARROW", },
-    { code = 0x27,    name = "RIGHT_ARROW", },
-    { code = 0x28,    name = "DOWN_ARROW", },
-    { code = 0x29,    name = "SELECT", },
-    { code = 0x2A,    name = "PRINT", },
-    { code = 0x2B,    name = "EXECUTE", },
-    { code = 0x2C,    name = "PRINT_SCREEN", },
-    { code = 0x2D,    name = "INSERT", },
-    { code = 0x2E,    name = "DEL", },
-    { code = 0x2F,    name = "HELP", },
-    { code = 0x30,    name = "0", },
-    { code = 0x31,    name = "1", },
-    { code = 0x32,    name = "2", },
-    { code = 0x33,    name = "3", },
-    { code = 0x34,    name = "4", },
-    { code = 0x35,    name = "5", },
-    { code = 0x36,    name = "6", },
-    { code = 0x37,    name = "7", },
-    { code = 0x38,    name = "8", },
-    { code = 0x39,    name = "9", },
-    { code = 0x41,    name = "A", },
-    { code = 0x42,    name = "B", },
-    { code = 0x43,    name = "C", },
-    { code = 0x44,    name = "D", },
-    { code = 0x45,    name = "E", },
-    { code = 0x46,    name = "F", },
-    { code = 0x47,    name = "G", },
-    { code = 0x48,    name = "H", },
-    { code = 0x49,    name = "I", },
-    { code = 0x4A,    name = "J", },
-    { code = 0x4B,    name = "K", },
-    { code = 0x4C,    name = "L", },
-    { code = 0x4D,    name = "M", },
-    { code = 0x4E,    name = "N", },
-    { code = 0x4F,    name = "O", },
-    { code = 0x50,    name = "P", },
-    { code = 0x51,    name = "Q", },
-    { code = 0x52,    name = "R", },
-    { code = 0x53,    name = "S", },
-    { code = 0x54,    name = "T", },
-    { code = 0x55,    name = "U", },
-    { code = 0x56,    name = "V", },
-    { code = 0x57,    name = "W", },
-    { code = 0x58,    name = "X", },
-    { code = 0x59,    name = "Y", },
-    { code = 0x5A,    name = "Z", },
-    { code = 0x5B,    name = "VK_LWIN", },
-    { code = 0x5C,    name = "VK_RWIN", },
-    { code = 0x5D,    name = "VK_APPS", },
-    { code = 0x5F,    name = "Sleep", },
-    { code = 0x60,    name = "Numpad0", },
-    { code = 0x61,    name = "Numpad1", },
-    { code = 0x62,    name = "Numpad2", },
-    { code = 0x63,    name = "Numpad3", },
-    { code = 0x64,    name = "Numpad4", },
-    { code = 0x65,    name = "Numpad5", },
-    { code = 0x66,    name = "Numpad6", },
-    { code = 0x67,    name = "Numpad7", },
-    { code = 0x68,    name = "Numpad8", },
-    { code = 0x69,    name = "Numpad9", },
-    { code = 0x6A,    name = "VK_MULTIPLY", },
-    { code = 0x6B,    name = "VK_ADD", },
-    { code = 0x6C,    name = "VK_SEPARATOR", },
-    { code = 0x6D,    name = "VK_SUBTRACT", },
-    { code = 0x6E,    name = "VK_DECIMAL", },
-    { code = 0x6F,    name = "VK_DIVIDE", },
-    { code = 0x70,    name = "F1", },
-    { code = 0x71,    name = "F2", },
-    { code = 0x72,    name = "F3", },
-    { code = 0x73,    name = "F4", },
-    { code = 0x74,    name = "F5", },
-    { code = 0x75,    name = "F6", },
-    { code = 0x76,    name = "F7", },
-    { code = 0x77,    name = "F8", },
-    { code = 0x78,    name = "F9", },
-    { code = 0x79,    name = "F10", },
-    { code = 0x7A,    name = "F11", },
-    { code = 0x7B,    name = "F12", },
-    { code = 0x7C,    name = "F13", },
-    { code = 0x7D,    name = "F14", },
-    { code = 0x7E,    name = "F15", },
-    { code = 0x7F,    name = "F16", },
-    { code = 0x80,    name = "F17", },
-    { code = 0x81,    name = "F18", },
-    { code = 0x82,    name = "F19", },
-    { code = 0x83,    name = "F20", },
-    { code = 0x84,    name = "F21", },
-    { code = 0x85,    name = "F22", },
-    { code = 0x86,    name = "F23", },
-    { code = 0x87,    name = "F24", },
-    { code = 0x90,    name = "NUM_LOCK", },
-    { code = 0x91,    name = "SCROLL_LOCK", },
-    { code = 0xA0,    name = "L_SHIFT", },
-    { code = 0xA1,    name = "R_SHIFT", },
-    { code = 0xA2,    name = "L_CONTROL", },
-    { code = 0xA3,    name = "R_CONTROL", },
-    { code = 0xA4,    name = "L_ALT", },
-    { code = 0xA5,    name = "R_ALT", },
-    { code = 0xA6,    name = "VK_BROWSER_BACK", },
-    { code = 0xA7,    name = "VK_BROWSER_FORWARD", },
-    { code = 0xA8,    name = "VK_BROWSER_REFRESH", },
-    { code = 0xA9,    name = "VK_BROWSER_STOP", },
-    { code = 0xAA,    name = "VK_BROWSER_SEARCH", },
-    { code = 0xAB,    name = "VK_BROWSER_FAVORITES", },
-    { code = 0xAC,    name = "VK_BROWSER_HOME" },
-    { code = 0xAD,    name = "VK_VOLUME_MUTE", },
-    { code = 0xAE,    name = "VK_VOLUME_DOWN", },
-    { code = 0xAF,    name = "VK_VOLUME_UP", },
-    { code = 0xB0,    name = "VK_MEDIA_NEXT_TRACK", },
-    { code = 0xB1,    name = "VK_MEDIA_PREV_TRACK", },
-    { code = 0xB2,    name = "VK_MEDIA_STOP", },
-    { code = 0xB3,    name = "VK_MEDIA_PLAY_PAUSE", },
-    { code = 0xB4,    name = "VK_LAUNCH_MAIL", },
-    { code = 0xB5,    name = "VK_LAUNCH_MEDIA_SELECT", },
-    { code = 0xB6,    name = "VK_LAUNCH_APP1", },
-    { code = 0xB7,    name = "VK_LAUNCH_APP2", },
-    { code = 0xBA,    name = "VK_OEM_1", },
-    { code = 0xBB,    name = "VK_OEM_PLUS", },
-    { code = 0xBC,    name = "VK_OEM_COMMA", },
-    { code = 0xBD,    name = "VK_OEM_MINUS", },
-    { code = 0xBE,    name = "VK_OEM_PERIOD", },
-    { code = 0xBF,    name = "VK_OEM_2", },
-    { code = 0xC0,    name = "VK_OEM_3", },
-    { code = 0xDB,    name = "VK_OEM_4", },
-    { code = 0xDC,    name = "VK_OEM_5", },
-    { code = 0xDD,    name = "VK_OEM_6", },
-    { code = 0xDE,    name = "VK_OEM_7", },
-    { code = 0xDF,    name = "VK_OEM_8", },
-    { code = 0xE1,    name = "VK_OEM_SPEC_1", },
-    { code = 0xE2,    name = "VK_OEM_102", },
-    { code = 0xE3,    name = "VK_OEM_SPEC_2", },
-    { code = 0xE4,    name = "VK_OEM_SPEC_3", },
-    { code = 0xE5,    name = "VK_PROCESSKEY", },
-    { code = 0xE6,    name = "VK_OEM_SPEC_4", },
-    { code = 0xE7,    name = "VK_PACKET", },
-    { code = 0xE9,    name = "VK_OEM_SPEC_5", },
-    { code = 0xF0,    name = "VK_OEM_SPEC_6", },
-    { code = 0xF1,    name = "VK_OEM_SPEC_7", },
-    { code = 0xF2,    name = "VK_OEM_SPEC_8", },
-    { code = 0xF3,    name = "VK_OEM_SPEC_9", },
-    { code = 0xF4,    name = "VK_OEM_SPEC_10", },
-    { code = 0xF5,    name = "VK_OEM_SPEC_11", },
-    { code = 0xF6,    name = "VK_ATTN", },
-    { code = 0xF7,    name = "VK_CRSEL", },
-    { code = 0xF8,    name = "VK_EXSEL", },
-    { code = 0xF9,    name = "VK_EREOF", },
-    { code = 0xFA,    name = "VK_PLAY", },
-    { code = 0xFB,    name = "VK_ZOOM", },
-    { code = 0xFD,    name = "VK_PA1", },
-    { code = 0xFE,    name = "VK_OEM_CLEAR", },
-    { code = 0x10020, name = "MOUSE4", },
-    { code = 0x20040, name = "MOUSE5", },
+---@diagnostic disable: lowercase-global
+
+---@enum eVirtualKeyCodes
+eVirtualKeyCodes       = {
+    DIGIT_0                = 0x30,
+    DIGIT_1                = 0x31,
+    DIGIT_2                = 0x32,
+    DIGIT_3                = 0x33,
+    DIGIT_4                = 0x34,
+    DIGIT_5                = 0x35,
+    DIGIT_6                = 0x36,
+    DIGIT_7                = 0x37,
+    DIGIT_8                = 0x38,
+    DIGIT_9                = 0x39,
+    A                      = 0x41,
+    ADD                    = 0x6B,
+    ALT                    = 0x12,
+    APPS                   = 0x5D,
+    B                      = 0x42,
+    BACKSPACE              = 0x8,
+    C                      = 0x43,
+    CAPSLOCK               = 0x14,
+    CLEAR                  = 0xC,
+    CTRL                   = 0x11,
+    D                      = 0x44,
+    DECIMAL                = 0x6E,
+    DEL                    = 0x2E,
+    DIVIDE                 = 0x6F,
+    DOWN                   = 0x28,
+    E                      = 0x45,
+    END                    = 0x23,
+    ENTER                  = 0xD,
+    ESC                    = 0x1B,
+    EXECUTE                = 0x2B,
+    F                      = 0x46,
+    F1                     = 0x70,
+    F10                    = 0x79,
+    F11                    = 0x7A,
+    F12                    = 0x7B,
+    F13                    = 0x7C,
+    F14                    = 0x7D,
+    F15                    = 0x7E,
+    F16                    = 0x7F,
+    F17                    = 0x80,
+    F18                    = 0x81,
+    F19                    = 0x82,
+    F2                     = 0x71,
+    F20                    = 0x83,
+    F21                    = 0x84,
+    F22                    = 0x85,
+    F23                    = 0x86,
+    F24                    = 0x87,
+    F3                     = 0x72,
+    F4                     = 0x73,
+    F5                     = 0x74,
+    F6                     = 0x75,
+    F7                     = 0x76,
+    F8                     = 0x77,
+    F9                     = 0x78,
+    G                      = 0x47,
+    H                      = 0x48,
+    HELP                   = 0x2F,
+    HOME                   = 0x24,
+    I                      = 0x49,
+    INSERT                 = 0x2D,
+    J                      = 0x4A,
+    K                      = 0x4B,
+    L                      = 0x4C,
+    LALT                   = 0xA4,
+    LCONTROL               = 0xA2,
+    LEFT                   = 0x25,
+    LSHIFT                 = 0xA0,
+    LWIN                   = 0x5B,
+    M                      = 0x4D,
+    MOUSE4                 = 0x10020,
+    MOUSE5                 = 0x20040,
+    MULTIPLY               = 0x6A,
+    N                      = 0x4E,
+    NUMLOCK                = 0x90,
+    Numpad0                = 0x60,
+    Numpad1                = 0x61,
+    Numpad2                = 0x62,
+    Numpad3                = 0x63,
+    Numpad4                = 0x64,
+    Numpad5                = 0x65,
+    Numpad6                = 0x66,
+    Numpad7                = 0x67,
+    Numpad8                = 0x68,
+    Numpad9                = 0x69,
+    O                      = 0x4F,
+    P                      = 0x50,
+    PAGEDOWN               = 0x22,
+    PAGEUP                 = 0x21,
+    PAUSE                  = 0x13,
+    PRINT                  = 0x2A,
+    PRINTSCREEN            = 0x2C,
+    Q                      = 0x51,
+    R                      = 0x52,
+    RALT                   = 0xA5,
+    RCONTROL               = 0xA3,
+    RIGHT                  = 0x27,
+    RSHIFT                 = 0xA1,
+    RWIN                   = 0x5C,
+    S                      = 0x53,
+    SCROLLLOCK             = 0x91,
+    SELECT                 = 0x29,
+    SEPARATOR              = 0x6C,
+    SHIFT                  = 0x10,
+    SPACEBAR               = 0x20,
+    SUBTRACT               = 0x6D,
+    Sleep                  = 0x5F,
+    T                      = 0x54,
+    TAB                    = 0x9,
+    U                      = 0x55,
+    UP                     = 0x26,
+    V                      = 0x56,
+    VK_ATTN                = 0xF6,
+    VK_BROWSER_BACK        = 0xA6,
+    VK_BROWSER_FAVORITES   = 0xAB,
+    VK_BROWSER_FORWARD     = 0xA7,
+    VK_BROWSER_HOME        = 0xAC,
+    VK_BROWSER_REFRESH     = 0xA8,
+    VK_BROWSER_SEARCH      = 0xAA,
+    VK_BROWSER_STOP        = 0xA9,
+    VK_CRSEL               = 0xF7,
+    VK_EREOF               = 0xF9,
+    VK_EXSEL               = 0xF8,
+    VK_LAUNCH_APP1         = 0xB6,
+    VK_LAUNCH_APP2         = 0xB7,
+    VK_LAUNCH_MAIL         = 0xB4,
+    VK_LAUNCH_MEDIA_SELECT = 0xB5,
+    VK_MEDIA_NEXT_TRACK    = 0xB0,
+    VK_MEDIA_PLAY_PAUSE    = 0xB3,
+    VK_MEDIA_PREV_TRACK    = 0xB1,
+    VK_MEDIA_STOP          = 0xB2,
+    VK_OEM_1               = 0xBA,
+    VK_OEM_102             = 0xE2,
+    VK_OEM_2               = 0xBF,
+    VK_OEM_3               = 0xC0,
+    VK_OEM_4               = 0xDB,
+    VK_OEM_5               = 0xDC,
+    VK_OEM_6               = 0xDD,
+    VK_OEM_7               = 0xDE,
+    VK_OEM_8               = 0xDF,
+    VK_OEM_CLEAR           = 0xFE,
+    VK_OEM_COMMA           = 0xBC,
+    VK_OEM_MINUS           = 0xBD,
+    VK_OEM_PERIOD          = 0xBE,
+    VK_OEM_PLUS            = 0xBB,
+    VK_OEM_SPEC_1          = 0xE1,
+    VK_OEM_SPEC_10         = 0xF4,
+    VK_OEM_SPEC_11         = 0xF5,
+    VK_OEM_SPEC_2          = 0xE3,
+    VK_OEM_SPEC_3          = 0xE4,
+    VK_OEM_SPEC_4          = 0xE6,
+    VK_OEM_SPEC_5          = 0xE9,
+    VK_OEM_SPEC_6          = 0xF0,
+    VK_OEM_SPEC_7          = 0xF1,
+    VK_OEM_SPEC_8          = 0xF2,
+    VK_OEM_SPEC_9          = 0xF3,
+    VK_PA1                 = 0xFD,
+    VK_PACKET              = 0xE7,
+    VK_PLAY                = 0xFA,
+    VK_PROCESSKEY          = 0xE5,
+    VK_VOLUME_DOWN         = 0xAE,
+    VK_VOLUME_MUTE         = 0xAD,
+    VK_VOLUME_UP           = 0xAF,
+    VK_ZOOM                = 0xFB,
+    W                      = 0x57,
+    X                      = 0x58,
+    Y                      = 0x59,
+    Z                      = 0x5A,
 }
 
 local WM_KEYDOWN     <const> = 0x0100
@@ -188,18 +191,19 @@ local WM_XBUTTONUP   <const> = 0x020C
 ---@field code integer https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 ---@field name string The key name
 ---@field callback function
+---@field repeat_on_hold boolean
 Key = {}
 Key.__index = Key
 
 ---@param code integer
 ---@param name string
-function Key:New(code, name)
+function Key.new(code, name)
     local instance = setmetatable({}, Key)
     instance.code = code
     instance.name = name
     instance.pressed = false
     instance.just_pressed = false
-    instance.callback = nil
+    instance.repeat_on_hold = false
     return instance
 end
 
@@ -208,89 +212,87 @@ end
 function Key:UpdateState(keydown, keyup)
     self.just_pressed = keyup
     self.pressed = keydown
+
     if self.just_pressed then
-        script.run_in_fiber(function()
+        ThreadManager:RunInFiber(function()
             self.just_pressed = false
         end)
     end
 end
 
----@class KeyManager
+---@class KeyManager : ClassMeta<KeyManager>
+---@field keys Key[]
+---@field registered_keybinds Key[]
 KeyManager = Class("KeyManager")
 KeyManager.keys = {}
+KeyManager.registered_keybinds = {}
+KeyManager.key_map_by_code = {}
+KeyManager.key_map_by_name = {}
 
 function KeyManager:init()
     local instance = setmetatable({}, KeyManager)
-    for _, k in ipairs(VIRTUAL_KEYCODES) do
-        table.insert(instance.keys, Key:New(k.code, k.name))
+
+    for name, code in pairs(eVirtualKeyCodes) do
+        local key = Key.new(code, name)
+        table.insert(instance.keys, key)
+        instance.key_map_by_code[code] = key
+        instance.key_map_by_name[name] = key
     end
 
     event.register_handler(menu_event.Wndproc, function(_, msg, wParam, _)
         instance:EventHandler(_, msg, wParam, _)
     end)
 
-    script.register_looped("SB_KEYMGR", function()
+    ThreadManager:StartNewThread("SB_KEYMGR", function()
         instance:HandleCallbacks()
     end)
 
     return instance
 end
 
----@param code integer
----@return Key | nil
+---@param code eVirtualKeyCodes
+---@return Key|nil
 function KeyManager:GetKeyByCode(code)
-    for _, key in ipairs(self.keys) do
-        if key.code == code then
-            return key
-        end
-    end
+    return self.key_map_by_code[code]
 end
 
 ---@param name string
----@return Key | nil
+---@return Key|nil
 function KeyManager:GetKeyByName(name)
-    for _, key in ipairs(self.keys) do
-        if key.name == name then
-            return key
-        end
+    return self.key_map_by_name[name:upper()]
+end
+
+---@param key eVirtualKeyCodes|string
+function KeyManager:GetKey(key)
+    if (type(key) == "number") then
+        return self:GetKeyByCode(key)
+    elseif (type(key) == "string") then
+        return self:GetKeyByName(key)
     end
 end
 
----@param key integer | string
+---@param key eVirtualKeyCodes|string
 ---@return boolean
 function KeyManager:IsKeyPressed(key)
-    local retKey
-
-    if type(key) == "number" then
-        retKey = self:GetKeyByCode(key)
-    elseif type(key) == "string" then
-        retKey = self:GetKeyByName(key)
-    end
-
-    return retKey and retKey.pressed or false
+    local _key = self:GetKey(key)
+    return _key and _key.pressed or false
 end
 
----@param key integer | string
+---@param key eVirtualKeyCodes|string
 ---@return boolean
 function KeyManager:IsKeyJustPressed(key)
-    local retKey
-
-    if type(key) == "number" then
-        retKey = self:GetKeyByCode(key)
-    elseif type(key) == "string" then
-        retKey = self:GetKeyByName(key)
-    end
-
-    return retKey and retKey.just_pressed or false
+    local _key = self:GetKey(key)
+    return _key and _key.just_pressed or false
 end
 
----@return boolean, integer | nil, string | nil
+---@return boolean, eVirtualKeyCodes|nil, string|nil
 function KeyManager:IsAnyKeyPressed()
     for _, key in ipairs(self.keys) do
         if key.pressed then
             return true, key.code, key.name
         end
     end
+
     return false, nil, nil
 end
 
@@ -298,8 +300,7 @@ end
 ---@param wParam integer
 function KeyManager:OnEvent(msg, wParam)
     local key = self:GetKeyByCode(wParam)
-
-    if not key then
+    if (not key) then
         return
     end
 
@@ -314,20 +315,18 @@ end
 ---@param callback function
 ---@param onKeyDown? boolean Set to true to loop the callback on key down. Ignore or set to false to execute once on key up only.
 function KeyManager:RegisterKeybind(key, callback, onKeyDown)
+    if not onKeyDown then
+        onKeyDown = false
+    end
+
     for _, k in ipairs(self.keys) do
         if (key == k.name or key == k.code) then
             if k.callback and k.callback ~= callback then
-                gui.show_warning(
-                    "Hotkey Manager",
-                    ("[%s] was already assigned to a different function!"):format(k.name)
-                )
-                log.warning(
-                    ("[WARNING] (Hotkey Manager): [%s] was already assigned to a different function!"):format(k.name)
-                )
+                self:notify("[%s] was already assigned to a different function and has been overridden.", k.name:upper())
             end
 
             k.callback = callback
-            k.on_hold = onKeyDown or false
+            k.repeat_on_hold = onKeyDown
         end
     end
 end
@@ -335,21 +334,25 @@ end
 ---@param oldKey integer | string
 ---@param newKey table
 function KeyManager:UpdateKeybind(oldKey, newKey)
+    local prev_func, on_key_down
     for _, v in ipairs(self.keys) do
-        if (oldKey == v.name) or (oldKey == v.code) then
-            v.code = newKey.code
-            v.name = newKey.name
+        if (oldKey == v.name or oldKey == v.code) then
+            prev_func = v.callback
+            on_key_down = v.repeat_on_hold
             break
         end
     end
+
+    self:RemoveKeybind(oldKey)
+    self:RegisterKeybind(newKey.name, prev_func, on_key_down)
 end
 
 ---@param key integer | string
 function KeyManager:RemoveKeybind(key)
     for _, v in ipairs(self.keys) do
-        if (key == v.name) or (key == v.code) then
+        if (key == v.name or key == v.code) then
             v.callback = nil
-            v.on_hold = false
+            v.repeat_on_hold = false
             break
         end
     end
@@ -358,8 +361,8 @@ end
 function KeyManager:HandleCallbacks()
     for _, k in ipairs(self.keys) do
         if k.callback then
-            if not k.on_hold then
-                if k.just_pressed then
+            if (not k.repeat_on_hold) then
+                if (k.just_pressed) then
                     k.callback()
                 end
             else

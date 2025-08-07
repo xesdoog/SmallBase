@@ -246,3 +246,18 @@ function Ped:SetComponenVariations(components)
     components = components or self:GetComponentVariations()
     Game.ApplyPedComponents(self:GetHandle(), components)
 end
+
+---@param vehicle_handle number
+---@param seatIndex? number
+function Ped:WarpIntoVehicle(vehicle_handle, seatIndex)
+    if not (self:IsValid() or self:IsAlive() or ENTITY.DOES_ENTITY_EXIST(vehicle_handle)) then
+        return
+    end
+
+    seatIndex = seatIndex or -1
+    if not VEHICLE.IS_VEHICLE_SEAT_FREE(vehicle_handle, seatIndex, true) then
+        seatIndex = -2
+    end
+
+    PED.SET_PED_INTO_VEHICLE(self:GetHandle(), vehicle_handle, seatIndex)
+end

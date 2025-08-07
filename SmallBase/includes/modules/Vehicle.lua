@@ -20,7 +20,6 @@
 ---@field tyre_smoke_color? { r: number, g: number, b: number }
 ---@field neon? { enabled: table<integer, boolean>, color: { r: number, g: number, b: number } }
 VehicleMods = {}
-VehicleMods.__index = VehicleMods
 
 ---@param mods table
 ---@param primary_color table
@@ -28,19 +27,17 @@ VehicleMods.__index = VehicleMods
 ---@param wheels table
 ---@param window_tint number
 ---@param plate_text? string
-function VehicleMods.new(mods, primary_color, secondary_color, wheels, window_tint, plate_text)
-    return setmetatable(
-        {
-            mods = mods,
-            primary_color = primary_color,
-            secondary_color = secondary_color,
-            wheels = wheels,
-            window_tint = window_tint,
-            plate_text = plate_text or "SmallBase"
-        },
-        VehicleMods
-    )
+function VehicleMods.create(mods, primary_color, secondary_color, wheels, window_tint, plate_text)
+    return {
+        mods = mods,
+        primary_color = primary_color,
+        secondary_color = secondary_color,
+        wheels = wheels,
+        window_tint = window_tint,
+        plate_text = plate_text or "SmallBase"
+    }
 end
+
 ------------------------------------------------------------
 ------------------------------------------------------------
 ------------------------------------------------------------
@@ -111,40 +108,11 @@ end
 ---@return string
 function Vehicle:GetClassName()
     local clsid = self:GetClassID()
-    for name, id in pairs(eVehicleClasses) do
-        if (id == clsid) then
-            return name
-        end
+    if not clsid then
+        return "Unknown"
     end
 
-    return "Unknown"
-end
-
----@return boolean
-function Vehicle:IsAnySeatFree()
-    if not self:IsValid() then
-        return false
-    end
-
-    return VEHICLE.ARE_ANY_VEHICLE_SEATS_FREE(self:GetHandle())
-end
-
----@return boolean
-function Vehicle:IsEmpty()
-    if not self:IsValid() then
-        return false -- ??
-    end
-
-    local handle = self:GetHandle()
-    local seats  = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(self:GetModelHash())
-
-    for i = -1, seats do
-        if not VEHICLE.IS_VEHICLE_SEAT_FREE(handle, i, true) then
-            return false
-        end
-    end
-
-    return true
+    return EnumTostring(eVehicleClasses, clsid)
 end
 
 ---@return table
@@ -169,11 +137,73 @@ function Vehicle:GetOccupants()
     return passengers
 end
 
+function Vehicle:GetNumberOfPassengers()
+    if not self:IsValid() then
+        return 0
+    end
+
+    return VEHICLE.GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(self:GetHandle())
+end
+
+function Vehicle:GetNumberOfSeats()
+    if not self:IsValid() then
+        return 0
+    end
+
+    return VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(self:GetModelHash())
+end
+
+---@param seatIndex number
+---@param isTaskRunning? boolean
+function Vehicle:IsSeatFree(seatIndex, isTaskRunning)
+    if not self:IsValid() then
+        return false
+    end
+
+    if (isTaskRunning == nil) then
+        isTaskRunning = true
+    end
+
+    return VEHICLE.IS_VEHICLE_SEAT_FREE(self:GetHandle(), seatIndex, isTaskRunning)
+end
+
+---@return boolean
+function Vehicle:IsAnySeatFree()
+    if not self:IsValid() then
+        return false
+    end
+
+    return VEHICLE.ARE_ANY_VEHICLE_SEATS_FREE(self:GetHandle())
+end
+
+---@return boolean
+function Vehicle:IsEmpty()
+    if not self:IsValid() then
+        return false -- ??
+    end
+
+    local seats  = self:GetNumberOfSeats()
+
+    for i = -1, seats do
+        if self:IsSeatFree(i) then
+            return false
+        end
+    end
+
+    return true
+end
+
+function Vehicle:IsLocalPlayerInVehicle()
+    if Self:IsOnFoot() or not self:IsValid() then
+        return false
+    end
+
+    return self == Self:GetVehicle()
+end
+
 ---@return boolean
 function Vehicle:IsEnemyVehicle()
-    local handle = self:GetHandle()
-
-    if not ENTITY.DOES_ENTITY_EXIST(handle) or not ENTITY.IS_ENTITY_A_VEHICLE(handle) or self:IsEmpty() then
+    if (not self:IsValid() or self:IsEmpty()) then
         return false
     end
 
@@ -262,22 +292,8 @@ end
 
 ---@return boolean
 function Vehicle:HasABS()
-    if self:IsCar() then
-        self:ReadMemoryLayout()
-        if not self.layout then
-            return false
-        end
-
-        local pModelFlags = self.layout.m_model_flags
-        if pModelFlags:is_valid() then
-            local iModelFlags = pModelFlags:get_dword()
-            return Bit.is_set(iModelFlags, eVehicleModelFlags.ABS_STD)
-        end
-    end
-
-    return false
+    return self:GetModelFlag(eVehicleModelFlags.ABS_STD)
 end
-
 
 ---@return boolean
 function Vehicle:IsSports()
@@ -307,24 +323,24 @@ end
 
 -- Returns whether the vehicle is an F1 race car.
 function Vehicle:IsFormulaOne()
-    return self:GetModelInfoFlag(eVehicleModelInfoFlags.IS_FORMULA_VEHICLE) or
-        (self:GetClassName() == "Open Wheel")
+    return self:GetModelInfoFlag(eVehicleModelInfoFlags.IS_FORMULA_VEHICLE)
+        or (self:GetClassID() == eVehicleClasses.OpenWheel)
 end
 
 -- Returns whether the vehicle is a lowrider
 --
 -- equipped with hydraulic suspension.
 function Vehicle:IsLowrider()
-    return self:GetModelInfoFlag(eVehicleModelInfoFlags.HAS_LOWRIDER_HYDRAULICS) or
-        self:GetModelInfoFlag(eVehicleModelInfoFlags.HAS_LOWRIDER_DONK_HYDRAULICS)
+    return self:GetModelInfoFlag(eVehicleModelInfoFlags.HAS_LOWRIDER_HYDRAULICS)
+        or self:GetModelInfoFlag(eVehicleModelInfoFlags.HAS_LOWRIDER_DONK_HYDRAULICS)
 end
 
 function Vehicle:MaxPerformance()
     local handle = self:GetHandle()
 
     if not self:IsValid()
-    or not VEHICLE.IS_VEHICLE_DRIVEABLE(handle, false)
-    or not ENTITY.IS_ENTITY_A_VEHICLE(handle) then
+        or not VEHICLE.IS_VEHICLE_DRIVEABLE(handle, false)
+        or not ENTITY.IS_ENTITY_A_VEHICLE(handle) then
         return
     end
 
@@ -371,37 +387,6 @@ function Vehicle:MaxPerformance()
     VEHICLE.SET_VEHICLE_STRONG(handle, true)
 end
 
--- Applies a custom paint job to the vehicle
----@param hex string
----@param p integer
----@param m boolean
----@param is_primary boolean
----@param is_secondary boolean
-function Vehicle:SetCustomPaint(hex, p, m, is_primary, is_secondary)
-    local handle = self:GetHandle()
-
-    if not self:IsValid() then
-        return
-    end
-
-    script.run_in_fiber(function()
-        local pt = m and 3 or 1
-        local r, g, b, _ = Color(hex):AsRGBA()
-
-        VEHICLE.SET_VEHICLE_MOD_KIT(handle, 0)
-        if is_primary then
-            VEHICLE.SET_VEHICLE_MOD_COLOR_1(handle, pt, 0, p)
-            VEHICLE.SET_VEHICLE_CUSTOM_PRIMARY_COLOUR(handle, r, g, b)
-            VEHICLE.SET_VEHICLE_EXTRA_COLOURS(handle, p, 0)
-        end
-
-        if is_secondary then
-            VEHICLE.SET_VEHICLE_MOD_COLOR_2(handle, pt, 0)
-            VEHICLE.SET_VEHICLE_CUSTOM_SECONDARY_COLOUR(handle, r, g, b)
-        end
-    end)
-end
-
 function Vehicle:Repair()
     local handle = self:GetHandle()
 
@@ -423,15 +408,14 @@ function Vehicle:Repair()
         return
     end
 
-    local m_damage_bits = pWaterDamage:get_int()
-    if m_damage_bits and type(m_damage_bits) == "number" then
-        pWaterDamage:set_int(Bit.clear(m_damage_bits, 0))
+    local damage_bits = pWaterDamage:get_int()
+    if (type(damage_bits) == "number") then
+        pWaterDamage:set_int(Bit.clear(damage_bits, 0))
     end
 end
 
 ---@param toggle boolean
----@param s script_util
-function Vehicle:LockDoors(toggle, s)
+function Vehicle:LockDoors(toggle)
     local handle = self:GetHandle()
 
     if self:IsCar() and entities.take_control_of(handle, 300) then
@@ -442,9 +426,8 @@ function Vehicle:LockDoors(toggle, s)
                     break
                 end
             end
-            if VEHICLE.IS_VEHICLE_A_CONVERTIBLE(handle, false)
-            -- and autoraiseroof
-            and VEHICLE.GET_CONVERTIBLE_ROOF_STATE(handle) ~= 0 then
+
+            if VEHICLE.IS_VEHICLE_A_CONVERTIBLE(handle, false) and VEHICLE.GET_CONVERTIBLE_ROOF_STATE(handle) ~= 0 then
                 VEHICLE.RAISE_CONVERTIBLE_ROOF(handle, false)
             else
                 for i = 0, 7 do
@@ -463,8 +446,7 @@ function Vehicle:LockDoors(toggle, s)
         AUDIO.SET_HORN_PERMANENTLY_ON(handle)
         VEHICLE.SET_VEHICLE_DOORS_LOCKED(handle, toggle and 2 or 1)
         VEHICLE.SET_VEHICLE_ALARM(handle, toggle)
-        YimToast:ShowMessage("SmallBase", ("Vehicle %s"):format(toggle and "locked." or "unlocked."))
-        s:sleep(696)
+        sleep(696)
         VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(handle, 0, false)
         VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(handle, 1, false)
     end
@@ -529,8 +511,8 @@ function Vehicle:GetExhaustBones()
         return {}
     end
 
-    local bones  = {}
-    local count  = VEHICLE.GET_VEHICLE_MAX_EXHAUST_BONE_COUNT_() - 1
+    local bones             = {}
+    local count             = VEHICLE.GET_VEHICLE_MAX_EXHAUST_BONE_COUNT_() - 1
     local bParam, boneIndex = false, -1
 
     for i = 0, count do
@@ -597,7 +579,7 @@ function Vehicle:GetCustomWheels()
     local wheels = {}
     wheels.type  = VEHICLE.GET_VEHICLE_WHEEL_TYPE(handle)
     wheels.index = VEHICLE.GET_VEHICLE_MOD(handle, 23)
-    wheels.var = VEHICLE.GET_VEHICLE_MOD_VARIATION(handle, 23)
+    wheels.var   = VEHICLE.GET_VEHICLE_MOD_VARIATION(handle, 23)
     return wheels
 end
 
@@ -621,7 +603,7 @@ function Vehicle:GetWindowStates()
     local t = {}
 
     for i = 1, 4 do
-        t[i] = VEHICLE.IS_VEHICLE_WINDOW_INTACT(self:GetHandle(), i-1)
+        t[i] = VEHICLE.IS_VEHICLE_WINDOW_INTACT(self:GetHandle(), i - 1)
     end
 
     return t
@@ -648,7 +630,7 @@ function Vehicle:GetNeonLights()
     }
 
     for i = 1, 4 do
-        local isEnabled = VEHICLE.GET_VEHICLE_NEON_ENABLED(handle, i-1)
+        local isEnabled = VEHICLE.GET_VEHICLE_NEON_ENABLED(handle, i - 1)
         neon.enabled[i] = isEnabled
         if isEnabled then
             bHasNeonLights = true
@@ -706,7 +688,7 @@ function Vehicle:GetMods()
     local col1, col2 = self:GetColors()
     local wheels = self:GetCustomWheels()
 
-    local struct = VehicleMods.new(
+    local struct = VehicleMods.create(
         _mods,
         col1,
         col2,
@@ -768,10 +750,11 @@ end
 function Vehicle:ApplyMods(tModData)
     local handle = self:GetHandle()
     if not self:IsValid() then
+        print("invalid")
         return
     end
 
-    script.run_in_fiber(function()
+    ThreadManager:RunInFiber(function()
         VEHICLE.SET_VEHICLE_MOD_KIT(handle, 0)
 
         if tModData.mods then
@@ -825,7 +808,7 @@ function Vehicle:ApplyMods(tModData)
         if tModData.window_states then
             for i = 1, #tModData.window_states do
                 local callback = tModData.window_states[i] and VEHICLE.ROLL_UP_WINDOW or VEHICLE.ROLL_DOWN_WINDOW
-                callback(handle, i-1)
+                callback(handle, i - 1)
             end
         end
 
@@ -863,22 +846,95 @@ function Vehicle:ApplyMods(tModData)
     end)
 end
 
----@param cloneSpawnPos? vec3
-function Vehicle:Clone(cloneSpawnPos)
+---@param opts? { spawn_pos?: vec3, warp_into?: boolean }
+function Vehicle:Clone(opts)
     if not self:IsValid() then
         return
     end
 
-    cloneSpawnPos = cloneSpawnPos or self:GetOffsetInWorldCoords(math.random(-2, 2), math.random(4, 8), 0.1)
-    local clone = Vehicle:Create(self:GetModelHash(), eEntityTypes.Vehicle, cloneSpawnPos)
+    opts = opts or {}
+    local pos = opts.spawn_pos or self:GetSpawnPosInFront()
+    local clone = Vehicle:Create(self:GetModelHash(), eEntityTypes.Vehicle, pos)
     local tModData = self:GetMods()
 
-    if next(tModData) ~= nil then
-        clone:ApplyMods(tModData)
+    if clone:IsValid() then
+        if next(tModData) ~= nil then
+            clone:ApplyMods(tModData)
+        end
+
+        clone:SetAsNoLongerNeeded()
+        if (opts.warp_into == true) then -- Some idiot passed a vector3 and kept wondering why they were being teleported into the vehicle. Don't ask who the idiot is.
+            clone:WarpPed(Self:GetHandle(), -1)
+        end
     end
 
-    clone:SetAsNoLongerNeeded()
     return clone
+end
+
+---@param ped_handle number
+---@param seatIndex? number
+function Vehicle:WarpPed(ped_handle, seatIndex)
+    if not (self:IsValid() or ENTITY.DOES_ENTITY_EXIST(ped_handle)) then
+        return
+    end
+
+    seatIndex = seatIndex or -1
+    if not self:IsSeatFree(seatIndex, true) then
+        seatIndex = -2
+    end
+
+    PED.SET_PED_INTO_VEHICLE(ped_handle, self:GetHandle(), seatIndex)
+end
+
+---@param step integer 1 next seat | -1 previous seat
+function Vehicle:ShuffleSeats(step)
+    ThreadManager:RunInFiber(function()
+        if not self:IsLocalPlayerInVehicle() then
+            return
+        end
+
+        if not self:IsAnySeatFree() then
+            return
+        end
+
+        local maxSeats = self:GetNumberOfPassengers()
+        local currentSeat = Self:GetVehicleSeat()
+
+        if (not currentSeat or maxSeats == 0) then
+            return
+        end
+
+        local attempts  = 0
+        local seatIndex = currentSeat
+
+        while attempts < maxSeats do
+            seatIndex = seatIndex + step
+
+            if seatIndex > maxSeats then
+                seatIndex = 1
+            elseif seatIndex < 1 then
+                seatIndex = maxSeats
+            end
+
+            if self:IsSeatFree(seatIndex) then
+                PED.SET_PED_INTO_VEHICLE(Self:GetHandle(), self:GetHandle(), seatIndex)
+                return
+            end
+
+            attempts = attempts + 1
+            yield()
+        end
+    end)
+end
+
+-- Must be called on tick.
+---@param value number speed modifier
+function Vehicle:ModifyTopSpeed(value)
+    if not Self:IsValid() then
+        return
+    end
+
+    VEHICLE.MODIFY_VEHICLE_TOP_SPEED(self:GetHandle(), value)
 end
 
 ---@param flag number
@@ -927,7 +983,27 @@ function Vehicle:SetHandlingFlag(flag, toggle)
     m_handling_flags:set_dword(new_bits)
 end
 
----@param flag number
+---@param flag eVehicleModelFlags
+function Vehicle:GetModelFlag(flag)
+    if not self:IsValid() then
+        return false
+    end
+
+    self:ReadMemoryLayout()
+    if not self.layout then
+        return false
+    end
+
+    local pModelFlags = self.layout.m_model_flags
+    if pModelFlags:is_null() then
+        return false
+    end
+
+    local iModelFlags = pModelFlags:get_dword()
+    return Bit.is_set(iModelFlags, flag)
+end
+
+---@param flag eVehicleModelInfoFlags
 ---@return boolean
 function Vehicle:GetModelInfoFlag(flag)
     if not self:IsValid() then
@@ -939,7 +1015,7 @@ function Vehicle:GetModelInfoFlag(flag)
         return false
     end
 
-    local base_ptr = self.layout.m_vehicle_model_flags
+    local base_ptr = self.layout.m_model_info_flags
     if not base_ptr:is_valid() then
         return false
     end
@@ -969,7 +1045,7 @@ function Vehicle:SetModelInfoFlag(flag, toggle)
         return
     end
 
-    local base_ptr = self.layout.m_vehicle_model_flags
+    local base_ptr = self.layout.m_model_info_flags
     if base_ptr:is_null() then
         return
     end
@@ -985,4 +1061,69 @@ function Vehicle:SetModelInfoFlag(flag, toggle)
     local Bitwise   = toggle and Bit.set or Bit.clear
     local new_bits  = Bitwise(flag_bits, bit_pos)
     flag_ptr:set_dword(new_bits)
+end
+
+-- Serializes a vehicle to JSON.
+--
+-- If a name isn't provided, the vehicle's name will be used.
+---@param name? string
+function Vehicle:SaveToJSON(name)
+    if not self:IsValid() then
+        return
+    end
+
+    if (type(name) ~= "string" or string.isnullorwhitespace(name)) then
+        name = self:GetName()
+    end
+
+    local filename = generate_unique_filename(name, ".json")
+    local modelhash = self:GetModelHash()
+    local mods = self:GetMods()
+    local t = {
+        model_hash = modelhash,
+        mods = mods
+    }
+
+    Serializer:WriteToFile(t, filename)
+    self:notify("Saved vehicle to '%s'", filename)
+end
+
+-- Static Method.
+--
+-- Spawns a vehicle from JSON and returns a new `Vehicle` instance.
+---@param filename string
+---@param warp_into? boolean
+function Vehicle.CreateFromJSON(filename, warp_into)
+    if (type(filename) ~= "string") then
+        Toast:ShowError("Vehicle", "Failed to read vehicle data from JSON!", true) -- I should probably refactor ToastNotifier to take an optional table parameter to make it more readable. true means log to console as well.
+        return
+    end
+
+    if not filename:endswith(".json") then
+        filename = filename .. ".json"
+    end
+
+    local data = Serializer:ReadFromFile(filename)
+    if (type(data) ~= "table") then
+        Toast:ShowError("Vehicle", "Failed to read vehicle data from JSON!", true)
+        return
+    end
+
+    local modelhash = data.model_hash
+    if not Game.EnsureModelHash(modelhash) then
+        Toast:ShowError("Vehicle", "Failed to create vehicle from JSON: Invalid model hash.", true)
+        return
+    end
+
+    local spawnpos = Self:GetVehicle():GetSpawnPosInFront() -- falls back to 5m in front of the player if the vehicle is invalid.
+    local new_veh = Vehicle:Create(modelhash, eEntityTypes.Vehicle, spawnpos, Self:GetHeading())
+    if (new_veh:IsValid() and type(data.mods) == "table") then
+        new_veh:ApplyMods(data.mods)
+    end
+
+    if (warp_into == true) then
+        new_veh:WarpPed(Self:GetHandle())
+    end
+
+    return new_veh
 end

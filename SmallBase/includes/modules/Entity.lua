@@ -6,12 +6,23 @@
 ---@field private layout pointer[]
 ---@overload fun(handle: integer): Entity
 Entity = Class("Entity")
+function Entity.__eq(this, other)
+    if IsInstance(other, Entity) then
+        return this:GetHandle() == other:GetHandle()
+    end
+
+    if (type(other) == "number" and Game.IsScriptHandle(other)) then
+        return this:GetHandle() == other
+    end
+
+    return false
+end
 
 ---@param handle number
----@return Entity
+---@return Entity|nil
 function Entity.new(handle)
     if not Game.IsScriptHandle(handle) then
-        error("Invalid script handle!")
+        return
     end
 
     return setmetatable(
@@ -273,6 +284,17 @@ function Entity:GetModelDimensions()
     end
 
     return Game.GetModelDimensions(self:GetModelHash())
+end
+
+-- Will be improved later.
+function Entity:GetSpawnPosInFront()
+    if not self:Exists() then
+        return Self and Self:GetOffsetInWorldCoords(0, 5, 0.1) or vec3:zero()
+    end
+
+    local min, max = self:GetModelDimensions()
+    local length = max.y - min.y
+    return self:GetOffsetInWorldCoords(0, length, 0.1)
 end
 
 ---@param keep_physics? boolean

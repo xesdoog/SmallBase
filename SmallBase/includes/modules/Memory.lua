@@ -104,7 +104,7 @@ Memory.GetVehicleInfo = function(vehicle)
     CVehicle.CBaseSubHandlingData    = CVehicle.CHandlingData:add(0x158):deref() -- `rage::atArray`
     CVehicle.CVehicleModelInfoLayout = CVehicle.CVehicleModelInfo:add(0x00B0):deref() -- `class`
 
-    CVehicle.m_vehicle_model_flags        = CVehicle.CVehicleModelInfo:add(0x057C)
+    CVehicle.m_model_info_flags           = CVehicle.CVehicleModelInfo:add(0x057C)
     CVehicle.m_initial_drag_coeff         = CVehicle.CHandlingData:add(0x0010) -- `float`
     CVehicle.m_drive_bias_rear            = CVehicle.CHandlingData:add(0x0044) -- `float`
     CVehicle.m_drive_bias_front           = CVehicle.CHandlingData:add(0x0048) -- `float`
@@ -151,7 +151,7 @@ Memory.GetVehicleModelFlag = function(vehicle, flag)
         return false
     end
 
-    local base_ptr = CVehicle.m_vehicle_model_flags
+    local base_ptr = CVehicle.m_model_info_flags
     if base_ptr:is_null() then
         return false
     end

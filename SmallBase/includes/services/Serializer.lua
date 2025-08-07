@@ -13,7 +13,7 @@
 
   - Uses [JSON.lua package by Jeffrey Friedl](http://regex.info/blog/lua/json).
 ]]
----@class Serializer
+---@class Serializer : ClassMeta<Serializer>
 ---@field file_name string
 ---@field default_config table
 ---@field m_key_states table
@@ -21,6 +21,7 @@
 ---@field parsing_options SerializerOptionals
 ---@field private m_disabled boolean
 ---@field private xor_key string
+---@field private m_last_write_time number
 ---@field TickHandler fun(): nil
 ---@field ShutdownHandler fun(): nil
 ---@field class_types table<string, {serializer:fun(), constructor:fun()}>
@@ -54,21 +55,21 @@ assert(Serializer.json.VERSION == "20211016.28", "Bad Json package version.")
 ---@return Serializer
 function Serializer:init(script_name, default_config, runtime_vars, varargs)
     varargs = varargs or {}
-    local timestamp = tostring(os.date("%H:%M:%S")):gsub(":", "_")
-    script_name = script_name or (Backend and Backend.script_name or ("noname_%s"):format(timestamp))
+    local timestamp = tostring(os.date("%H_%M_%S"))
+    script_name = script_name or (Backend and Backend.script_name or ("cout_%s"):format(timestamp))
 
     ---@type Serializer
     local instance = setmetatable(
         {
-            default_config = default_config or {__version = Backend and Backend.__version or self.__version},
-            file_name = string.format("%s.json", script_name:lower():gsub(" ", "_")),
-            xor_key = varargs and varargs.encryption_key or self.default_xor_key,
-            m_disabled = false,
-            m_dirty = false,
-            m_key_states = {},
+            default_config  = default_config or {__version = Backend and Backend.__version or self.__version},
+            file_name       = string.format("%s.json", script_name:lower():gsub("%s+", "_")),
+            xor_key         = varargs.encryption_key or self.default_xor_key,
+            m_disabled      = false,
+            m_dirty         = false,
+            m_key_states    = {},
             parsing_options = {
-                pretty = varargs.pretty ~= nil and varargs.pretty or true,
-                indent = string.rep(" ", varargs.indent or 4),
+                pretty         = (varargs.pretty ~= nil) and varargs.pretty or true,
+                indent         = string.rep(" ", varargs.indent or 4),
                 strict_parsing = varargs.strict_parsing or false
             }
         },
@@ -93,7 +94,8 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
 
     instance.m_key_states.__version = config_data.__version or Backend and Backend.__version or Serializer.__version
     config_data.__version = instance.m_key_states.__version
-    setmetatable(
+
+        setmetatable(
         runtime_vars,
         {
             __index = function(_, k)
@@ -118,7 +120,7 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
                 end
 
                 if (instance.default_config[k] == nil) then
-                    local value = config_data[k] ~= nil and config_data[k] or v -- first seen
+                    local value = config_data[k] ~= nil and config_data[k] or v
                     instance.default_config[k] = value
                     instance.m_key_states[k] = value
                     return
@@ -155,9 +157,8 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
         instance:SyncKeys()
     end
 
-    script.register_looped("SB_SERIALIZER", instance.TickHandler)
+    ThreadManager:StartNewThread("SB_SERIALIZER", instance.TickHandler)
     Backend:RegisterEventCallback(eBackendEvent.RELOAD_UNLOAD, instance.ShutdownHandler)
-
     return instance
 end
 
@@ -547,6 +548,64 @@ function Serializer:Decrypt()
     self:Parse(self:Decode(decrypted))
 end
 
+-- A separate write function that doesn't rely on any setup or state flags.
+--
+-- Do not use it to write to the Serializer's config file.
+---@param data any
+---@param filename string
+function Serializer:WriteToFile(data, filename)
+    if (type(filename) ~= "string" or not filename:endswith(".json")) then
+        log.warning("Invalid file name.")
+        return
+    end
+
+    if (filename == self.file_name) then
+        log.warning("Attempt to overwrite the Serializer's config file!")
+        return
+    end
+
+    if (not data) then
+        log.warning("Invalid data type.")
+        return
+    end
+
+    local f, err = io.open(filename, "w")
+    if not f then
+        log.fwarning("Failed to open file!\n%s", err)
+        return
+    end
+
+    f:write(self:Encode(data))
+    f:flush()
+    f:close()
+end
+
+-- A separate read function that doesn't rely on any setup or state flags.
+---@param filename string
+function Serializer:ReadFromFile(filename)
+    if (type(filename) ~= "string" or not filename:endswith(".json")) then
+        log.warning("Invalid file name.")
+        return
+    end
+
+    if (filename == self.file_name) then
+        log.warning("Use Serializer:Read() instead to read the Serializer's config file.")
+        return
+    end
+
+    local f, err = io.open(filename, "r")
+    if not f then
+        log.fwarning("Failed to open file!\n%s", err)
+        return
+    end
+
+    local data = f:read("a")
+    f:flush()
+    f:close()
+
+    return self:Decode(data)
+end
+
 function Serializer:FlushObjectQueue()
     for _, t in ipairs(self.deferred_objects) do
         local name  = t.__type:lower():trim()
@@ -568,29 +627,32 @@ function Serializer:FlushObjectQueue()
     self.deferred_objects = {}
 end
 
+function Serializer:GetTimeSinceLastFlush()
+    return Time.now() - self.m_last_write_time
+end
+
 function Serializer:Flush()
-    if not self:CanAccess() then
+    if (not self:CanAccess()) then
         return
     end
 
     self:Parse(self.m_key_states)
     self.m_dirty = false
+    self.m_last_write_time = Time.now()
 end
 
 function Serializer:OnTick()
-    if not self.m_dirty then
-        return
+    if self.m_dirty or self:GetTimeSinceLastFlush() >= 5 then
+        self:Flush()
     end
 
-    self:Flush()
-    coroutine.yield(250)
+    sleep(1000)
 end
 
 function Serializer:OnShutdown()
-    if not self.m_dirty then
+    if (not self.m_dirty and self:GetTimeSinceLastFlush() <= 2) then
         return
     end
-
     self:Flush()
 end
 
@@ -604,7 +666,8 @@ function Serializer:DebugDump()
         runtime_vars   = _ENV.GVars or {},
     }
 
-    table.print(out)
+    print(out)
+    self:notify("Dumped to console.")
 end
 
 return Serializer
