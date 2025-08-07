@@ -140,6 +140,7 @@ CommandExecutor.cmd_index     = 0
 CommandExecutor.history_index = 0
 CommandExecutor.cmd_entered   = false
 CommandExecutor.is_typing     = false
+CommandExecutor.hint_text     = ">_"
 CommandExecutor.history       = {}
 CommandExecutor.suggestions   = {}
 CommandExecutor.screen_size   = Game.ScreenResolution
@@ -211,7 +212,7 @@ end
 ---@param command_name string
 ---@return boolean
 function CommandExecutor:IsBuiltinCommand(command_name)
-    return not command_name:startswith("!")
+    return command_name:startswith("!")
 end
 
 -- Registers a command with a callback that receives arguments.
@@ -319,29 +320,37 @@ function CommandExecutor:HandleCallbacks()
 
         self.user_cmd    = ""
         self.cmd_entered = false
+        self.hint_text   = ">_"
     end
 
     if (#self.suggestions == 0) then
         if KeyManager:IsKeyJustPressed(eVirtualKeyCodes.UP) then
-            if (#self.history > 0) then
-                self.history_index = (self.history_index or (#self.history + 1)) - 1
-                if (self.history_index < 1) then
-                    self.history_index = #self.history
-                end
-                self.mutation_request = self.history[self.history_index]
+            self.history_index = self.history_index - 1
+            if (self.history_index < 0) then
+                self.history_index = #self.history
             end
+            self.hint_text = self.history[self.history_index] or ">_"
         end
 
         if KeyManager:IsKeyJustPressed(eVirtualKeyCodes.DOWN) then
-            if (self.history_index) then
-                self.history_index = (self.history_index or 1) + 1
-                if (self.history_index > #self.history) then
-                    self.history_index = 1
-                end
-                self.mutation_request = self.history[self.history_index]
+            self.history_index = self.history_index + 1
+            if (self.history_index > #self.history) then
+                self.history_index = 0
             end
+            self.hint_text = self.history[self.history_index] or ">_"
+        end
+
+        if ((KeyManager:IsKeyPressed(eVirtualKeyCodes.TAB)
+        or KeyManager:IsKeyPressed(eVirtualKeyCodes.ENTER))
+        or KeyManager:IsKeyJustPressed(eVirtualKeyCodes.RIGHT)
+        and self.history[self.history_index]) then
+            self.mutation_request = self.history[self.history_index]
+            self.history_index = 0
+            self.hint_text = ">_"
         end
     elseif (#self.suggestions > 0) then
+        self.hint_text = ">_"
+
         if KeyManager:IsKeyJustPressed(eVirtualKeyCodes.UP) then
             self.cmd_index = self.cmd_index - 1
             if (self.cmd_index < 1) then
@@ -355,11 +364,11 @@ function CommandExecutor:HandleCallbacks()
                 self.cmd_index = 1
             end
         end
-    end
 
-    if ((KeyManager:IsKeyPressed(eVirtualKeyCodes.TAB) or KeyManager:IsKeyPressed(eVirtualKeyCodes.ENTER)) and self.suggestions[self.cmd_index]) then
-        self.mutation_request = self.suggestions[self.cmd_index].name .. " "
-        self.cmd_index = 0
+        if ((KeyManager:IsKeyPressed(eVirtualKeyCodes.TAB) or KeyManager:IsKeyPressed(eVirtualKeyCodes.ENTER)) and self.suggestions[self.cmd_index]) then
+            self.mutation_request = self.suggestions[self.cmd_index].name .. " "
+            self.cmd_index = 0
+        end
     end
 end
 
@@ -387,17 +396,21 @@ function CommandExecutor:DrawSuggestions()
                 end
 
                 if GUI:IsItemClicked(GUI.MouseButtons.RIGHT) then
+                    local cmd = self.commands[suggestion.name]
                     self.user_cmd = suggestion.name
-                    self.cmd_entered = false
+                    self.cmd_entered = cmd and (not cmd.alias or #cmd.alias == 0)
+                    self.hint_text = ">_"
                 end
             end
         ImGui.EndChild()
+    end
 
-        if self.suggestions[self.cmd_index] then
-            self.gui.bottom_text = self.suggestions[self.cmd_index].def
-        else
-            self.gui.bottom_text = "All built-in commands are prefixed with an exclamation mark <!>."
-        end
+    if self.suggestions[self.cmd_index] then
+        self.gui.bottom_text = self.suggestions[self.cmd_index].def
+    elseif self.history[self.history_index] then
+        self.gui.bottom_text = "Press [Right Arrow] or [TAB] or [Enter] to auto-fill this command."
+    else
+        self.gui.bottom_text = "All built-in commands are prefixed with an exclamation mark <!>."
     end
 end
 
@@ -430,7 +443,7 @@ function CommandExecutor:Draw()
             end
             self.user_cmd, self.cmd_entered = ImGui.InputTextWithHint(
                 "##cmd",
-                ">_",
+                self.hint_text,
                 self.user_cmd,
                 128,
                 ImGuiInputTextFlags.EnterReturnsTrue

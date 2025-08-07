@@ -431,7 +431,10 @@ end
 ---@param str string?
 ---@return boolean
 string.isnullorwhitespace = function(str)
-    return str and (str:isnull() or str:iswhitespace()) or true
+    if str == nil then
+        return true
+    end
+    return str:isnull() or str:iswhitespace()
 end
 
 -- Returns whether a string starts with the provided prefix.

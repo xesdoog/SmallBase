@@ -43,6 +43,7 @@ Bind a key (default F5) to toggle the command input window.
 - `!help`: Displays help instructions. Alias `!h`.
 - `!setautoclose`: Sets the behavior of the command window after successful command execution. Arguments (1): <toggle: boolean>
 - `!setkey`: Sets the default command window key. Arguments (1): <key: string | number>
+- `!panique`: Panic Mode. (NOTE: This **removes** all registered threads when invoked. They can only be registered again after reloading the script.). Aliases: <!panik | !panicus | !bordeldemerde | !dammit>
 
 ## Input Behavior
 

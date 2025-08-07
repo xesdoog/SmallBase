@@ -99,19 +99,13 @@ Forcefully deletes all tracked entities (peds, vehicles, objects) and associated
 Handled internally using a background thread:
 
 ```lua
-Backend:OnPlayerSwitch(script_util)
-Backend:OnSessionSwitch(script_util)
+Backend:OnPlayerSwitch()
+Backend:OnSessionSwitch()
 ```
 
 ## Spawn Limits
 
 Each entity category (peds, vehicles, objects) has a configurable max cap to prevent script-based entity spam.
-
-```lua
-Backend:GetMaxAllowedEntities("peds")        --> 50
-Backend:SetMaxAllowedEntities("vehicles", 20)
-Backend:CanCreateEntity("objects")           --> true | false
-```
 
 ```lua
 Backend:GetMaxAllowedEntities(eEntityTypes.Ped)        --> 50

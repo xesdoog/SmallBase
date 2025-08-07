@@ -65,7 +65,7 @@ example_tab:AddLoopedCommand("Fast Vehicles", "fastvehicles", function()
     end
 
     PV:ModifyTopSpeed(100)
-end, nil, { description = "Increases your current vehicle's top speed.", alias = {"fastvehs"} })
+end, nil, { description = "Increases the top speed of any land vehicle you drive.", alias = {"fastvehs"} })
 
 example_tab:AddLoopedCommand("Draw Box", "drawbox", function()
     if (not Self:IsPlaying() or not Self:IsAlive()) then
