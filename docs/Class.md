@@ -23,6 +23,7 @@ MySubclass = Class("MySubclass", MyClass)
 If you want your class to be callable, you have to define a constructor in one of these two ways:
 
 - A `.new` static function.
+
 - An `:init` colon method.
 
 Once one of these is defined, you can safely call your class to automatically call its constructor:
@@ -51,7 +52,8 @@ ___
 Resolves the parent class if available or returns the class itself if not.
 
 **Example scenario**:
-    - Your parent class has a `__tostring` method. You created a subclass of it but defined a new different `__tostring` for it and now you want to call the parent's method:
+
+- Your parent class has a `__tostring` method. You created a subclass of it but defined a new different `__tostring` for it and now you want to call the parent's method:
 
 ```lua
 print(MySubclass:super().__tostring())

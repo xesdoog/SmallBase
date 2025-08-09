@@ -164,4 +164,4 @@ Refer to `CommandExecutor.md` for the `CommandMeta` argument.
 - Tabs will not be registered until the `GUI:Draw()` method is called. Refer to `GUI.md` for more details or see `main.lua` for an example.
 - If no GUI is registered, tabs will not render anything visually.
 - `GridRenderer` is optional and only initialized when explicitly requested.
-- All toggle states are managed through `GVars` global keys.
+- All toggle states are managed through `GVars` global keys for auto-serialization.

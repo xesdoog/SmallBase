@@ -9,8 +9,11 @@ It is essentially a wrapper around native API script global and local accessors 
 ## ScriptGlobal
 
 **Params (1):**
-    - `address`: *number*: The global address.
+
+- `address`: *number*: The global address.
+
 **Return:** A `ScriptGlobal` object with read, write, offset (At), and `__tostring` methods.
+
 **Example:**
 
 ```lua
@@ -21,9 +24,12 @@ local some_random_global_with_offset = ScriptGlobal(1996245):At(4)
 ## ScriptLocal
 
 **Params (2):**
-    - `script_name`: *string*: The name of the game script.
-    - `address`: *number*: The local address.
+
+- `script_name`: *string*: The name of the game script.
+- `address`: *number*: The local address.
+
 **Return:** A `ScriptLocal` object with read, write, offset (At), and `__tostring` methods.
+
 **Example:**
 
 ```lua
@@ -74,20 +80,20 @@ All methods are the same to what is available in the V1 API's `globals` and `loc
 
 ### Read
 
-`ReadFloat`
-`ReadInt`
-`ReadUint`
-`ReadVec3`
-`ReadString` <- Globals only.
-`GetPointer` <- Still named `Get` because it returns a pointer object.
+- `ReadFloat`
+- `ReadInt`
+- `ReadUint`
+- `ReadVec3`
+- `ReadString` <- Globals only.
+- `GetPointer` <- Still named `Get` because it returns a pointer object.
 
 ### Write
 
-`WriteFloat`
-`WriteInt`
-`WriteUint` <- Globals only.
-`WriteVec3`
-`WriteString` <- Globals only.
+- `WriteFloat`
+- `WriteInt`
+- `WriteUint` <- Globals only.
+- `WriteVec3`
+- `WriteString` <- Globals only.
 
 > [!Note]
 > V2 is not supported yet until API development is finished.

@@ -14,7 +14,7 @@
 
 ```lua
 local thread = Thread("MyThread", function()
-    -- DoSomeGoofyStuff
+    DoSomeGoofyStuff()
 end)
 ```
 
@@ -70,6 +70,7 @@ ThreadManager:RemoveAll()
 ### UI Debug Integration
 
 Threads appear in a debug tab with color-coded states and controls:
+
 - Remove
 - Pause / Resume
 - Start / Kill

@@ -33,6 +33,7 @@ local my_tab = GUI:RegisterNewTab(name, draw_function, subtabs)
 ```
 
 **Params (3):**
+
 - `name`: string: The new tab's name.
 - `draw_function`: function **Optional**: The function that this new tab will draw. You can skip this parameter and register the function later using the `Tab`'s method.
 - `subtabs`: Tab[] **Optional**: Subtabs for this tab. You can ignore this if you don't want to add subtabs or register them later individually.
@@ -46,9 +47,11 @@ local exists = GUI:DoesTabExist("Example")
 ```
 
 **Params (1):**
+
 - `name`: string: The tab's name.
 
 **Returns:**
+
 - `boolean`.
 
 ### GetTab
@@ -67,9 +70,11 @@ example_tab.this:AddLoopedCommand(...) -- custom Tab class method
 ```
 
 **Params (1):**
+
 - `name`: string: The tab's name.
 
 **Returns:**
+
 - A `Tab` object or `nil`.
 
 ### GetSubtab
@@ -81,10 +86,12 @@ local example_tab = GUI:GetSubtab("Demo", "Example")
 ```
 
 **Params (2):**
+
 - `name`: string: The sub-tab's name.
 - `parent_name`: string: The parent tab's name.
 
 **Returns:**
+
 - A `Tab` object or `nil`.
 
 ### RegisterIndependentGUI
@@ -96,7 +103,8 @@ GUI:RegisterIndependentGUI(my_gui_func)
 ```
 
 **Params (1):**
-- `drawfunc`: function: The ImGui function to be drawn.
+
+- `drawfunc`: function: The ImGui function to draw.
 
 ### GetNewWindowSizeAndCenterPos
 
@@ -109,6 +117,7 @@ ImGui.SetNextWindowPos(centerpos.x, centerpos.y)
 ```
 
 **Returns:**
+
 - `vec2`: A size vector.
 - `vec2`: A center position vector.
 
@@ -169,7 +178,6 @@ Draws a small confirmation popup window with [Yes]/[No] buttons. Can execute a c
 > [!NOTE]
 > For this popup to actually be drawn, you have to call `ImGui.OpenPopup(name)` on the same frame (on button press or whatever trigger) then call this method with the same name.
 
-
 ```lua
 if ImGui.Button("Delete") then
     ImGui.OpenPopup("confirm_delete")
@@ -205,13 +213,15 @@ local bool, clicked = GUI:Checkbox(label, bool, opts?)
 ```
 
 **Params:**
-    - `label`: string.
-    - `bool`: boolean.
-    - `opts`?: table: Optional params.
+
+- `label`: string.
+- `bool`: boolean.
+- `opts`?: table: Optional params.
 
 **Optional Params Table:**
-`tooltip?`: string: If provided, a tooltip will be displayed on hover.
-`color?`: Color: If provided, the text inside the tooltip will be colored.
+
+- field `tooltip?`: string: If provided, a tooltip will be displayed on hover.
+- field `color?`: Color: If provided, the text inside the tooltip will be colored.
 
 ### Button
 
@@ -226,12 +236,14 @@ end
 ```
 
 **Params:**
-    - `label`: string: The button label.
-    - `opts`?: table: Optional parameters.
+
+- `label`: string: The button label.
+- `opts`?: table: Optional parameters.
 
 **Optional Params Table:**
-    - field `size?`: vec2: Change the default button size.
-    - field `repeatable?`: boolean: If true, the button will keep returning true for as long as you hold it.
+
+- field `size?`: vec2: Change the default button size.
+- field `repeatable?`: boolean: If true, the button will keep returning true for as long as you hold it.
 
 ### ColoredButton
 
@@ -244,12 +256,14 @@ end
 ```
 
 **Params:**
-    - `label`: string: The button label.
-    - `color`: `Color` instance: The button's default color.
-    - `hover_color`: `Color` instance: The button's hover color.
-    - `active_color`: `Color` instance: The button's active color.
-    - `opts`?: table: Optional parameters.
+
+- `label`: string: The button label.
+- `color`: `Color` instance: The button's default color.
+- `hover_color`: `Color` instance: The button's hover color.
+- `active_color`: `Color` instance: The button's active color.
+- `opts`?: table: Optional parameters.
 
 **Optional Params Table:**
-    - field `size?`: vec2: Change the default button size.
-    - field `repeatable?`: boolean: If true, the button will keep returning true for as long as you hold it.
+
+- field `size?`: vec2: Change the default button size.
+- field `repeatable?`: boolean: If true, the button will keep returning true for as long as you hold it.
