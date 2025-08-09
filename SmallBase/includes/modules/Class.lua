@@ -1,8 +1,8 @@
 ---@diagnostic disable: undefined-doc-name
 ---@generic T
 ---@class ClassMeta<T>
----@field new fun(...): T
----@field init fun(self: T, ...): T
+---@field new? fun(...): T
+---@field init? fun(self: T, ...): T
 ---@field extend fun(self: T, subclassName: string): T
 ---@field super fun(self: T): T
 ---@field isinstance fun(self: any, class: any): boolean

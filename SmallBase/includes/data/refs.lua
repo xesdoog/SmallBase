@@ -76,21 +76,6 @@ t_ModshopScriptNames = {
     -- "vinewood_premium_garage_carmod",
 }
 
-t_Langs = {
-    { name = "English", iso = "en-US" },
-    { name = "Français", iso = "fr-FR" },
-    { name = "Deütsch", iso = "de-DE" },
-    { name = "Español", iso = "es-ES" },
-    { name = "Italiano", iso = "it-IT" },
-    { name = "Português (Brasil)", iso = "pt-BR" },
-    { name = "Русский (Russian)", iso = "ru-RU" },
-    { name = "Chinese (Traditional)", iso = "zh-TW" },
-    { name = "Chinese (Simplified)", iso = "zh-CN" },
-    { name = "Japanese", iso = "ja-JP" },
-    { name = "Polish", iso = "pl-PL" },
-    { name = "Korean", iso = "ko-KR" },
-}
-
 t_GamepadControls = {
     { ctrl = 7,   gpad = "R3" },
     { ctrl = 10,  gpad = "LT" },

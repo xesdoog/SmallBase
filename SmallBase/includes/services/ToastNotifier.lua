@@ -67,6 +67,11 @@ end
 
 local SCREEN_RESOLUTION <const> = Game and Game.ScreenResolution or GetScreenResolution()
 
+--#region Toast
+
+--------------------------------------
+-- Private Subclass: Toast
+--------------------------------------
 ---@class Toast
 ---@field caller string The notification title.
 ---@field message string The notification body.
@@ -162,7 +167,14 @@ function Toast:Draw(notifier)
     end
 end
 
+--#endregion
 
+
+--#region Notifier
+
+--------------------------------------
+-- Class: Notifier
+--------------------------------------
 ---@class Notifier
 ---@field private last_caller string
 ---@field private last_message string
@@ -189,7 +201,7 @@ function Notifier.new()
         instance:Draw()
     end)
 
-    ThreadManager:StartNewThread("SB_TOAST", function()
+    ThreadManager:CreateNewThread("SB_TOAST", function()
         instance:Update()
         sleep(1)
     end)
@@ -330,5 +342,7 @@ function Notifier:Draw()
         self.active:Draw(self)
     end
 end
+
+--#endregion
 
 return Notifier

@@ -55,12 +55,22 @@ local function get_timestamp()
     return os.date("%Y-%m-%d %H:%M:%S")
 end
 
----@param stack_depth integer
+---@param stack_depth? number
 ---@return string
 local function get_caller_info(stack_depth)
-    local info = debug.getinfo(stack_depth, "nSlf")
+    stack_depth = stack_depth or 12
+    local info = debug.getinfo(stack_depth, "nSl")
 
-    if not info then
+    while (not info or not info.currentline or not info.name) do
+        if (stack_depth <= 1) then
+            break
+        end
+
+        stack_depth = stack_depth - 1
+        info = debug.getinfo(stack_depth, "nSl")
+    end
+
+    if (not info) then
         return "?"
     end
 
@@ -68,7 +78,7 @@ local function get_caller_info(stack_depth)
     local line = info.currentline or "?"
     local name = info.name
 
-    if name then
+    if (name) then
         return string.format("%s:%d in function %s", src, line, name)
     else
         return string.format("%s:%d", src, line)
@@ -77,8 +87,9 @@ end
 
 
 --------------------------------
---------- Logger Class ---------
+--Class: Logger
 --------------------------------
+-- Do not use this in YimMenu. It will not load.
 ---@class Logger
 ---@field name? string
 ---@field level? integer
@@ -199,7 +210,7 @@ function Logger:log(level, message)
         return
     end
 
-    local trace_info = get_caller_info(3)
+    local trace_info = get_caller_info()
     local line = self:format(level, message, trace_info)
 
     if self.use_colors then

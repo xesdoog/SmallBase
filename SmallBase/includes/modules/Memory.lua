@@ -1,3 +1,7 @@
+--------------------------------------
+-- Class: Memory
+--------------------------------------
+-- **Global Singleton.**
 ---@class Memory
 Memory = {}
 Memory.__index = Memory

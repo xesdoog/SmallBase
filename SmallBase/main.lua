@@ -14,8 +14,8 @@ CommandExecutor:RegisterCommand("clonepv", function(args)
         PV:Clone({ warp_into = warp })
     end)
 end, {
-    description = "Spawns an exact replica of the vehicle you're currently sitting in. Does nothing if you're on foot.",
-    args = { "<warp_into: boolean>" }
+    args = { "Optional<warp_into: boolean>" },
+    description = "Spawns an exact replica of the vehicle you're currently sitting in. Does nothing if you're on foot."
 })
 
 CommandExecutor:RegisterCommand("savepv", function(args)
@@ -29,7 +29,10 @@ CommandExecutor:RegisterCommand("savepv", function(args)
         local filename = args and args[1] or nil
         PV:SaveToJSON(filename)
     end)
-end, { description = "Saves the vehicle you're currently sitting in to JSON." })
+end, {
+    args = { "Optional<file_name: string>" },
+    description = "Saves the vehicle you're currently sitting in to JSON."
+})
 
 CommandExecutor:RegisterCommand("spawnjsonveh", function(args)
     ThreadManager:RunInFiber(function()
@@ -42,4 +45,34 @@ CommandExecutor:RegisterCommand("spawnjsonveh", function(args)
 
         Vehicle.CreateFromJSON(filename, warp)
     end)
-end, { args = {"<filename: string>", "<warp_into: boolean>"}, description = "Saves the vehicle you're currently sitting in to JSON." })
+end, {
+    args = {"<filename: string>", "Optional<warp_into: boolean>"},
+    description = "Saves the vehicle you're currently sitting in to JSON."
+})
+
+
+
+
+-------------------------
+-- main loop from temu
+-------------------------
+-- Note: If you're in a test/mock environment, anything after this block will not be reachable.
+--
+-- Keep this at the very bottom of this file or remove it if you don't plan on testing coroutines in mock env.
+local function mock_main()
+    if not (Backend:IsMockEnv()) then
+        return
+    end
+
+    local suspended_thread = false
+    local debug_only = true
+
+    ThreadManager:CreateNewThread("MOCK_TEST", function()
+        printf("Doing important stuff... [%s]", string.random())
+        sleep(5e3)
+    end, suspended_thread, debug_only)
+
+    ThreadManager:UpdateMockRoutines()
+end
+
+mock_main()

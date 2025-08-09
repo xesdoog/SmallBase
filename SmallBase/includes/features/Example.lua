@@ -56,6 +56,14 @@ Below are simple examples of two features created using a combination of custom 
     if ImGui.Button("Dump Serializer") then
         Serializer:DebugDump()
     end
+
+    ImGui.Spacing()
+    ImGui.BulletText(_T"TEST")
+    ImGui.SameLine()
+
+    if ImGui.Button("Reload Translator") then
+        Translator:Reload()
+    end
 end)
 
 example_tab:AddLoopedCommand("Fast Vehicles", "fastvehicles", function()

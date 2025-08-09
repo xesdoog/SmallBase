@@ -1,12 +1,16 @@
 ---@diagnostic disable: param-type-mismatch
 
+--#region Tab
 
+--------------------------------------
+-- Tab Class
+--------------------------------------
 ---@class Tab : ClassMeta<Tab>
 ---@field private m_name string
 ---@field private m_gui? function
 ---@field private m_subtabs? table<string, Tab>
 ---@field private m_api tab
----@field checkbox_grid? GridRenderer
+---@field private m_grid_layout? GridRenderer
 ---@overload fun(name: string, api_obj?: tab, drawable?: function, subtabs?: Tab) : Tab
 local Tab = Class("Tab")
 
@@ -52,6 +56,7 @@ function Tab:RegisterGUI(drawable)
     end
 
     if self:HasGUI() then
+        -- just warn and proceed
         log.fwarning("%s already had a GUI function. Did you mean to overwrite it?", self:GetName())
     end
 
@@ -78,12 +83,38 @@ function Tab:GetAPI()
     return self.m_api
 end
 
-function Tab:GetOrCreateCheckboxGrid()
-    if (not self.checkbox_grid) then
-        self.checkbox_grid = GridRenderer.new(5, 25, 10)
+---@return GridRenderer|nil
+function Tab:GetGridRenderer()
+    return self.m_grid_layout
+end
+
+---@param columns? number
+---@param padding_x? number
+---@param padding_y? number
+---@return GridRenderer
+function Tab:GetOrCreateGrid(columns, padding_x, padding_y)
+    if (not self.m_grid_layout) then
+        self.m_grid_layout = GridRenderer.new(
+            columns or 5,
+            padding_x or 25,
+            padding_y or 25
+        )
     end
 
-    return self.checkbox_grid
+    return self.m_grid_layout
+end
+
+---@return boolean
+function Tab:HasGridLayout()
+    return self.m_grid_layout ~= nil
+end
+
+function Tab:RemoveGrid()
+    self.m_grid_layout = nil
+end
+
+function Tab:RemoveGUI()
+    self.m_gui = nil
 end
 
 function Tab:ListSubtabs()
@@ -101,7 +132,7 @@ function Tab:AddBoolCommand(label, gvar_key, on_enable, on_disable, meta)
     end
 
     meta = meta or {}
-    self:GetOrCreateCheckboxGrid():AddCheckbox(
+    self:GetOrCreateGrid():AddCheckbox(
         label,
         gvar_key,
         {
@@ -155,7 +186,7 @@ function Tab:AddLoopedCommand(label, gvar_key, callback, on_disable, meta)
     meta = meta or {}
     local command_name = label:lower():gsub("%s+", ""):trim()
     local suspended_thread = not GVars[gvar_key]
-    local thread = ThreadManager:StartNewThread(command_name:upper(), callback, suspended_thread)
+    local thread = ThreadManager:CreateNewThread(command_name:upper(), callback, suspended_thread)
 
     local function toggle()
         if GVars[gvar_key] then
@@ -172,7 +203,7 @@ function Tab:AddLoopedCommand(label, gvar_key, callback, on_disable, meta)
         )
     end
 
-    self:GetOrCreateCheckboxGrid():AddCheckbox(
+    self:GetOrCreateGrid():AddCheckbox(
         label,
         gvar_key,
         {
@@ -193,16 +224,26 @@ function Tab:AddLoopedCommand(label, gvar_key, callback, on_disable, meta)
 
     CommandExecutor:RegisterCommand(command_name, command_callback, meta)
 end
+--#endregion
 
+
+--#region GUI
+
+--------------------------------------
+-- GUI Class
+--------------------------------------
 ---@class GUI : ClassMeta<GUI>
 ---@field private m_tabs table<string, { this: Tab, api_obj: tab }> 
 ---@field private m_guis function[] -- Independent GUIs
+---@field private m_screen_resolution vec2
 local GUI = Class("GUI")
 
 -- Constructor
 ---@return GUI
 function GUI:init()
-    return setmetatable({ m_tabs = {}, m_guis = {} }, self)
+    local instance = setmetatable({ m_tabs = {}, m_guis = {} }, self)
+    instance.m_screen_resolution = Game.ScreenResolution
+    return instance
 end
 
 ---@param name string
@@ -233,7 +274,7 @@ function GUI:RegisterNewTab(name, drawable, subtabs)
 end
 
 ---@param name string
----@return {this: Tab, api_obj: tab}|nil
+---@return { this: Tab, api_obj: tab }|nil
 function GUI:GetTab(name)
     if not self:DoesTabExist(name) then
         return
@@ -265,12 +306,25 @@ end
 function GUI:RecursiveAddTab(newtab, api_tab)
     local previous_gui = newtab:GetGUI()
     local drawfunc = function()
-        if type(previous_gui) == "function" then
-            previous_gui()
+        if (type(previous_gui) == "function") then
+            local ok, err = pcall(previous_gui)
+            if (not ok) then
+                log.warning(err)
+                newtab:RemoveGUI()
+                return
+            end
         end
 
-        if newtab.checkbox_grid then
-            newtab.checkbox_grid:Draw()
+        if newtab:HasGridLayout() then
+            local ok, err = pcall(function()
+                newtab:GetGridRenderer():Draw()
+            end)
+
+            if (not ok) then
+                log.warning(err)
+                newtab:RemoveGrid()
+                return
+            end
         end
     end
 
@@ -310,6 +364,23 @@ function GUI:Draw()
     for _, drawfunc in ipairs(self.m_guis) do
         gui.add_always_draw_imgui(drawfunc)
     end
+end
+
+-- Calculates a new window size percentage and center position vectors in relation to the screen resolution.
+---@param x_pecent float
+---@param y_percent float
+---@return vec2, vec2
+function GUI:GetNewWindowSizeAndCenterPos(x_pecent, y_percent)
+    local size = vec2:new(
+        self.m_screen_resolution.x * x_pecent,
+        self.m_screen_resolution.y * y_percent
+    )
+    local center = vec2:new(
+        (self.m_screen_resolution.x - size.x) / 2,
+        (self.m_screen_resolution.y - size.y) / 2
+    )
+
+    return size, center
 end
 
 -- Just a wrapper for ImGui::TextColored.
@@ -412,6 +483,9 @@ function GUI:TooltipMultiline(lines, wrap_pos)
     end
 end
 
+-- Draws a small confirmation popup window with two Yes/No buttons.
+--
+-- Can execute a callback function on confirmation.
 ---@param name string
 ---@param callback function
 ---@param ... any
@@ -523,10 +597,13 @@ function GUI:Checkbox(label, key, opts)
 end
 
 ---@param label string
----@param size? vec2 Optional Vector2 size
-function GUI:Button(label, size)
-    size = size or vec2:zero()
-    local pressed = ImGui.Button(label, size.x, size.y)
+---@param opts? { size?: vec2, repeatable?: boolean }
+function GUI:Button(label, opts)
+    opts = opts or { size = vec2:zero(), repeatable = false }
+
+    ImGui.PushButtonRepeat(opts.repeatable)
+    local pressed = ImGui.Button(label, opts.size.x, opts.size.y)
+    ImGui.PopButtonRepeat()
     if (pressed) then
         self:PlaySound(self.Sounds.Button)
     end
@@ -538,13 +615,12 @@ end
 ---@param color Color
 ---@param hover_color Color
 ---@param active_color Color
----@param size? vec2 Optional Vector2 size
-function GUI:ColoredButton(label, color, hover_color, active_color, size)
-    size = size or vec2:zero()
+---@param opts? { size?: vec2, repeatable?: boolean }
+function GUI:ColoredButton(label, color, hover_color, active_color, opts)
     ImGui.PushStyleColor(ImGuiCol.Button, color:AsRGBA())
     ImGui.PushStyleColor(ImGuiCol.ButtonHovered, hover_color:AsRGBA())
     ImGui.PushStyleColor(ImGuiCol.ButtonActive, active_color:AsRGBA())
-    local pressed = ImGui.Button(label, size.x, size.y)
+    local pressed = self:Button(label, opts)
     ImGui.PopStyleColor(3)
 
     if (pressed) then
@@ -622,5 +698,7 @@ GUI.MouseButtons = {
     LEFT = 0,
     RIGHT = 1
 }
+
+--#endregion
 
 return GUI

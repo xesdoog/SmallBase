@@ -3,26 +3,11 @@ local function get_default_commands(instance)
     return {
         ["!list"] = {
             callback = function()
-                local command_count = instance:GetCommandCount()
-                local notif_prefix  = ("Available Commands (%d)"):format(command_count)
-                local notif_text    = notif_prefix .. "\n" .. instance:ListCommands()
-                if not Toast then
-                    log.info(notif_text)
-                    return
-                end
-
-                local notif_log      = true
-                local notif_duration = math.min(command_count * 3, 35)
-                Toast:ShowMessage(
-                    "CommandExecutor",
-                    notif_text,
-                    notif_log,
-                    notif_duration
-                )
+                instance.gui.popup.should_draw = true
             end,
             alias = {"!l"},
             args = {},
-            description = "Lists all available commands in a toast notification."
+            description = "Lists all available commands in a popup window."
         },
         ["!help"] = {
             callback = function()
@@ -35,21 +20,19 @@ local function get_default_commands(instance)
 
 - Press enter to execute a command.
 ]]
-                if not Toast then
+                if (not Toast) then
                     log.info(notif_text)
                     return
                 end
 
-                local notif_log      = true
-                local notif_duration = 15
                 Toast:ShowMessage(
                     "CommandExecutor",
                     notif_text,
-                    notif_log,
-                    notif_duration
+                    true,
+                    15
                 )
             end,
-            alias = {"!h"},
+            alias = { "!h" },
             args = {},
             description = "Displays usage help in a toast notification that lasts 15 seconds.",
         },
@@ -131,6 +114,9 @@ end
 ---@field alias? string[]
 
 
+--------------------------------------
+-- Class: CommandExecutor
+--------------------------------------
 ---@class CommandExecutor : ClassMeta<CommandExecutor>
 ---@field commands table<string, { callback: fun(...), args: string[], description: string, alias?: string[], is_alias?: boolean }>
 ---@field suggestions table<number, {name: string, def: string}>
@@ -144,10 +130,14 @@ CommandExecutor.hint_text     = ">_"
 CommandExecutor.history       = {}
 CommandExecutor.suggestions   = {}
 CommandExecutor.screen_size   = Game.ScreenResolution
-CommandExecutor.window_size   = vec2:new(600, 400)
+CommandExecutor.window_size   = GUI:GetNewWindowSizeAndCenterPos(0.3, 0.37)
 CommandExecutor.gui           = {
     should_draw = false,
-    bottom_text = "All built-in commands are prefixed with an exclamation mark <!>."
+    bottom_text = "All built-in commands are prefixed with an exclamation mark <!>.",
+    popup = {
+        should_draw = false,
+        name = "cmd_popup"
+    }
 }
 
 -- The string variable passed to `ImGui.InputText*` is a copy-return cycle, not a pointer. Therefore it is immutable while the item is focused.
@@ -173,7 +163,7 @@ function CommandExecutor.new()
         end
     end
 
-    ThreadManager:StartNewThread("SB_COMMANDS", function()
+    ThreadManager:CreateNewThread("SB_COMMANDS", function()
         instance:HandleCallbacks()
     end)
 
@@ -198,6 +188,7 @@ function CommandExecutor.new()
     return instance
 end
 
+---@return number
 function CommandExecutor:GetCommandCount()
     local count = 0
     for _, cmd in pairs(self.commands) do
@@ -216,11 +207,11 @@ function CommandExecutor:IsBuiltinCommand(command_name)
 end
 
 -- Registers a command with a callback that receives arguments.
----@param cmd string
+---@param name string
 ---@param callback fun(args: table)
 ---@param meta? CommandMeta -- optional metadata
-function CommandExecutor:RegisterCommand(cmd, callback, meta)
-    self.commands[cmd:lower()] = {
+function CommandExecutor:RegisterCommand(name, callback, meta)
+    self.commands[name:lower()] = {
         callback = callback,
         args = meta and meta.args or {},
         description = meta and meta.description or "No description.",
@@ -230,38 +221,35 @@ function CommandExecutor:RegisterCommand(cmd, callback, meta)
 
     if (meta and meta.alias) then
         for _, alias in ipairs(meta.alias) do
-            self.commands[alias:lower()] = table.copy(self.commands[cmd:lower()])
-            self.commands[alias:lower()].alias = {}
-            self.commands[alias:lower()].is_alias = true
+            self:RegisterAlias(alias:lower(), name:lower())
         end
     end
 end
 
--- Registers an alias for an existing command.
 ---@param alias string
----@param what string original command name
-function CommandExecutor:RegisterAlias(alias, what)
-    local cmd = table.copy(self.commands[what:lower()])
-    if not cmd then
-        log.fwarning("Attempt to alias a non-existing command: '%s'", what)
+---@param of string original command name
+function CommandExecutor:RegisterAlias(alias, of)
+    local _orig = self.commands[of:lower()]
+    if not _orig then
+        log.fwarning("Attempt to alias a non-existing command: '%s'", of)
         return
     end
 
+    local cmd = table.copy(_orig)
     cmd.alias = {}
     cmd.is_alias = true
     self.commands[alias:lower()] = cmd
 end
 
--- Lists all registered commands.
 ---@return string
 function CommandExecutor:ListCommands()
-    local out = {}
+    local out = { "\n" }
 
     for name, def in pairs(self.commands) do
         if (not def.is_alias) then
             local sig = name
             if (def.args) then
-                sig = sig .. " " .. table.concat(def.args, " ")
+                sig = sig .. " " .. table.concat(def.args, ", ")
             end
 
             local line = string.format("* %s - %s", sig, def.description)
@@ -302,10 +290,12 @@ function CommandExecutor:ParseCommand(input)
 end
 
 function CommandExecutor:HandleCallbacks()
-    if (self.cmd_entered and #self.user_cmd > 0) then
+    if (self.cmd_entered and not string.isnullorwhitespace(self.user_cmd)) then
+        GUI:PlaySound(GUI.Sounds.Click)
+
         local cmd, args = self:ParseCommand(self.user_cmd)
-        local command = self.commands[cmd]
-        local callback = command and command.callback or nil
+        local command   = self.commands[cmd]
+        local callback  = command and command.callback or nil
 
         if (callback) then
             callback(args)
@@ -318,12 +308,15 @@ function CommandExecutor:HandleCallbacks()
             self:notify("Unknown command: %s", cmd)
         end
 
-        self.user_cmd    = ""
         self.cmd_entered = false
+        self.user_cmd    = ""
         self.hint_text   = ">_"
     end
 
     if (#self.suggestions == 0) then
+        if not string.isnull(self.user_cmd) then
+            return
+        end
         if KeyManager:IsKeyJustPressed(eVirtualKeyCodes.UP) then
             self.history_index = self.history_index - 1
             if (self.history_index < 0) then
@@ -372,11 +365,69 @@ function CommandExecutor:HandleCallbacks()
     end
 end
 
+function CommandExecutor:DrawCommandDump()
+    local size, pos = GUI:GetNewWindowSizeAndCenterPos(0.3, 0.5)
+    ImGui.SetNextWindowSize(size.x, size.y)
+    ImGui.SetNextWindowPos(pos.x, pos.y)
+    ImGui.SetNextWindowFocus()
+
+    if ImGui.BeginPopupModal(self.gui.popup.name,
+        ImGuiWindowFlags.NoTitleBar |
+        ImGuiWindowFlags.AlwaysAutoResize |
+        ImGuiWindowFlags.NoResize
+    ) then
+        ImGui.SetNextWindowBgAlpha(0)
+        if ImGui.BeginChild("##cmd_dump_upper", (size.x * 0.93), (size.y * 0.15)) then
+            ImGui.Dummy(1, 10)
+
+            if GUI:Button("Close") then
+                ImGui.CloseCurrentPopup()
+                return
+            end
+
+            ImGui.SameLine()
+            ImGui.Dummy(10, 1)
+            ImGui.SameLine()
+
+            if GUI:Button("Print To Console") then
+                print(self:ListCommands())
+                self:notify("Command dump logged to console.")
+            end
+            ImGui.EndChild()
+        end
+
+        ImGui.SeparatorText(string.format("Command Count: [ %d ]", self:GetCommandCount()))
+        ImGui.SetNextWindowBgAlpha(0)
+        if ImGui.BeginChild("##cmd_dump_lower", (size.x * 0.965), (size.y * 0.7)) then
+            ImGui.PushTextWrapPos(size.x * 0.94)
+            for name, data in pairs(self.commands) do
+                if not data.is_alias then
+                    ImGui.BulletText(name)
+                    ImGui.Indent()
+                        ImGui.SetWindowFontScale(0.9)
+                        ImGui.Text(string.format("- Description: %s", data.description or "No description."))
+                        if data.args then
+                            ImGui.Text(string.format("- Arguments (%d): %s", #data.args, table.concat(data.args, ", ")))
+                        end
+                        if data.alias then
+                            ImGui.Text(string.format("- Alias: %s", table.concat(data.alias, " | ")))
+                        end
+                        ImGui.SetWindowFontScale(1)
+                    ImGui.Unindent()
+                end
+            end
+            ImGui.PopTextWrapPos()
+            ImGui.EndChild()
+        end
+        ImGui.EndPopup()
+    end
+end
+
 function CommandExecutor:DrawSuggestions()
     if (#self.suggestions > 0) then
         local height = math.min(#self.suggestions, 5) * ImGui.GetTextLineHeightWithSpacing()
         ImGui.SetNextWindowBgAlpha(0.45)
-        ImGui.BeginChild("##suggestions", self.window_size.x - 40, height)
+        ImGui.BeginChild("##suggestions", self.window_size.x * 0.93, height)
             for i, suggestion in ipairs(self.suggestions) do
                 local is_selected = (self.cmd_index == i)
 
@@ -398,7 +449,7 @@ function CommandExecutor:DrawSuggestions()
                 if GUI:IsItemClicked(GUI.MouseButtons.RIGHT) then
                     local cmd = self.commands[suggestion.name]
                     self.user_cmd = suggestion.name
-                    self.cmd_entered = cmd and (not cmd.alias or #cmd.alias == 0)
+                    self.cmd_entered = cmd and (not cmd.args or #cmd.args == 0)
                     self.hint_text = ">_"
                 end
             end
@@ -429,14 +480,15 @@ function CommandExecutor:Draw()
             "Command Executor",
             ImGuiWindowFlags.NoTitleBar |
             ImGuiWindowFlags.NoMove |
-            ImGuiWindowFlags.NoResize
+            ImGuiWindowFlags.NoResize |
+            ImGuiWindowFlags.NoScrollbar
         ) then
             ImGui.SetNextWindowBgAlpha(0)
-            ImGui.BeginChild("main", 0, self.window_size.y - 140)
+            ImGui.BeginChild("main", 0, self.window_size.y * 0.7)
             ImGui.Spacing()
             ImGui.SeparatorText("Command Executor")
             ImGui.Spacing()
-            ImGui.SetNextItemWidth(self.window_size.x - 60)
+            ImGui.SetNextItemWidth(self.window_size.x * 0.9)
              -- `IsKeyJustPressed` doesnt't work inside the GUI loop because it also uses a workaround that resulted from duct tape and tears. Possibly a smashed keyboard too.
             if (KeyManager:IsKeyPressed(eVirtualKeyCodes.TAB) or KeyManager:IsKeyPressed(eVirtualKeyCodes.ENTER)) then
                 ImGui.SetKeyboardFocusHere()
@@ -471,7 +523,7 @@ function CommandExecutor:Draw()
                         "%s\nArguments (%d): %s",
                         data.description or "No description",
                         #data.args,
-                        table.concat(data.args, " ")
+                        table.concat(data.args, ", ")
                     )
                     if (data.alias and #data.alias > 0 and not data.is_alias) then
                         s = s .. "\nAliases: " .. table.concat(data.alias, " | ")
@@ -483,20 +535,21 @@ function CommandExecutor:Draw()
 
             self:DrawSuggestions()
 
-            if self.cmd_entered then
-                GUI:PlaySound(GUI.Sounds.Click)
-                self:HandleCallbacks()
-            end
-
             ImGui.EndChild()
             ImGui.Separator()
             ImGui.Spacing()
             ImGui.SetWindowFontScale(0.9)
-            local width = ImGui.GetWindowWidth()
-            ImGui.PushTextWrapPos(width)
+            ImGui.PushTextWrapPos(self.window_size.x * 0.9)
             ImGui.TextDisabled(self.gui.bottom_text)
             ImGui.PopTextWrapPos()
             ImGui.SetWindowFontScale(1)
+
+            if self.gui.popup.should_draw then
+                ImGui.OpenPopup(self.gui.popup.name)
+                self.gui.popup.should_draw = false
+            end
+
+            self:DrawCommandDump()
             ImGui.End()
         end
     else
@@ -516,7 +569,11 @@ end
 function CommandExecutor:Close()
     gui.override_mouse(false)
     self.gui.should_draw = false
+    self.gui.popup.should_draw = false
+    self.mutation_request = nil
+    self.suggestions = {}
     self.user_cmd = ""
+    self.hint_text = ">_"
 end
 
 return CommandExecutor

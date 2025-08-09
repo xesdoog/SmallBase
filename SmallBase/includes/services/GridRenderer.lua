@@ -7,7 +7,12 @@
 ---@field tooltip? string
 ---@field disabled? boolean
 
--- Class representing an ImGui widget item.
+--#region GridItem
+
+--------------------------------------
+-- Class: GridItem
+--------------------------------------
+-- Class representing an ImGui item.
 ---@class GridItem
 ---@field item_type string
 ---@field label string
@@ -29,17 +34,24 @@ function GridItem.new(item_type, item_label, global_variable, opts)
     return instance
 end
 
--- Renders ImGui widgets (buttons, checkboxes, radio buttons) in a grid layout.
+--#endregion
+
+--#region GridRenderer
+
+--------------------------------------
+-- Class: GridRenderer
+--------------------------------------
+-- **Global** - Renders ImGui widgets (buttons, checkboxes, radio buttons) in a grid layout.
 ---@class GridRenderer : ClassMeta<GridRenderer>
 ---@field columns number
----@field padding_x number
----@field padding_y number
----@field item_count number
----@field total_width number
----@field total_height number
----@field max_width number
----@field max_height number
 ---@field elements GridItem[]
+---@field item_count number
+---@field private padding_x number
+---@field private padding_y number
+---@field private total_width number
+---@field private total_height number
+---@field private max_width number
+---@field private max_height number
 GridRenderer = Class("GridRenderer")
 
 ---@param columns number The number of columns in the grid.
@@ -278,3 +290,5 @@ function GridRenderer:Draw()
     self.total_width  = current_x + self.max_width
     self.total_height = current_y + self.max_height
 end
+
+--#endregion

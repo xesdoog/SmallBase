@@ -1,5 +1,9 @@
 ---@diagnostic disable: unknown-operator
 
+--------------------------------------
+-- Class: vec3
+--------------------------------------
+-- **Global.** - Class representing a 3D vector.
 ---@class vec3
 ---@overload fun(x: number, y: number, z: number): vec3
 ---@overload fun(pos: { x: number, y: number, z: number } | { [1]: number, [2]: number, [3]: number }): vec3

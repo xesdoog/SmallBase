@@ -1,3 +1,11 @@
+--------------------------------------
+-- Class: Object
+--------------------------------------
+-- **Global.**
+--
+-- **Parent:** `Entity`.
+--
+-- - Class representing a GTA V object (Unfinished).
 ---@class Object : Entity
 ---@overload fun(handle: integer): Entity
 Object = Class("Object", Entity)

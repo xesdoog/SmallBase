@@ -1,9 +1,10 @@
 ---@diagnostic disable: lowercase-global
+math.randomseed(os.time())
 
 --#region Global functions
 
-function DummyFunc()
-    do return end
+function DummyFunc(...)
+    return ...
 end
 
 function IsInstance(object, class)
@@ -102,10 +103,10 @@ end
 
 ---@param t table
 ---@param mt table|metatable
-function recursive_setmetatable(t, mt)
+function RecursiveSetmetatable(t, mt)
     for _, v in pairs(t) do
-        if type(v) == "table" and getmetatable(v) == nil then
-            recursive_setmetatable(v, mt)
+        if (type(v) == "table" and getmetatable(v) == nil) then
+            RecursiveSetmetatable(v, mt)
         end
     end
     return setmetatable(t, mt)
@@ -115,9 +116,10 @@ end
 ---@param base_name string
 ---@param extension string
 ---@return string
-function generate_unique_filename(base_name, extension)
+function GenerateUniqueFilename(base_name, extension)
     local filename = string.format("%s%s", base_name, extension)
     local suffix = 0
+
     while (io.exists(filename)) do
         suffix = suffix + 1
         filename = string.format("%s_%d%s", base_name, suffix, extension)
@@ -125,6 +127,8 @@ function generate_unique_filename(base_name, extension)
 
     return filename
 end
+
+--#endregion
 
 --#region stdlib extensions
 
@@ -394,6 +398,28 @@ function table.is_equal(a, b, seen)
     return true
 end
 
+-- Generates a random string.
+---@param size? number
+---@param isalnum? boolean Alphanumeric
+---@return string
+string.random = function(size, isalnum)
+    local str_table = {}
+    local charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+    size = size or math.random(1, 10)
+    size = math.min(size, 128)
+
+    if isalnum then
+        chraset = charset .. "0123456789"
+    end
+
+    for _ = 1, size do
+        local index = math.random(1, #charset)
+        table.insert(str_table, charset:sub(index, index))
+    end
+
+    return table.concat(str_table)
+end
 
 -- Returns whether a string is alphabetic.
 ---@param str string
@@ -699,3 +725,5 @@ end
 Bit.lrotate = function(n, bits)
     return ((n << bits) | (n >> (32 - bits))) & 0xFFFFFFFF
 end
+
+--#endregion

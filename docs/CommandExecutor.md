@@ -48,16 +48,16 @@ Bind a key (default F5) to toggle the command input window.
 ## Input Behavior
 
 - `Enter`: Executes the command.
-- `Tab/Enter`: Auto-completes highlighted suggestion.
-- `Up/Down`: Navigates suggestions or command history.
+- `Tab/Enter`: Auto-completes highlighted suggestion
+- `Up/Down`: Navigates suggestions or command history. Command history is only navigable if you're not typing, the input text field is empty, and you have previously executed at least one command.
 - `ESC`: Closes the command window (hardcoded but the bound toggle button also closes the UI).
 
 ## Metadata Format
 
 ```lua
 CommandMeta({
-  args = {"arg1: arg_type", "arg2: arg_type"},
+  args = { "<arg1: arg_type>", "<arg2: arg_type>", ... },
   description = "Explains what the command does.",
-  alias = {"alt_name"}
+  alias = { "alt_name", ... }
 })
 ```

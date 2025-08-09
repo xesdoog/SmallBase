@@ -1,5 +1,7 @@
 ---@diagnostic disable: lowercase-global
 
+--#region consts
+
 ---@enum eVirtualKeyCodes
 eVirtualKeyCodes       = {
     DIGIT_0                = 0x30,
@@ -186,7 +188,14 @@ local WM_SYSKEYUP    <const> = 0x0105
 local WM_XBUTTONDOWN <const> = 0x020B
 local WM_XBUTTONUP   <const> = 0x020C
 
+--#endregion
 
+
+--#region Key
+
+--------------------------------------
+-- Subclass: Key
+--------------------------------------
 ---@class Key
 ---@field code integer https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 ---@field name string The key name
@@ -220,6 +229,14 @@ function Key:UpdateState(keydown, keyup)
     end
 end
 
+--#endregion
+
+
+--#region KeyManager
+
+--------------------------------------
+-- Class: KeyManager
+--------------------------------------
 ---@class KeyManager : ClassMeta<KeyManager>
 ---@field keys Key[]
 ---@field registered_keybinds Key[]
@@ -243,7 +260,7 @@ function KeyManager:init()
         instance:EventHandler(_, msg, wParam, _)
     end)
 
-    ThreadManager:StartNewThread("SB_KEYMGR", function()
+    ThreadManager:CreateNewThread("SB_KEYMGR", function()
         instance:HandleCallbacks()
     end)
 
@@ -387,5 +404,7 @@ function KeyManager:EventHandler(_, msg, wParam, _)
 
     self:OnEvent(msg, wParam)
 end
+
+--#endregion
 
 return KeyManager

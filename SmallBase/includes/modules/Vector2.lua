@@ -1,5 +1,9 @@
 ---@diagnostic disable: unknown-operator, param-type-mismatch
 
+--------------------------------------
+-- Class: vec2
+--------------------------------------
+-- **Global.** - Class representing a 2D vector.
 ---@class vec2
 ---@field x float
 ---@field y float

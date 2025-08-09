@@ -12,27 +12,32 @@ eThreadState = {
 
 --#region Thread
 
+--------------------------------------
+-- Class: Thread
+--------------------------------------
 ---@class Thread : ClassMeta<Thread>
 ---@field private m_name string
 ---@field private m_callback function
 ---@field private m_can_run boolean
----@field private m_was_started boolean
 ---@field private m_should_pause boolean
 ---@field private m_state eThreadState
----@field private m_time_created number
----@field private m_time_started number
+---@field private m_time_created Time.TimePoint
+---@field private m_time_started seconds
 ---@overload fun(name: string, callback: function): Thread
 local Thread = Class("Thread")
 function Thread.new(name, callback)
+    if string.isnullorwhitespace(name) then
+        name = string.random():upper()
+    end
+
     return setmetatable(
         {
             m_name         = name,
             m_callback     = callback,
             m_can_run      = false,
-            m_was_started  = false,
             m_should_pause = false,
             m_state        = eThreadState.UNK,
-            m_time_created = Time.now(),
+            m_time_created = TimePoint.new(),
             m_time_started = 0
         },
         Thread
@@ -54,25 +59,24 @@ function Thread:GetCallback()
     return self.m_callback
 end
 
+---@return milliseconds
 function Thread:GetTimeCreated()
-    return self.m_time_created
+    return self.m_time_created:age()
 end
 
+---@return seconds
 function Thread:GetTimeStarted()
     return self.m_time_started
 end
 
+---@return string
+function Thread:GetLifetime()
+    return Time.format_time_since_ms(self:GetTimeCreated())
+end
+
+---@return string
 function Thread:GetRunningTime()
-    if (type(self.m_time_started) ~= "number" or self.m_time_started < 1) then
-        return "00:00:00"
-    end
-
-    local ago = math.floor(Time.now() - self.m_time_started)
-    local hours = math.floor(ago / 3600)
-    local minutes = math.floor((ago % 3600) / 60)
-    local seconds = ago % 60
-
-    return string.format("%02d:%02d:%02d", hours, minutes, seconds)
+    return Time.format_time_since(self:GetTimeStarted())
 end
 
 ---@return boolean
@@ -90,10 +94,17 @@ function Thread:IsSuspended()
     return self.m_state == eThreadState.SUSPENDED
 end
 
-function Thread:Tick()
+---@param s? script_util
+function Thread:Tick(s)
     self.m_can_run = (type(self.m_callback) == "function")
-    self.m_time_started = Time.now()
+    if not self.m_can_run then
+        log.fwarning("Thread %s was terminated because it has no callback", self.m_name)
+        self:Stop()
+        return
+    end
 
+    self.m_time_started = Time.now()
+    Backend:debug("Started thread %s", self.m_name)
     while self.m_can_run do
         if self.m_should_pause then
             self.m_state = eThreadState.SUSPENDED
@@ -101,30 +112,48 @@ function Thread:Tick()
             repeat
                 yield()
             until not self.m_should_pause
+            self.m_time_started = Time.now()
         end
 
-        self.m_was_started = true
         self.m_state = eThreadState.RUNNING
-        self.m_callback()
+        local ok, err = pcall(self.m_callback, s)
+        if not ok then
+            log.fwarning("Thread %s was terminated due to an unhandled exception: %s", self.m_name, err)
+            self:Stop()
+            return
+        end
         yield()
     end
 end
 
+---@return boolean
 function Thread:Start()
-    if (self.m_state == eThreadState.DEAD) then
+    if (self.m_state == eThreadState.DEAD or self.m_state == eThreadState.UNK) then
+        return false
+    end
+
+    self.m_can_run = (type(self.m_callback) == "function")
+    if not self.m_can_run then
+        log.fwarning("Thread %s was killed because it has no callback", self.m_name)
+        self.m_state = eThreadState.DEAD
         return false
     end
 
     self.m_state = eThreadState.RUNNING
-    self.m_can_run = true
     self.m_time_started = Time.now()
+    Backend:debug("Started thread %s", self.m_name)
     return true
 end
 
 function Thread:Stop()
+    if (self.m_state == eThreadState.UNK or self.m_state == eThreadState.DEAD) then
+        return
+    end
+
     self.m_time_started = 0
     self.m_can_run = false
     self.m_state = eThreadState.DEAD
+    Backend:debug("Terminated thread %s", self.m_name)
 end
 
 function Thread:Suspend()
@@ -140,16 +169,53 @@ end
 --#endregion
 
 
-----------------------------------------------
-----------------------------------------------
-----------------------------------------------
+--#region ThreadManager
+
+-- TODO: state-bucketed refactor: split m_threads into separate tables by state 
+-- (RUNNING/SUSPENDED/DEAD/UNK) for faster bulk operations in high thread count use cases
+
+---------------------------------------
+-- Class: ThreadManager
+---------------------------------------
 ---@class ThreadManager : ClassMeta<ThreadManager>
 ---@field private m_threads table<string, Thread>
+---@field private m_mock_routines table<integer, thread>
+---@field private m_callback_handlers table<eAPIVersion, { dispatch: function}>
 local ThreadManager = Class("ThreadManager")
 
 ---@return ThreadManager
 function ThreadManager:init()
-    local instance = setmetatable({ m_threads = {} }, self)
+    local instance = setmetatable({
+        m_threads = {},
+        m_mock_routines = {}
+    }, self)
+
+    instance.m_callback_handlers = {
+        [eAPIVersion.L54] = {
+            dispatch = function(callback)
+                table.insert(
+                    instance.m_mock_routines,
+                    coroutine.create(callback)
+                )
+            end
+        },
+        [eAPIVersion.V1] = {
+            dispatch = function(callback)
+                script.run_in_fiber(function(s)
+                    callback(s)
+                end)
+            end
+        },
+        [eAPIVersion.V2] = {
+            dispatch = function(callback)
+                ---@diagnostic disable-next-line: undefined-field
+                script.run_in_callback(function(s)
+                    callback(s)
+                end)
+            end
+        }
+    }
+
     Backend:RegisterEventCallback(eBackendEvent.RELOAD_UNLOAD, function()
         instance:Shutdown()
     end)
@@ -157,39 +223,53 @@ function ThreadManager:init()
     return instance
 end
 
+---@param func function
 function ThreadManager:RunInFiber(func)
-    if (API_VER == eAPIVersion.V1) then
-        script.run_in_fiber(func)
-    elseif (API_VER == eAPIVersion.V2) then
-        ---@diagnostic disable-next-line: undefined-field
-        script.run_in_callback(func)
-    else
-        func({ sleep = function() end, yield = function() end })
+    if (type(func) ~= "function") then
+        Backend:debug("[ThreadManager] Invalid parameter! Expected function, got %s instead.", type(func))
+        return
     end
+
+    local handler = self.m_callback_handlers[API_VER]
+    if not (handler or handler.Dispatch) then
+        Backend:debug("[ThreadManager] No handler for API version: %s", EnumTostring(eAPIVersion, API_VER))
+        return
+    end
+
+    handler.dispatch(func)
 end
 
 ---@param name string
 ---@param func function
----@param start_suspended? boolean
-function ThreadManager:StartNewThread(name, func, start_suspended)
+---@param suspended? boolean
+---@param is_debug_thread? boolean
+function ThreadManager:CreateNewThread(name, func, suspended, is_debug_thread)
+    if (API_VER == eAPIVersion.L54 and not is_debug_thread) then
+        return
+    end
+
+    if (is_debug_thread and API_VER ~= eAPIVersion.L54) then
+        return
+    end
+
+    if string.isnullorwhitespace(name) then
+        name = string.random(5):upper()
+    end
+
     if self:IsThreadRegistered(name) then
         log.fwarning("Thread '%s' is already registered!", name)
         return
     end
 
     local thread = Thread(name, func)
-    if start_suspended then
+    if suspended then
         thread:Suspend()
     end
 
     self.m_threads[name] = thread
-    if (API_VER ~= eAPIVersion.L54) then
-        self:RunInFiber(function()
-            thread:Tick()
-        end)
-    else
-        Backend:debug("Thread '%s' registered in mock environment but not started.", name)
-    end
+    self:RunInFiber(function(s)
+        thread:Tick(s)
+    end)
 
     return thread
 end
@@ -223,7 +303,7 @@ end
 ---@return boolean
 function ThreadManager:IsThreadRunning(name)
     local thread = self:GetThread(name)
-    return thread and thread:IsRunning()
+    return thread and thread:IsRunning() or false
 end
 
 ---@param name string
@@ -237,14 +317,10 @@ function ThreadManager:StartThread(name)
     if not ok then
         local func = thread:GetCallback()
         local new_thread = Thread(name, func)
+
         self.m_threads[name] = new_thread
-
-        if (API_VER == eAPIVersion.L54) then
-            return
-        end
-
-        self:RunInFiber(function()
-            new_thread:Tick()
+        self:RunInFiber(function(s)
+            new_thread:Tick(s)
         end)
     end
 end
@@ -301,6 +377,8 @@ function ThreadManager:RemoveAllThreads()
     for name, _ in pairs(self.m_threads) do
         self:RemoveThread(name)
     end
+
+    self.m_mock_routines = {}
 end
 
 function ThreadManager:Shutdown()
@@ -308,7 +386,7 @@ function ThreadManager:Shutdown()
 end
 
 function ThreadManager:DebugPrint()
-    if not Backend.debug_mode then
+    if (not Backend.debug_mode) then
         return
     end
 
@@ -321,5 +399,28 @@ function ThreadManager:DebugPrint()
         )
     end
 end
+
+function ThreadManager:UpdateMockRoutines()
+    if (#self.m_mock_routines == 0) then
+        return
+    end
+
+    while (API_VER == eAPIVersion.L54) do
+        for i = #self.m_mock_routines, 1, -1 do
+            local co = self.m_mock_routines[i]
+            if coroutine.status(co) == "dead" then
+                table.remove(self.m_mock_routines, i)
+            else
+                local ok, err = coroutine.resume(co)
+                if not ok then
+                    Backend:debug("[Coroutine error]: %s", err)
+                    table.remove(self.m_mock_routines, i)
+                end
+            end
+        end
+    end
+end
+
+--#endregion
 
 return ThreadManager

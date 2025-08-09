@@ -1,5 +1,9 @@
 ---@diagnostic disable: param-type-mismatch
 
+--------------------------------------
+-- Class: Color
+--------------------------------------
+-- **Global.**
 ---@class Color
 ---@overload fun(...): Color
 Color = Class("Color")

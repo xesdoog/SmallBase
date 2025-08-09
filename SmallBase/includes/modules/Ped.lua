@@ -1,3 +1,11 @@
+--------------------------------------
+-- Class: Ped
+--------------------------------------
+-- **Global.**
+--
+-- **Parent:** `Entity`.
+--
+-- - Class representing a GTA V NPC.
 ---@class Ped : Entity
 ---@field private layout CPed
 ---@field Create fun(_, modelHash: number, entityType: eEntityTypes, pos?: vec3, heading?: number, isNetwork?: boolean, isScriptHostPed?: boolean): Ped

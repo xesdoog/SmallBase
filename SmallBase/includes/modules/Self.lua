@@ -1,5 +1,13 @@
 ---@diagnostic disable
 
+--------------------------------------
+-- Class: Self
+--------------------------------------
+-- **Global.**
+--
+-- **Parent:** `Player`.
+--
+-- - Class representing the local player.
 ---@class Self: Player
 Self = Class("Self", Player)
 Self.new = nil

@@ -1,3 +1,11 @@
+--------------------------------------
+-- Class: Player
+--------------------------------------
+-- **Global.**
+--
+-- **Parent:** `Ped`.
+--
+-- - Class representing a GTA V player (Unfinished).
 ---@class Player : Ped
 ---@field private layout CPed
 ---@overload fun(handle: integer): Player

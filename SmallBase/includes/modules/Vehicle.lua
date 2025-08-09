@@ -1,6 +1,6 @@
-------------------------------------------------------------
------------------ VehicleMods Struct -----------------------
-------------------------------------------------------------
+-------------------------
+-- Struct: VehicleMods 
+-------------------------
 ---@class VehicleMods
 ---@field mods table<integer, integer>
 ---@field toggle_mods table<integer, boolean>
@@ -43,6 +43,10 @@ end
 ------------------------------------------------------------
 
 
+--------------------------------------
+-- Class: Vehicle
+--------------------------------------
+-- **Global** - Prarent: `Entity`
 ---@class Vehicle : Entity
 ---@field private layout CVehicle
 ---@field private m_class_id number
@@ -1076,7 +1080,7 @@ function Vehicle:SaveToJSON(name)
         name = self:GetName()
     end
 
-    local filename = generate_unique_filename(name, ".json")
+    local filename = GenerateUniqueFilename(name, ".json")
     local modelhash = self:GetModelHash()
     local mods = self:GetMods()
     local t = {

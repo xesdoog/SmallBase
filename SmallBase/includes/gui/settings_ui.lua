@@ -6,7 +6,7 @@ local GREY <const> = Color("#636363")
 local side_button_size = vec2:new(140, 35)
 local max_allowed_entities = 0
 local current_entity_count = 0
-local selected_type
+local selected_type = 1
 local thread_name
 local thread_state
 local selected_thread
@@ -122,18 +122,15 @@ local function DrawThreads()
         if (thread_state == eThreadState.RUNNING) then
             if ImGui.Button("Suspend", side_button_size.x, side_button_size.y) then
                 ThreadManager:SuspendThread(thread_name)
-                -- selected_thread:Suspend()
             end
 
             if ImGui.Button("Kill", side_button_size.x, side_button_size.y) then
                 ThreadManager:StopThread(thread_name)
-                -- selected_thread:Stop()
             end
         else
             if (thread_state == eThreadState.SUSPENDED) then
                 if ImGui.Button("Resume", side_button_size.x, side_button_size.y) then
                     ThreadManager:ResumeThread(thread_name)
-                    -- selected_thread:Resume()
                 end
             elseif (thread_state == eThreadState.DEAD) then
                 if ImGui.Button("Start", side_button_size.x, side_button_size.y) then
@@ -150,18 +147,31 @@ main_tab:RegisterSubtab("Settings ", function()
     ImGui.SeparatorText("Backend")
     GVars.backend.auto_cleanup_entities = GUI:Checkbox("Auto Cleanup Entities", GVars.backend.auto_cleanup_entities)
 
+    ImGui.Spacing()
+    ImGui.BulletText(string.format("Language: %s (%s)", GVars.backend.language_name, GVars.backend.language_code))
+    ImGui.Spacing()
+
+    if ImGui.BeginCombo("##langs", string.format("%s (%s)",
+        Translator.locales[GVars.backend.language_index].name,
+        Translator.locales[GVars.backend.language_index].iso
+    )) then
+        for i, lang in ipairs(Translator.locales) do
+            local is_selected = (i == GVars.backend.language_index)
+            if ImGui.Selectable(string.format("%s (%s)", lang.name, lang.iso), is_selected) then
+                GVars.backend.language_index = i
+                GVars.backend.language_name = lang.name
+                GVars.backend.language_code = lang.iso
+            end
+        end
+        ImGui.EndCombo()
+    end
+
     ImGui.Dummy(1, 10)
 
-    ImGui.SeparatorText("UI")
+    ImGui.SeparatorText("GUI")
     GVars.ui.disable_tooltips = GUI:Checkbox("Disable Tooltips", GVars.ui.disable_tooltips)
     ImGui.SameLine()
     GVars.ui.disable_sound_feedback = GUI:Checkbox("Disable Sound Feedback", GVars.ui.disable_sound_feedback)
-
-    if GUI:Button("Generic Yes/No Popup") then
-        ImGui.OpenPopup("test_popup_1")
-    end
-
-    GUI:ConfirmPopup("test_popup_1", DummyFunc)
 
 end):RegisterSubtab("Debug", function()
     ImGui.BeginTabBar("##debug")

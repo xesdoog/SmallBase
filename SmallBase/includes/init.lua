@@ -1,7 +1,7 @@
 ---@diagnostic disable: lowercase-global
 
 local SCRIPT_NAME    <const> = "SmallBase"
-local SCRIPT_VERSION <const> = "0.7b"
+local SCRIPT_VERSION <const> = "0.8b"
 local DEFAULT_CONFIG <const> = {
     backend = {
         auto_cleanup_entities = false,
@@ -42,10 +42,11 @@ require("includes.modules.Game")
 -- For temporary or internal state that should not be saved, use `_G` directly.
 GVars = {}
 
-Time  = require("includes.modules.Time").new()
-Timer = Time.Timer
-yield = coroutine.yield
-sleep = Time.Sleep
+Time      = require("includes.modules.Time")
+Timer     = Time.Timer
+TimePoint = Time.TimePoint
+yield     = coroutine.yield
+sleep     = Time.sleep
 
 -- These services must be loaded before any class that registers with/uses them
 ThreadManager   = require("includes.services.ThreadManager"):init()
@@ -86,3 +87,4 @@ end
 
 Serializer:FlushObjectQueue()
 Backend:RegisterHandlers()
+Translator:Load()

@@ -1,5 +1,11 @@
 ---@diagnostic disable: param-type-mismatch
 
+--------------------------------------
+-- Class: Entity
+--------------------------------------
+-- **Global.**
+--
+-- - Class representing a GTA V entity.
 ---@class Entity : ClassMeta<Entity>
 ---@field private m_handle number
 ---@field private m_modelhash number

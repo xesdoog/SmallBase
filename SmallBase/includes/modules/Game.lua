@@ -1,3 +1,9 @@
+--------------------------------------
+-- Class: Game
+--------------------------------------
+-- **Global Singleton.**
+--
+-- - Native wrappers.
 ---@class Game
 Game = {}
 Game.__index = Game
@@ -701,7 +707,7 @@ Game.SyncNetworkID = function(netID)
 
     local timer = Timer.new(250)
     NETWORK.NETWORK_REQUEST_CONTROL_OF_NETWORK_ID(netID)
-    while not NETWORK.NETWORK_HAS_CONTROL_OF_NETWORK_ID(netID) and not timer:isDone() do
+    while not NETWORK.NETWORK_HAS_CONTROL_OF_NETWORK_ID(netID) and not timer:is_done() do
         NETWORK.NETWORK_REQUEST_CONTROL_OF_NETWORK_ID(netID)
         yield()
     end
@@ -719,7 +725,7 @@ Game.DesyncNetworkID = function(netID)
 
     local timer = Timer.new(250)
     NETWORK.NETWORK_REQUEST_CONTROL_OF_NETWORK_ID(netID)
-    while not NETWORK.NETWORK_HAS_CONTROL_OF_NETWORK_ID(netID) and timer:isDone() do
+    while not NETWORK.NETWORK_HAS_CONTROL_OF_NETWORK_ID(netID) and timer:is_done() do
         NETWORK.NETWORK_REQUEST_CONTROL_OF_NETWORK_ID(netID)
         yield()
     end

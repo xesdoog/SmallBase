@@ -7,6 +7,9 @@
 ---@field strict_parsing? boolean -- Refer to the Json package
 ---@field encryption_key? string -- Optional key for XOR encryption
 
+--------------------------------------
+-- Class: Serializer
+--------------------------------------
 --[[**¤ Universal Config System For YimMenu-Lua ¤**
 
   - Author: [SAMURAI (xesdoog)](https://github.com/xesdoog).
@@ -21,7 +24,7 @@
 ---@field parsing_options SerializerOptionals
 ---@field private m_disabled boolean
 ---@field private xor_key string
----@field private m_last_write_time number
+---@field private m_last_write_time Time.TimePoint
 ---@field TickHandler fun(): nil
 ---@field ShutdownHandler fun(): nil
 ---@field class_types table<string, {serializer:fun(), constructor:fun()}>
@@ -153,11 +156,13 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
     end
     --
 
+    instance.m_last_write_time = TimePoint.new()
+
     if default_config then
         instance:SyncKeys()
     end
 
-    ThreadManager:StartNewThread("SB_SERIALIZER", instance.TickHandler)
+    ThreadManager:CreateNewThread("SB_SERIALIZER", instance.TickHandler)
     Backend:RegisterEventCallback(eBackendEvent.RELOAD_UNLOAD, instance.ShutdownHandler)
     return instance
 end
@@ -627,10 +632,6 @@ function Serializer:FlushObjectQueue()
     self.deferred_objects = {}
 end
 
-function Serializer:GetTimeSinceLastFlush()
-    return Time.now() - self.m_last_write_time
-end
-
 function Serializer:Flush()
     if (not self:CanAccess()) then
         return
@@ -638,21 +639,23 @@ function Serializer:Flush()
 
     self:Parse(self.m_key_states)
     self.m_dirty = false
-    self.m_last_write_time = Time.now()
+    self.m_last_write_time:reset()
 end
 
 function Serializer:OnTick()
-    if self.m_dirty or self:GetTimeSinceLastFlush() >= 5 then
-        self:Flush()
+    if (not self.m_dirty or not self.m_last_write_time:has_elapsed(5e3)) then
+        return
     end
 
-    sleep(1000)
+    self:Flush()
+    sleep(1e3)
 end
 
 function Serializer:OnShutdown()
-    if (not self.m_dirty and self:GetTimeSinceLastFlush() <= 2) then
+    if (not self.m_last_write_time:has_elapsed(2e3)) then
         return
     end
+
     self:Flush()
 end
 

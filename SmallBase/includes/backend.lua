@@ -93,9 +93,14 @@ function Backend:GetAPIVersion()
     return eAPIVersion.L54
 end
 
+---@return boolean
+function Backend:IsMockEnv()
+    return self:GetAPIVersion() == eAPIVersion.L54
+end
+
 ---@param data string
 function Backend:debug(data, ...)
-    if not self.debug_mode then
+    if (not self.debug_mode) then
         return
     end
 
@@ -292,21 +297,23 @@ function Backend:OnPlayerSwitch()
 end
 
 function Backend:RegisterHandlers()
-    self.debug_mode = GVars.backend.debug_mode or false
+    self.debug_mode = self:IsMockEnv() or GVars.backend.debug_mode or false
 
-    ThreadManager:StartNewThread("SB_BACKEND", function(s)
-        self:OnPlayerSwitch()
-        self:OnSessionSwitch()
-        yield()
-    end)
-
-    ThreadManager:StartNewThread("SB_CTRLS", function()
-        if (self.disable_input) then
-            PAD.DISABLE_ALL_CONTROL_ACTIONS(0)
-        end
-    end)
+    if (self:GetAPIVersion() ~= eAPIVersion.L54) then
+        ThreadManager:CreateNewThread("SB_CTRLS", function()
+            if (self.disable_input) then
+                PAD.DISABLE_ALL_CONTROL_ACTIONS(0)
+            end
+        end)
+    end
 
     if (self:GetAPIVersion() == eAPIVersion.V1) then
+        ThreadManager:CreateNewThread("SB_BACKEND", function()
+            self:OnPlayerSwitch()
+            self:OnSessionSwitch()
+            yield()
+        end)
+
         event.register_handler(menu_event.MenuUnloaded, function() self:Cleanup() end)
         event.register_handler(menu_event.ScriptsReloaded, function() self:Cleanup() end)
     end
