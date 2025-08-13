@@ -3,7 +3,7 @@
 --------------------------------------
 -- **Global Singleton.**
 --
--- - Native wrappers.
+-- Native wrappers.
 ---@class Game
 Game = {}
 Game.__index = Game
@@ -11,7 +11,7 @@ Game.Version = Memory and Memory.GetGameVersion() or { _build = "nil", _online =
 Game.ScreenResolution = Memory and Memory.GetScreenResolution() or vec2:zero()
 
 ---@return string, string
-Game.GetLanguage = function()
+function Game.GetLanguage()
     local lang_iso = "en-US"
     local lang_name = "English"
     local i_LangID = LOCALIZATION.GET_CURRENT_LANGUAGE()
@@ -32,7 +32,7 @@ Game.GetLanguage = function()
 end
 
 ---@return integer | nil, string | nil
-Game.GetKeyPressed = function()
+function Game.GetKeyPressed()
     if PAD.IS_USING_KEYBOARD_AND_MOUSE(0) then
         return nil, nil
     end
@@ -45,13 +45,13 @@ Game.GetKeyPressed = function()
 end
 
 ---@return boolean
-Game.IsOnline = function()
+function Game.IsOnline()
     return network.is_session_started() and not script.is_active("maintransition")
 end
 
 ---@param handle integer
 ---@return boolean
-Game.IsScriptHandle = function(handle)
+function Game.IsScriptHandle(handle)
     if not handle or type(handle) ~= "number" then
         return false
     end
@@ -61,7 +61,7 @@ end
 
 ---@param value integer | string
 ---@return boolean
-Game.IsModelHash = function(value)
+function Game.IsModelHash(value)
     if type(value) == "string" then
         value = joaat(value)
     end
@@ -71,7 +71,7 @@ end
 
 ---@param input any
 ---@return integer
-Game.EnsureModelHash = function(input)
+function Game.EnsureModelHash(input)
     if not input then
         return 0
     end
@@ -96,7 +96,7 @@ end
 ---@param heading? integer
 ---@param is_networked? boolean
 ---@param is_sripthost_ped? boolean
-Game.CreatePed = function(model_hash, spawn_pos, heading, is_networked, is_sripthost_ped)
+function Game.CreatePed(model_hash, spawn_pos, heading, is_networked, is_sripthost_ped)
     if not Backend:CanCreateEntity(eEntityTypes.Ped) then
         if not GVars.backend.auto_cleanup_entities then
             Toast:ShowError(
@@ -135,7 +135,7 @@ end
 ---@param heading? integer
 ---@param is_networked? boolean
 ---@param is_scripthost_veh? boolean
-Game.CreateVehicle = function(model_hash, spawn_pos, heading, is_networked, is_scripthost_veh)
+function Game.CreateVehicle(model_hash, spawn_pos, heading, is_networked, is_scripthost_veh)
     if not Backend:CanCreateEntity(eEntityTypes.Vehicle) then
         if not GVars.backend.auto_cleanup_entities then
             Toast:ShowError(
@@ -181,7 +181,7 @@ end
 ---@param is_dynamic? boolean
 ---@param should_place_on_ground? boolean
 ---@param heading? integer
-Game.CreateObject = function(model_hash, spawn_pos, is_networked, is_scripthost_obj, is_dynamic, should_place_on_ground, heading)
+function Game.CreateObject(model_hash, spawn_pos, is_networked, is_scripthost_obj, is_dynamic, should_place_on_ground, heading)
     if not Backend:CanCreateEntity(eEntityTypes.Object) then
         if not GVars.backend.auto_cleanup_entities then
             Toast:ShowError(
@@ -220,7 +220,7 @@ Game.CreateObject = function(model_hash, spawn_pos, is_networked, is_scripthost_
     return i_Handle
 end
 
-Game.SafeRemovePedFromGroup = function(ped)
+function Game.SafeRemovePedFromGroup(ped)
     local groupID = PED.GET_PED_GROUP_INDEX(Self:GetHandle())
     if PED.DOES_GROUP_EXIST(groupID) and PED.IS_PED_GROUP_MEMBER(ped, groupID) then
         PED.REMOVE_PED_FROM_GROUP(ped)
@@ -229,7 +229,7 @@ end
 
 ---@param entity integer
 ---@param entity_type? eEntityTypes
-Game.DeleteEntity = function(entity, entity_type)
+function Game.DeleteEntity(entity, entity_type)
     ThreadManager:RunInFiber(function()
         entity_type = entity_type or Game.GetEntityType(entity)
         if not Game.IsScriptHandle(entity) or (entity == self.get_ped()) then
@@ -273,18 +273,18 @@ end
 
 ---@param text string
 ---@param spinner_type integer
-Game.BusySpinnerOn = function(text, spinner_type)
+function Game.BusySpinnerOn(text, spinner_type)
     HUD.BEGIN_TEXT_COMMAND_BUSYSPINNER_ON("STRING")
     HUD.ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(text)
     HUD.END_TEXT_COMMAND_BUSYSPINNER_ON(spinner_type)
 end
 
-Game.BusySpinnerOff = function()
+function Game.BusySpinnerOff()
     HUD.BUSYSPINNER_OFF()
 end
 
 ---@param text string
-Game.ShowButtonPrompt = function(text)
+function Game.ShowButtonPrompt(text)
     if not HUD.IS_HELP_MESSAGE_ON_SCREEN() then
         HUD.BEGIN_TEXT_COMMAND_DISPLAY_HELP("STRING")
         HUD.ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(text)
@@ -298,7 +298,7 @@ end
 ---@param fgCol Color
 ---@param bgCol Color
 ---@param value number
-Game.DrawProgressBar = function(position, width, height, fgCol, bgCol, value)
+function Game.DrawProgressBar(position, width, height, fgCol, bgCol, value)
     local bgPaddingX = 0.005
     local bgPaddingY = 0.01
     local fg = {}
@@ -339,7 +339,7 @@ end
 ---@param scale vec2 | table
 ---@param font number
 ---@param center? boolean
-Game.DrawText = function(position, text, color, scale, font, center)
+function Game.DrawText(position, text, color, scale, font, center)
     local col = {}
 
     if type(color) == "table" and color.r then
@@ -371,7 +371,7 @@ end
 ---@param showHeading? boolean
 ---@param name? string
 ---@param alpha? number
-Game.AddBlipForEntity = function(entity, scale, isFriendly, showHeading, name, alpha)
+function Game.AddBlipForEntity(entity, scale, isFriendly, showHeading, name, alpha)
     local blip = HUD.ADD_BLIP_FOR_ENTITY(entity)
 
     if not blip or not HUD.DOES_BLIP_EXIST(blip) then
@@ -395,7 +395,7 @@ Game.AddBlipForEntity = function(entity, scale, isFriendly, showHeading, name, a
 end
 
 ---@param handle integer
-Game.RemoveBlipFromEntity = function(handle)
+function Game.RemoveBlipFromEntity(handle)
     local blip = Backend.CreatedBlips[handle]
 
     if not blip or not HUD.DOES_BLIP_EXIST(blip.handle) then
@@ -409,7 +409,7 @@ end
 -- Blip Sprites: https://wiki.rage.mp/index.php?title=Blips
 ---@param blip number
 ---@param icon number
-Game.SetBlipSprite = function(blip, icon)
+function Game.SetBlipSprite(blip, icon)
     if not blip or not HUD.DOES_BLIP_EXIST(blip) then
         return
     end
@@ -420,7 +420,7 @@ end
 -- Sets a custom name for a blip. Custom names appear on the pause menu and the world map.
 ---@param blip integer
 ---@param name string
-Game.SetBlipName = function(blip, name)
+function Game.SetBlipName(blip, name)
     if not blip or not HUD.DOES_BLIP_EXIST(blip) then
         return
     end
@@ -432,7 +432,7 @@ end
 
 ---@param i_entity integer
 ---@param i_heading integer
-Game.SetEntityHeading = function(i_entity, i_heading)
+function Game.SetEntityHeading(i_entity, i_heading)
     if not Game.IsScriptHandle(i_entity) then
         return
     end
@@ -446,7 +446,7 @@ end
 ---@param y_axis? boolean
 ---@param z_axis? boolean
 ---@param should_clear_area? boolean
-Game.SetEntityCoords = function(handle, coords, x_axis, y_axis, z_axis, should_clear_area)
+function Game.SetEntityCoords(handle, coords, x_axis, y_axis, z_axis, should_clear_area)
     ThreadManager:RunInFiber(function()
         ENTITY.SET_ENTITY_COORDS(
             handle,
@@ -466,7 +466,7 @@ end
 ---@param x_axis? boolean
 ---@param y_axis? boolean
 ---@param z_axis? boolean
-Game.SetEntityCoordsNoOffset = function(handle, coords, x_axis, y_axis, z_axis)
+function Game.SetEntityCoordsNoOffset(handle, coords, x_axis, y_axis, z_axis)
     ThreadManager:RunInFiber(function()
         ENTITY.SET_ENTITY_COORDS_NO_OFFSET(
             handle,
@@ -482,7 +482,7 @@ end
 
 ---@param model integer
 ---@return boolean
-Game.RequestModel = function(model)
+function Game.RequestModel(model)
     if STREAMING.IS_MODEL_VALID(model) and STREAMING.IS_MODEL_IN_CDIMAGE(model) then
         STREAMING.REQUEST_MODEL(model)
         return STREAMING.HAS_MODEL_LOADED(model)
@@ -492,42 +492,42 @@ end
 
 ---@param dict string
 ---@return boolean
-Game.RequestNamedPtfxAsset = function(dict)
+function Game.RequestNamedPtfxAsset(dict)
     STREAMING.REQUEST_NAMED_PTFX_ASSET(dict)
     return STREAMING.HAS_NAMED_PTFX_ASSET_LOADED(dict)
 end
 
 ---@param clipset string
 ---@return boolean
-Game.RequestClipSet = function(clipset)
+function Game.RequestClipSet(clipset)
     STREAMING.REQUEST_CLIP_SET(clipset)
     return STREAMING.HAS_CLIP_SET_LOADED(clipset)
 end
 
 ---@param dict string
 ---@return boolean
-Game.RequestAnimDict = function(dict)
+function Game.RequestAnimDict(dict)
     STREAMING.REQUEST_ANIM_DICT(dict)
     return STREAMING.HAS_ANIM_DICT_LOADED(dict)
 end
 
 ---@param dict string
 ---@return boolean
-Game.RequestTextureDict = function(dict)
+function Game.RequestTextureDict(dict)
     GRAPHICS.REQUEST_STREAMED_TEXTURE_DICT(dict, false)
     return GRAPHICS.HAS_STREAMED_TEXTURE_DICT_LOADED(dict)
 end
 
 ---@param weapon integer
 ---@return boolean
-Game.RequestWeaponAsset = function(weapon)
+function Game.RequestWeaponAsset(weapon)
     WEAPON.REQUEST_WEAPON_ASSET(weapon, 31, 0)
     return WEAPON.HAS_WEAPON_ASSET_LOADED(weapon)
 end
 
 ---@param scr string
 ---@return boolean
-Game.RequestScript = function(scr)
+function Game.RequestScript(scr)
     SCRIPT.REQUEST_SCRIPT(scr)
     return SCRIPT.HAS_SCRIPT_LOADED(scr)
 end
@@ -535,66 +535,66 @@ end
 ---@param entity integer
 ---@param is_alive boolean
 ---@return vec3
-Game.GetEntityCoords = function(entity, is_alive)
+function Game.GetEntityCoords(entity, is_alive)
     return ENTITY.GET_ENTITY_COORDS(entity, is_alive)
 end
 
 ---@param entity integer
 ---@param order? integer
 ---@return vec3
-Game.GetEntityRotation = function(entity, order)
+function Game.GetEntityRotation(entity, order)
    return ENTITY.GET_ENTITY_ROTATION(entity, order or 2)
 end
 
 ---@param entity integer
 ---@return number
-Game.GetHeading = function(entity)
+function Game.GetHeading(entity)
     return ENTITY.GET_ENTITY_HEADING(entity)
 end
 
 ---@param entity integer
 ---@return number
-Game.GetForwardX = function(entity)
+function Game.GetForwardX(entity)
     return ENTITY.GET_ENTITY_FORWARD_X(entity)
 end
 
 ---@param entity integer
 ---@return number
-Game.GetForwardY = function(entity)
+function Game.GetForwardY(entity)
     return ENTITY.GET_ENTITY_FORWARD_Y(entity)
 end
 
 ---@param entity integer
 ---@return vec3
-Game.GetForwardVector = function(entity)
+function Game.GetForwardVector(entity)
     return ENTITY.GET_ENTITY_FORWARD_VECTOR(entity)
 end
 
 ---@param ped integer
 ---@param boneID integer
 ---@return integer
-Game.GetPedBoneIndex = function(ped, boneID)
+function Game.GetPedBoneIndex(ped, boneID)
     return PED.GET_PED_BONE_INDEX(ped, boneID)
 end
 
 ---@param ped integer
 ---@param boneID integer
 ---@return vec3
-Game.GetPedBoneCoords = function(ped, boneID)
+function Game.GetPedBoneCoords(ped, boneID)
     return PED.GET_PED_BONE_COORDS(ped, boneID, 0, 0, 0)
 end
 
 ---@param entity integer
 ---@param boneName string
 ---@return integer
-Game.GetEntityBoneIndexByName = function(entity, boneName)
+function Game.GetEntityBoneIndexByName(entity, boneName)
     return ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(entity, boneName)
 end
 
 ---@param entity integer
 ---@param bone number | string
 ---@return vec3
-Game.GetWorldPositionOfEntityBone = function(entity, bone)
+function Game.GetWorldPositionOfEntityBone(entity, bone)
     local boneIndex
 
     if type(bone) == "string" then
@@ -609,7 +609,7 @@ end
 ---@param entity integer
 ---@param bone integer | string
 ---@return vec3
-Game.GetEntityBonePos = function(entity, bone)
+function Game.GetEntityBonePos(entity, bone)
     if type(bone) == "string" then
         bone = Game.GetEntityBoneIndexByName(entity, bone)
     end
@@ -620,7 +620,7 @@ end
 ---@param entity integer
 ---@param bone integer | string
 ---@return vec3
-Game.GetEntityBoneRot = function(entity, bone)
+function Game.GetEntityBoneRot(entity, bone)
     if type(bone) == "string" then
         bone = Game.GetEntityBoneIndexByName(entity, bone)
     end
@@ -630,14 +630,14 @@ end
 
 ---@param entity integer
 ---@return integer
-Game.GetEntityBoneCount = function(entity)
+function Game.GetEntityBoneCount(entity)
     return ENTITY.GET_ENTITY_BONE_COUNT(entity)
 end
 
 -- Returns the entity localPlayer is aiming at.
 ---@param player integer
 ---@return integer | nil
-Game.GetEntityPlayerIsFreeAimingAt = function(player)
+function Game.GetEntityPlayerIsFreeAimingAt(player)
     local bIsAiming, Entity = false, 0
 
     if PLAYER.IS_PLAYER_FREE_AIMING(player) then
@@ -649,25 +649,25 @@ end
 
 ---@param entity integer
 ---@return integer
-Game.GetEntityModel = function(entity)
+function Game.GetEntityModel(entity)
     return ENTITY.GET_ENTITY_MODEL(entity)
 end
 
 ---@param entity integer
 ---@return integer
-Game.GetEntityType = function(entity)
+function Game.GetEntityType(entity)
     return ENTITY.GET_ENTITY_TYPE(entity)
 end
 
 ---@param entity integer
 ---@return string
-Game.GetEntityTypeString = function(entity)
+function Game.GetEntityTypeString(entity)
     return EnumTostring(eEntityTypes, Game.GetEntityType(entity)) or "Unknown"
 end
 
 ---@param model integer
 ---@return vec3, vec3
-Game.GetModelDimensions = function(model)
+function Game.GetModelDimensions(model)
     local vmin, vmax = vec3:zero(), vec3:zero()
 
     if STREAMING.IS_MODEL_VALID(model) then
@@ -682,7 +682,7 @@ end
 ---is sitting in (-1 driver, 0 front passenger, etc...).
 ---@param ped integer
 ---@return integer | nil
-Game.GetPedVehicleSeat = function(ped)
+function Game.GetPedVehicleSeat(ped)
     if not PED.IS_PED_SITTING_IN_ANY_VEHICLE(ped) then
         return
     end
@@ -700,7 +700,7 @@ Game.GetPedVehicleSeat = function(ped)
 end
 
 ---@param netID integer
-Game.SyncNetworkID = function(netID)
+function Game.SyncNetworkID(netID)
     if not Game.IsOnline() or not NETWORK.NETWORK_DOES_NETWORK_ID_EXIST(netID) then
         return false
     end
@@ -718,7 +718,7 @@ Game.SyncNetworkID = function(netID)
     return NETWORK.NETWORK_HAS_CONTROL_OF_NETWORK_ID(netID)
 end
 
-Game.DesyncNetworkID = function(netID)
+function Game.DesyncNetworkID(netID)
     if not Game.IsOnline() or not NETWORK.NETWORK_DOES_NETWORK_ID_EXIST(netID) then
         return
     end
@@ -811,7 +811,7 @@ end
 ---@param v_Pos vec3
 ---@param v_Rot vec3
 ---@param f_Scale integer
-Game.StartSyncedPtfxNonLoopedOnEntityBone = function(i_EntityHandle, s_PtfxDict, s_PtfxName, bone, v_Pos, v_Rot, f_Scale)
+function Game.StartSyncedPtfxNonLoopedOnEntityBone(i_EntityHandle, s_PtfxDict, s_PtfxName, bone, v_Pos, v_Rot, f_Scale)
     if not i_EntityHandle or not ENTITY.DOES_ENTITY_EXIST(i_EntityHandle) then
         return
     end
@@ -932,7 +932,7 @@ end
 ---@param nonPlayerVehicle? boolean -- **Optional**: if true, ignores player vehicles
 ---@param maxSpeed? number  -- **Optional**: if set, skips vehicles faster than this speed (m/s)
 ---@return integer -- vehicle handle or 0
-Game.GetClosestVehicle = function(closeTo, range, excludeEntity, nonPlayerVehicle, maxSpeed)
+function Game.GetClosestVehicle(closeTo, range, excludeEntity, nonPlayerVehicle, maxSpeed)
     local this = type(closeTo) == "number" and Game.GetEntityCoords(closeTo, false) or closeTo
     local closestVeh = 0
     local closestDist = range * range
@@ -974,7 +974,7 @@ end
 ---@param range integer
 ---@param aliveOnly boolean **Optional**: if true, ignores dead peds.
 ---@return integer
-Game.GetClosestPed = function(closeTo, range, aliveOnly)
+function Game.GetClosestPed(closeTo, range, aliveOnly)
     local this = type(closeTo) == 'number' and Game.GetEntityCoords(closeTo, false) or closeTo
     local closestDist = range * range
 
@@ -1003,7 +1003,7 @@ end
 
 -- Temporary workaround to fix auto-pilot's "fly to objective" option.
 ---@return boolean, vec3
-Game.GetObjectiveBlipCoords = function()
+function Game.GetObjectiveBlipCoords()
     for _, v in ipairs(t_ObjectiveBlips) do
         if HUD.DOES_BLIP_EXIST(HUD.GET_FIRST_BLIP_INFO_ID(v)) then
             return true, HUD.GET_BLIP_INFO_ID_COORD(HUD.GET_FIRST_BLIP_INFO_ID(v))
@@ -1021,7 +1021,7 @@ Game.GetObjectiveBlipCoords = function()
 end
 
 ---@return vec3|nil
-Game.GetWaypointCoords = function()
+function Game.GetWaypointCoords()
     local waypoint = HUD.GET_FIRST_BLIP_INFO_ID(HUD.GET_WAYPOINT_BLIP_ENUM_ID())
 
     if HUD.DOES_BLIP_EXIST(waypoint) then
@@ -1034,7 +1034,7 @@ end
 ---@param dest vec3
 ---@param traceFlags integer
 ---@return boolean, vec3, integer
-Game.RayCast = function(src, dest, traceFlags, entityToExclude)
+function Game.RayCast(src, dest, traceFlags, entityToExclude)
     local rayHandle = SHAPETEST.START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE(
         src.x,
         src.y,
@@ -1063,12 +1063,8 @@ Game.RayCast = function(src, dest, traceFlags, entityToExclude)
     return hit, endCoords, entityHit
 end
 
----@class Game.World
-Game.World = {}
-Game.World.__index = Game.World
-
 ---@param toggle boolean
-Game.World.ExtendBounds = function(toggle)
+function Game.ExtendWorldBounds(toggle)
     if toggle then
         PLAYER.EXTEND_WORLD_BOUNDARY_FOR_PLAYER(-42069420.0, -42069420.0, -42069420.0)
         PLAYER.EXTEND_WORLD_BOUNDARY_FOR_PLAYER(42069420.0, 42069420.0, 42069420.0)
@@ -1078,14 +1074,14 @@ Game.World.ExtendBounds = function(toggle)
 end
 
 ---@param toggle boolean
-Game.World.DisableOceanWaves = function(toggle)
+function Game.DisableOceanWaves(toggle)
     MISC.WATER_OVERRIDE_SET_STRENGTH(toggle and 1.0 or -1)
 end
 
 -- Draws a green chevron down element on top of an entity in the game world.
 ---@param entity integer
 ---@param offset? float
-Game.World.MarkSelectedEntity = function(entity, offset)
+function Game.MarkSelectedEntity(entity, offset)
     ThreadManager:RunInFiber(function()
         local entity_hash  = ENTITY.GET_ENTITY_MODEL(entity)
         local entity_pos   = ENTITY.GET_ENTITY_COORDS(entity, false)
@@ -1142,27 +1138,27 @@ function Game.GetModelType(modelHash)
 end
 
 ---@param modelName string
-Game.GetPedHash = function(modelName)
+function Game.GetPedHash(modelName)
     return t_PedLookup[modelName].hash -- not sure if this is faster than simply calling `joaat` on the model name.
 end
 
 ---@param modelHash integer
-Game.GetPedName = function(modelHash)
+function Game.GetPedName(modelHash)
     return t_PedLookup[modelHash].name or string.format("0x%X", modelHash)
 end
 
 ---@param model integer|string
-Game.GetPedTypeFromModel = function(model)
+function Game.GetPedTypeFromModel(model)
     return t_PedLookup[model].ped_type or ePedType.CIVMALE
 end
 
 ---@param model integer|string
-Game.GetPedGenderFromModel = function(model)
+function Game.GetPedGenderFromModel(model)
     return t_PedLookup[model].gender or "unknown"
 end
 
 ---@param model integer|string
-Game.IsPedModelHuman = function(model)
+function Game.IsPedModelHuman(model)
     return t_PedLookup[model].is_human
 end
 
@@ -1170,7 +1166,7 @@ end
 ---@param forwardVector vec3
 ---@param distance integer
 ---@return vec3|nil
-Game.FindSpawnPointInDirection = function(coords, forwardVector, distance)
+function Game.FindSpawnPointInDirection(coords, forwardVector, distance)
     local bFound, vOutPos = false, vec3:zero()
 
     bFound, vOutPos = MISC.FIND_SPAWN_POINT_IN_DIRECTION(
@@ -1188,7 +1184,7 @@ Game.FindSpawnPointInDirection = function(coords, forwardVector, distance)
 end
 
 ---@param distance integer
-Game.FindSpawnPointNearPlayer = function(distance)
+function Game.FindSpawnPointNearPlayer(distance)
     return Game.FindSpawnPointInDirection(
         Self:GetPos(),
         Self:GetForwardVector(),
@@ -1199,7 +1195,7 @@ end
 ---@param coords vec3
 ---@param nodeType integer
 ---@return vec3, integer
-Game.GetClosestVehicleNodeWithHeading = function(coords, nodeType)
+function Game.GetClosestVehicleNodeWithHeading(coords, nodeType)
     local outPos = vec3:zero()
     local outHeading = 0
 
@@ -1218,7 +1214,7 @@ Game.GetClosestVehicleNodeWithHeading = function(coords, nodeType)
 end
 
 ---@param entity integer | table
-Game.FadeOutEntity = function(entity)
+function Game.FadeOutEntity(entity)
     if not Game.IsOnline() then
         return
     end
@@ -1237,7 +1233,7 @@ Game.FadeOutEntity = function(entity)
 end
 
 ---@param entity integer | table
-Game.FadeInEntity = function(entity)
+function Game.FadeInEntity(entity)
     if not Game.IsOnline() then
         return
     end

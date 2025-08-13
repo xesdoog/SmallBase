@@ -1,52 +1,7 @@
--------------------------
--- Struct: VehicleMods 
--------------------------
----@class VehicleMods
----@field mods table<integer, integer>
----@field toggle_mods table<integer, boolean>
----@field primary_color table<string, integer>
----@field secondary_color table<string, integer>
----@field window_tint number
----@field plate_text string
----@field window_states table<integer, boolean>
----@field wheels { index: integer, type: integer, var?: integer }
----@field xenon_color? number
----@field livery? number
----@field livery2? number
----@field pearlescent_color? number
----@field wheel_color? number
----@field interior_color? number
----@field dashboard_color? number
----@field tyre_smoke_color? { r: number, g: number, b: number }
----@field neon? { enabled: table<integer, boolean>, color: { r: number, g: number, b: number } }
-VehicleMods = {}
-
----@param mods table
----@param primary_color table
----@param secondary_color table
----@param wheels table
----@param window_tint number
----@param plate_text? string
-function VehicleMods.create(mods, primary_color, secondary_color, wheels, window_tint, plate_text)
-    return {
-        mods = mods,
-        primary_color = primary_color,
-        secondary_color = secondary_color,
-        wheels = wheels,
-        window_tint = window_tint,
-        plate_text = plate_text or "SmallBase"
-    }
-end
-
-------------------------------------------------------------
-------------------------------------------------------------
-------------------------------------------------------------
-
-
 --------------------------------------
 -- Class: Vehicle
 --------------------------------------
--- **Global** - Prarent: `Entity`
+--[[**Global** - Prarent: `Entity`]]
 ---@class Vehicle : Entity
 ---@field private layout CVehicle
 ---@field private m_class_id number
@@ -435,7 +390,6 @@ function Vehicle:LockDoors(toggle)
                 VEHICLE.RAISE_CONVERTIBLE_ROOF(handle, false)
             else
                 for i = 0, 7 do
-                    -- VEHICLE.FIX_VEHICLE_WINDOW(vehicle, i) -- Unnecessary. Locking your car doesn't magically fix its broken windows. *realism intensifies*
                     VEHICLE.ROLL_UP_WINDOW(handle, i)
                 end
             end
@@ -1024,10 +978,6 @@ function Vehicle:GetModelInfoFlag(flag)
         return false
     end
 
-    -- array of 7 uint32_t (224 flags).
-    --
-    -- Outdated ref: https://gtamods.com/wiki/Vehicles.meta
-
     local index     = math.floor(flag / 32)
     local bit_pos   = flag % 32
     local flag_ptr  = base_ptr:add(index * 4)
@@ -1076,7 +1026,7 @@ function Vehicle:SaveToJSON(name)
         return
     end
 
-    if (type(name) ~= "string" or string.isnullorwhitespace(name)) then
+    if (not name or string.isnullorwhitespace(name)) then
         name = self:GetName()
     end
 
@@ -1099,7 +1049,7 @@ end
 ---@param warp_into? boolean
 function Vehicle.CreateFromJSON(filename, warp_into)
     if (type(filename) ~= "string") then
-        Toast:ShowError("Vehicle", "Failed to read vehicle data from JSON!", true) -- I should probably refactor ToastNotifier to take an optional table parameter to make it more readable. true means log to console as well.
+        Toast:ShowError("Vehicle", "Failed to read vehicle data from JSON!", true)
         return
     end
 
@@ -1119,7 +1069,7 @@ function Vehicle.CreateFromJSON(filename, warp_into)
         return
     end
 
-    local spawnpos = Self:GetVehicle():GetSpawnPosInFront() -- falls back to 5m in front of the player if the vehicle is invalid.
+    local spawnpos = Self:GetVehicle():GetSpawnPosInFront()
     local new_veh = Vehicle:Create(modelhash, eEntityTypes.Vehicle, spawnpos, Self:GetHeading())
     if (new_veh:IsValid() and type(data.mods) == "table") then
         new_veh:ApplyMods(data.mods)
@@ -1130,4 +1080,47 @@ function Vehicle.CreateFromJSON(filename, warp_into)
     end
 
     return new_veh
+end
+
+
+
+-------------------------
+-- Struct: VehicleMods 
+-------------------------
+---@ignore
+---@class VehicleMods
+---@field mods table<integer, integer>
+---@field toggle_mods table<integer, boolean>
+---@field primary_color table<string, integer>
+---@field secondary_color table<string, integer>
+---@field window_tint number
+---@field plate_text string
+---@field window_states table<integer, boolean>
+---@field wheels { index: integer, type: integer, var?: integer }
+---@field xenon_color? number
+---@field livery? number
+---@field livery2? number
+---@field pearlescent_color? number
+---@field wheel_color? number
+---@field interior_color? number
+---@field dashboard_color? number
+---@field tyre_smoke_color? { r: number, g: number, b: number }
+---@field neon? { enabled: table<integer, boolean>, color: { r: number, g: number, b: number } }
+VehicleMods = {}
+
+---@param mods table
+---@param primary_color table
+---@param secondary_color table
+---@param wheels table
+---@param window_tint number
+---@param plate_text? string
+function VehicleMods.create(mods, primary_color, secondary_color, wheels, window_tint, plate_text)
+    return {
+        mods = mods,
+        primary_color = primary_color,
+        secondary_color = secondary_color,
+        wheels = wheels,
+        window_tint = window_tint,
+        plate_text = plate_text or "SmallBase"
+    }
 end

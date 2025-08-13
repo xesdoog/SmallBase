@@ -26,7 +26,7 @@ eEntityTypes = {
     Object  = 3
 }
 
--- Global singleton
+-- Global Singleton.
 ---@class Backend
 ---@field private api_version eAPIVersion
 Backend = {
@@ -86,8 +86,8 @@ function Backend:GetAPIVersion()
             return eAPIVersion.V2
         end
         ---@diagnostic disable-next-line: undefined-global
-    elseif (util or (_VERSION ~= "Lua 5.4")) then
-        error("Unknown or unsupported scripting environment.")
+    elseif (util or (menu and menu.root) or SCRIPT_SILENT_START or (_VERSION ~= "Lua 5.4")) then -- should probably place these in a lookup table
+        error("SmallBase failed to load: Unknown or unsupported environment.")
     end
 
     return eAPIVersion.L54
@@ -143,11 +143,14 @@ function Backend:SetMaxAllowedEntities(entity_type, value)
 end
 
 ---@param entity_type eEntityTypes
+---@return boolean
 function Backend:CanCreateEntity(entity_type)
     local currentCount = table.getlen(self.SpawnedEntities[entity_type])
     return currentCount < (self:GetMaxAllowedEntities(entity_type))
 end
 
+---@param handle number
+---@return boolean
 function Backend:IsEntityRegistered(handle)
     for _, cat in pairs(self.SpawnedEntities) do
         if cat[handle] then
@@ -159,6 +162,7 @@ function Backend:IsEntityRegistered(handle)
 end
 
 ---@param handle number
+---@return boolean
 function Backend:IsBlipRegistered(handle)
     return self.CreatedBlips[handle] ~= nil
 end
@@ -189,7 +193,6 @@ function Backend:RemoveEntity(handle, entity_type)
     self.SpawnedEntities[entity_type][handle] = nil
 end
 
--- TODO: add a simple blip struct for IntelliSense
 ---@param blip_handle number
 ---@param owner number
 ---@param initial_alpha? number
@@ -242,24 +245,24 @@ end
 ---@param event eBackendEvent
 ---@param func function
 function Backend:RegisterEventCallback(event, func)
-    if ((type(func) ~= "function") or not self.EventCallbacks[event]) then
+    local evnt = self.EventCallbacks[event]
+
+    if ((type(func) ~= "function") or not evnt) then
         log.fdebug("Failed to register event: %s", EnumTostring(eBackendEvent, event))
         return
     end
 
-    local t = self.EventCallbacks[event]
-
-    if table.find(t, func) then
+    if table.find(evnt, func) then
         return
     end
 
-    table.insert(t, func)
+    table.insert(evnt, func)
 end
 
 ---@param event eBackendEvent
 function Backend:TriggerEventCallbacks(event)
     for _, fn in ipairs(self.EventCallbacks[event] or {}) do
-        if type(fn) == "function" then
+        if (type(fn) == "function") then
             fn()
         end
     end
@@ -329,17 +332,17 @@ function Backend:PANIQUE()
         self:Cleanup()
         for i = eBackendEvent.SESSION_SWITCH, eBackendEvent.PLAYER_SWITCH do
             self:TriggerEventCallbacks(i)
+            sleep(100)
         end
 
         local pos = Self:GetPos()
         AUDIO.PLAY_AMBIENT_SPEECH_FROM_POSITION_NATIVE(
             "ELECTROCUTION",
             "MISTERK",
-            pos.x,
-            pos.y,
-            pos.z,
+            pos.x, pos.y, pos.z,
             "SPEECH_PARAMS_FORCE"
         )
+
         gui.show_warning("PANIQUE!", "(Ó _ Ò )!!")
     end)
 end

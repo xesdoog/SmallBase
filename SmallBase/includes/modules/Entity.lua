@@ -3,9 +3,7 @@
 --------------------------------------
 -- Class: Entity
 --------------------------------------
--- **Global.**
---
--- - Class representing a GTA V entity.
+-- Class representing a GTA V entity.
 ---@class Entity : ClassMeta<Entity>
 ---@field private m_handle number
 ---@field private m_modelhash number
@@ -77,22 +75,6 @@ function Entity:Delete()
 
     self:Destroy()
 end
-
-
---[[
--- I would rather repeat code and have clear return types as opposed to this
-
----@param func function
----@param ... any
-function Entity:CallFunc(func, ...)
-    if not self:Exists() then
-        return
-    end
-
-    local args = { ... }
-    return func(table.unpack(args))
-end
-]]
 
 ---@return boolean
 function Entity:Exists()

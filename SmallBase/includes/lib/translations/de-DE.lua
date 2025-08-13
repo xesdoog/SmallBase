@@ -1,3 +1,3 @@
 return {
-    ["TEST"] = "Dies ist ein übersetzter testtext.",
+    ["TEST"] = "Dies ist ein Testtext, übersetzt in",
 }

@@ -52,12 +52,11 @@ end, {
 
 
 
-
--------------------------
+-- -----------------------
 -- main loop from temu
--------------------------
+-- -----------------------
 -- Note: If you're in a test/mock environment, anything after this block will not be reachable.
---
+
 -- Keep this at the very bottom of this file or remove it if you don't plan on testing coroutines in mock env.
 local function mock_main()
     if not (Backend:IsMockEnv()) then

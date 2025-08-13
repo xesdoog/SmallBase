@@ -77,7 +77,7 @@ local packages = {
     "services.Translator",
     "gui.main_ui",
     "gui.settings_ui",
-    "features.Example",
+    "features.Demo",
 }
 
 for _, package in ipairs(packages) do

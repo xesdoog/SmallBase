@@ -92,8 +92,8 @@ function Class(name, base)
         local msg = (... ~= nil) and string.format(fmt, ...) or fmt
         local caller = name:gsub("_", " "):titlecase()
 
-        if Toast then
-            Toast:ShowMessage(caller, msg)
+        if (Toast) then
+            Toast:ShowMessage(caller, msg, false, 5)
         else
             log.info("[" .. caller .. "]: " .. msg)
         end

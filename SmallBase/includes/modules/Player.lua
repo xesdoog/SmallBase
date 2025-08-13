@@ -5,17 +5,16 @@
 --
 -- **Parent:** `Ped`.
 --
--- - Class representing a GTA V player (Unfinished).
+-- Class representing a GTA V player (Unfinished).
 ---@class Player : Ped
 ---@field private layout CPed
 ---@overload fun(handle: integer): Player
 Player = Class("Player", Ped)
-
--- override
 Player.Create = nil
 Player.Delete = nil
 Player.SetAsNoLongerNeeded = nil
 
+-- Returns whether the player is currently playing by checking their game state.
 ---@return boolean
 function Player:IsPlaying()
     if not self:IsValid() then

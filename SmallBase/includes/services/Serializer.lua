@@ -1,6 +1,7 @@
 ---@diagnostic disable: param-type-mismatch
 
 -- Optional parameters struct.
+---@ignore
 ---@class SerializerOptionals
 ---@field pretty? boolean Pretty Encoding
 ---@field indent? number Number of indentations for pretty encoding.
@@ -21,7 +22,7 @@
 ---@field default_config table
 ---@field m_key_states table
 ---@field m_dirty boolean
----@field parsing_options SerializerOptionals
+---@field private parsing_options SerializerOptionals
 ---@field private m_disabled boolean
 ---@field private xor_key string
 ---@field private m_last_write_time Time.TimePoint
@@ -59,7 +60,7 @@ assert(Serializer.json.VERSION == "20211016.28", "Bad Json package version.")
 function Serializer:init(script_name, default_config, runtime_vars, varargs)
     varargs = varargs or {}
     local timestamp = tostring(os.date("%H_%M_%S"))
-    script_name = script_name or (Backend and Backend.script_name or ("cout_%s"):format(timestamp))
+    script_name = script_name or (Backend and Backend.script_name or ("unk_cfg_%s"):format(timestamp))
 
     ---@type Serializer
     local instance = setmetatable(
@@ -98,7 +99,7 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
     instance.m_key_states.__version = config_data.__version or Backend and Backend.__version or Serializer.__version
     config_data.__version = instance.m_key_states.__version
 
-        setmetatable(
+    setmetatable(
         runtime_vars,
         {
             __index = function(_, k)
@@ -124,7 +125,6 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
 
                 if (instance.default_config[k] == nil) then
                     local value = config_data[k] ~= nil and config_data[k] or v
-                    instance.default_config[k] = value
                     instance.m_key_states[k] = value
                     return
                 end
@@ -182,6 +182,16 @@ end
 ---@return boolean
 function Serializer:CanAccess()
     return not self.m_disabled
+end
+
+---@return milliseconds
+function Serializer:GetLastWriteTime()
+    return self.m_last_write_time and self.m_last_write_time.value or 0
+end
+
+---@return milliseconds
+function Serializer:GetTimeSinceLastFlush()
+    return self.m_last_write_time and self.m_last_write_time:elapsed() or 0
 end
 
 function Serializer:IsBase64(data)
@@ -426,13 +436,18 @@ function Serializer:SyncKeys(runtime_vars)
         end
     end
 
+    -- Defeats the purpose of a dynamic Serializer.
+    --[[
     for k in pairs(saved) do
         if (k ~= "__version" and default[k] == nil) then
+            print(k)
             saved[k] = nil
+            runtime_vars[k] = nil
             Backend:debug(string.format("[Serializer]: Removed deprecated config key: '%s'", k))
             dirty = true
         end
     end
+    ]]
 
     if (not saved.__version or (saved.__version and saved.__version ~= Backend.__version)) then
         dirty = true
@@ -643,7 +658,7 @@ function Serializer:Flush()
 end
 
 function Serializer:OnTick()
-    if (not self.m_dirty or not self.m_last_write_time:has_elapsed(5e3)) then
+    if (not self.m_dirty and not self.m_last_write_time:has_elapsed(5e3)) then
         return
     end
 

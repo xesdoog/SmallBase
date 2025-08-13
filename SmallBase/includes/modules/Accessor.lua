@@ -6,7 +6,8 @@ local eAccessorType <const> = {
     LOCAL = 1
 }
 
----@class Accessor
+-- Wrapper around native API script global and local accessors but with ease of use and debug-friendliness in mind.
+---@class Accessor: ClassMeta<Accessor>
 ---@field private m_address integer
 ---@field private m_type eAccessorType
 ---@field m_script? string
@@ -15,9 +16,6 @@ local eAccessorType <const> = {
 local Accessor = Class("Accessor")
 
 --#region Internal
---------------------------------------------------------
---------------------------------------------------------
---------------------------------------------------------
 
 local AccessorDispatch = {
     [eAccessorType.GLOBAL] = function(self, method, args)
@@ -68,7 +66,7 @@ end
 ---@param path? table
 ---@return Accessor
 function Accessor.new(m_base, m_type, script, path)
-    assert(type(m_base) == "number", "Invalid base address")
+    assert(type(m_base) == "number" and m_base > 0, "Invalid base address!")
 
     return setmetatable(
         {
@@ -203,6 +201,7 @@ end
 
 
 ---@class ScriptGlobal : Accessor
+---@field At fun(self: ScriptGlobal, offset: integer): ScriptGlobal
 ---@overload fun(address: integer): ScriptGlobal
 ScriptGlobal = Class("ScriptGlobal", Accessor)
 
@@ -216,7 +215,8 @@ function ScriptGlobal.new(address)
 end
 
 ---@class ScriptLocal : Accessor
----@overload fun(scr: string, address: integer): ScriptLocal
+---@field At fun(self: ScriptLocal, offset: integer): ScriptLocal
+---@overload fun(address: integer, scr: string): ScriptLocal
 ScriptLocal = Class("ScriptLocal", Accessor)
 setmetatable(ScriptLocal,
     {
@@ -227,10 +227,11 @@ setmetatable(ScriptLocal,
     }
 )
 
----@param script_name string Script name
 ---@param address integer Local address
+---@param script_name string Script name
 ---@return ScriptLocal
-function ScriptLocal.new(script_name, address)
+function ScriptLocal.new(address, script_name)
+    assert(not string.isnullorempty(script_name) and not string.iswhitespace(script_name), "Invalid script name for ScriptLocal!")
     local instance = Accessor.new(address, eAccessorType.LOCAL, script_name)
     ---@diagnostic disable: undefined-field
     instance.__index.ReadString  = nil

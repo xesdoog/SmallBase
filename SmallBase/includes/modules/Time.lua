@@ -1,4 +1,7 @@
+---@ignore
 ---@class seconds: number
+
+---@ignore
 ---@class milliseconds: number
 
 --------------------------------------
@@ -8,6 +11,8 @@
 ---@class Time
 local Time = {}
 Time.__index = Time
+Time.__type = "Time"
+setmetatable(Time, Time)
 
 -- Returns an approximation of the amount in seconds of CPU time used by the program.
 ---@return seconds
@@ -116,7 +121,7 @@ end
 ---@param ms milliseconds
 ---@return string `HH:MM:SS`
 function Time.format_time_since_ms(ms)
-    return Time.format_time_since(ms / 1000)
+    return Time.format_time_since(math.floor(ms / 1000))
 end
 
 --------------------------------------

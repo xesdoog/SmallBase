@@ -1,14 +1,14 @@
 --------------------------------------
 -- Class: Memory
 --------------------------------------
--- **Global Singleton.**
+--[[**Global Singleton.**]]
 ---@class Memory
 Memory = {}
 Memory.__index = Memory
 
 ---@param ptr pointer
 ---@param size integer
-Memory.Dump = function(ptr, size)
+function Memory.Dump(ptr, size)
     size = size or 4
     local result = {}
 
@@ -22,7 +22,7 @@ end
 
 ---@param ptr pointer
 ---@return vec3
-Memory.GetVec3 = function(ptr)
+function Memory.GetVec3(ptr)
     if ptr:is_null() then
         return vec3:zero()
     end
@@ -35,7 +35,7 @@ Memory.GetVec3 = function(ptr)
 end
 
 ---@return table
-Memory.GetGameVersion = function()
+function Memory.GetGameVersion()
     local pGameVersion = memory.scan_pattern("8B C3 33 D2 C6 44 24 20")
     if pGameVersion:is_null() then
         log.warning("Failed to find pattern (Game Version)")
@@ -52,7 +52,7 @@ Memory.GetGameVersion = function()
 end
 
 ---@return number|nil
-Memory.GetGameState = function()
+function Memory.GetGameState()
     local pGameState = memory.scan_pattern("83 3D ? ? ? ? ? 75 17 8B 43 20 25")
     if pGameState:is_null() then
         log.warning("Failed to find pattern (Game State)")
@@ -63,7 +63,7 @@ Memory.GetGameState = function()
 end
 
 ---@return number
-Memory.GetGameTime = function()
+function Memory.GetGameTime()
     local pGameTime = memory.scan_pattern("8B 05 ? ? ? ? 89 ? 48 8D 4D C8")
     if pGameTime:is_null() then
         log.warning("Failed to find pattern (Game Time)")
@@ -74,7 +74,7 @@ Memory.GetGameTime = function()
 end
 
 ---@return vec2
-Memory.GetScreenResolution = function()
+function Memory.GetScreenResolution()
     local pScreenResolution = memory.scan_pattern("66 0F 6E 0D ? ? ? ? 0F B7 3D")
     if pScreenResolution:is_null() then
         log.warning("Failed to find pattern (Screen Resolution)")
@@ -88,7 +88,7 @@ Memory.GetScreenResolution = function()
 end
 
 ---@return CVehicle|nil
-Memory.GetVehicleInfo = function(vehicle)
+function Memory.GetVehicleInfo(vehicle)
     if not (ENTITY.DOES_ENTITY_EXIST(vehicle) or ENTITY.IS_ENTITY_A_VEHICLE(vehicle)) then
         return
     end
@@ -132,7 +132,7 @@ end
 ---@param vehicle number
 ---@param flag number
 ---@return boolean | nil
-Memory.GetVehicleHandlingFlag = function(vehicle, flag)
+function Memory.GetVehicleHandlingFlag(vehicle, flag)
     if not (ENTITY.DOES_ENTITY_EXIST(vehicle) or ENTITY.IS_ENTITY_A_VEHICLE(vehicle)) then
         return
     end
@@ -146,10 +146,7 @@ end
 ---@param vehicle integer
 ---@param flag integer
 ---@return boolean
-Memory.GetVehicleModelFlag = function(vehicle, flag)
-    -- array of 7 uint32_t (7 * 32 = 224 flags total).
-    --
-    -- Outdated ref: https://gtamods.com/wiki/Vehicles.meta
+function Memory.GetVehicleModelFlag(vehicle, flag)
     local CVehicle = Memory.GetVehicleInfo(vehicle)
     if not CVehicle then
         return false
@@ -168,13 +165,12 @@ Memory.GetVehicleModelFlag = function(vehicle, flag)
     return Bit.is_set(dword, bitPos)
 end
 
--- ### Unsafe for non-scripted entities.
---______________________________________
+-- Unsafe for non-scripted entities.
 --
 -- Returns the model type of an entity (ped, object, vehicle, MLO, time, etc...)
 ---@param entity integer
 ---@return number
-Memory.GetEntityType = function(entity)
+function Memory.GetEntityType(entity)
     if not ENTITY.DOES_ENTITY_EXIST(entity) then
         return 0
     end
@@ -196,7 +192,7 @@ end
 
 ---@param ped integer A Ped ID, not a Player ID.
 ---@return CPed | nil
-Memory.GetPedInfo = function(ped)
+function Memory.GetPedInfo(ped)
     if not ENTITY.DOES_ENTITY_EXIST(ped) or not ENTITY.IS_ENTITY_A_PED(ped) then
         return
     end
@@ -206,6 +202,7 @@ Memory.GetPedInfo = function(ped)
         return
     end
 
+    ---@ignore
     ---@class CPed
     local CPed = {}
     CPed.__index = CPed
@@ -222,18 +219,20 @@ Memory.GetPedInfo = function(ped)
     CPed.m_armor           = pEntity:add(0x150C) -- `float`
 
     ---@return boolean
-    CPed.CanPedRagdoll = function()
+    function CPed.CanPedRagdoll()
         return (CPed.m_ped_type:get_dword() & 0x20) ~= 0
     end;
 
     ---@return boolean
-    CPed.HasSeatbelt = function()
+    function CPed.HasSeatbelt()
         return (CPed.m_seatbelt:get_word() & 0x3) ~= 0
     end;
 
     if PED.IS_PED_A_PLAYER(ped) then
         local pCPlayerInfo = pEntity:add(0x10A8):deref() -- `class`
         if pCPlayerInfo:is_valid() then
+
+            ---@ignore
             ---@class CPlayerInfo
             CPed.CPlayerInfo = {}
             CPed.CPlayerInfo.m_swim_speed           = pCPlayerInfo:add(0x01C8) -- `float`
@@ -247,7 +246,7 @@ Memory.GetPedInfo = function(ped)
             CPed.CPlayerInfo.m_weapon_defence_mult  = pCPlayerInfo:add(0x0D70) -- `float`
 
             ---@return number
-            CPed.CPlayerInfo.GetGameState = function()
+            function CPed.CPlayerInfo.GetGameState()
                 return pCPlayerInfo:add(0x0230):get_dword()
             end;
         end
@@ -259,7 +258,7 @@ end
 --[[
 ---@deprecated
 ---@param dword integer
-Memory.SetWeaponEffectGroup = function(dword)
+function Memory.SetWeaponEffectGroup(dword)
     local pedPtr = memory.handle_to_ptr(self.get_ped())
     if pedPtr:is_valid() then
         local CPedWeaponManager = pedPtr:add(0x10B8):deref()

@@ -3,7 +3,6 @@
 --------------------------------------
 -- Class: Color
 --------------------------------------
--- **Global.**
 ---@class Color
 ---@overload fun(...): Color
 Color = Class("Color")

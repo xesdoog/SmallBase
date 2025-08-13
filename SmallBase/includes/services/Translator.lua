@@ -16,6 +16,7 @@ Translator = {}
 Translator.__index = Translator
 Translator.default_labels = loaded and en or {}
 Translator.m_last_load_time = TimePoint.new()
+Translator.m_cache = {}
 
 -- Only add locales if you have matching files for them under /lib/translations/ otherwise you'll get an error when trying
 --
@@ -49,7 +50,6 @@ function Translator:Load()
     self.labels = (bool and (type(res) == "table")) and res or self.default_labels
     self.lang_code = iso
     self.m_log_history = {}
-    self.m_cache = {}
     self.m_last_load_time:reset()
 end
 
@@ -61,6 +61,15 @@ function Translator:WasLogged(msg)
     end
 
     return table.find(self.m_log_history, msg)
+end
+
+function Translator:Notify(message)
+    if self:WasLogged(message) then
+        return
+    end
+
+    Toast:ShowWarning("Translator", message, true)
+    table.insert(self.m_log_history, message)
 end
 
 function Translator:Reload()
@@ -101,26 +110,15 @@ function Translator:Translate(label)
     end
 
     local text = self.labels[label]
-    local msg
 
     if (not text) then
-        msg = "Missing label!"
-        if not self:WasLogged(msg) then
-            Toast:ShowWarning("Translator", msg, true)
-            table.insert(self.m_log_history, msg)
-        end
-
+        self:Notify("Missing label!")
         Backend:debug("Missing label: %s", label)
         return string.format("[!MISSING LABEL]: %s", label)
     end
 
-    if (string.isnullorwhitespace(text)) then
-        msg = "Missing or unsupported language!"
-        if not self:WasLogged(msg) then
-            Toast:ShowWarning("Translator", msg, true)
-            table.insert(self.m_log_history, msg)
-        end
-
+    if (string.isnullorempty(text)) then
+        self:Notify("Missing or unsupported language!")
         Backend:debug("Missing translation for: %s in (%s)", label, self.lang_code)
         return "[!MISSING TRANSLATION]"
     end

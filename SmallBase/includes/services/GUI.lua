@@ -5,6 +5,7 @@
 --------------------------------------
 -- Tab Class
 --------------------------------------
+---@ignore
 ---@class Tab : ClassMeta<Tab>
 ---@field private m_name string
 ---@field private m_gui? function
@@ -224,6 +225,12 @@ function Tab:AddLoopedCommand(label, gvar_key, callback, on_disable, meta)
 
     CommandExecutor:RegisterCommand(command_name, command_callback, meta)
 end
+
+function Tab:Notify(fmt, ...)
+    local msg = (... ~= nil) and string.format(fmt, ...) or fmt
+    Toast:ShowMessage(self:GetName(), msg, false, 5)
+end
+
 --#endregion
 
 
@@ -257,10 +264,7 @@ end
 ---@param subtabs? Tab[]
 ---@return Tab
 function GUI:RegisterNewTab(name, drawable, subtabs)
-    assert(
-        (type(name) == "string" and not name:isnullorwhitespace()),
-        "Attempt to register a new tab with no name."
-    )
+    assert((not string.isnullorwhitespace(name)), "Attempt to register a new tab with no name.")
 
     if self:DoesTabExist(name) then
         error(("Tab '%s' already exists."):format(name))
@@ -476,6 +480,7 @@ function GUI:TooltipMultiline(lines, wrap_pos)
         for _, line in pairs(lines) do
             if not string.isnullorwhitespace(line) then
                 ImGui.TextWrapped(line)
+                ImGui.Spacing()
             end
         end
         ImGui.PopTextWrapPos()
@@ -616,7 +621,7 @@ end
 ---@param hover_color Color
 ---@param active_color Color
 ---@param opts? { size?: vec2, repeatable?: boolean }
-function GUI:ColoredButton(label, color, hover_color, active_color, opts)
+function GUI:ButtonColored(label, color, hover_color, active_color, opts)
     ImGui.PushStyleColor(ImGuiCol.Button, color:AsRGBA())
     ImGui.PushStyleColor(ImGuiCol.ButtonHovered, hover_color:AsRGBA())
     ImGui.PushStyleColor(ImGuiCol.ButtonActive, active_color:AsRGBA())

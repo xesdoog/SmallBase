@@ -174,6 +174,7 @@ function CommandExecutor.new()
     KeyManager:RegisterKeybind(GVars.commands_console.key, function()
         instance.gui.should_draw = not instance.gui.should_draw
         gui.override_mouse(instance.gui.should_draw)
+        Backend.disable_input = instance.gui.should_draw
     end)
 
     -- hardcoded.
@@ -317,6 +318,7 @@ function CommandExecutor:HandleCallbacks()
         if not string.isnull(self.user_cmd) then
             return
         end
+
         if KeyManager:IsKeyJustPressed(eVirtualKeyCodes.UP) then
             self.history_index = self.history_index - 1
             if (self.history_index < 0) then
@@ -467,8 +469,6 @@ end
 
 function CommandExecutor:Draw()
     if self.gui.should_draw then
-        Backend.disable_input = true
-
         ImGui.SetNextWindowSize(self.window_size.x, self.window_size.y)
         ImGui.SetNextWindowPos(
             self.screen_size.x / 2 - (self.window_size.x / 2),
@@ -552,9 +552,6 @@ function CommandExecutor:Draw()
             self:DrawCommandDump()
             ImGui.End()
         end
-    else
-        Backend.disable_input = false
-        self.user_cmd = ""
     end
 end
 

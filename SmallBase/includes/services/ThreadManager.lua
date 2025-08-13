@@ -15,6 +15,7 @@ eThreadState = {
 --------------------------------------
 -- Class: Thread
 --------------------------------------
+---@ignore
 ---@class Thread : ClassMeta<Thread>
 ---@field private m_name string
 ---@field private m_callback function
@@ -27,7 +28,7 @@ eThreadState = {
 local Thread = Class("Thread")
 function Thread.new(name, callback)
     if string.isnullorwhitespace(name) then
-        name = string.random():upper()
+        name = string.random(5, true):upper()
     end
 
     return setmetatable(
@@ -61,7 +62,7 @@ end
 
 ---@return milliseconds
 function Thread:GetTimeCreated()
-    return self.m_time_created:age()
+    return self.m_time_created.value
 end
 
 ---@return seconds
@@ -231,7 +232,7 @@ function ThreadManager:RunInFiber(func)
     end
 
     local handler = self.m_callback_handlers[API_VER]
-    if not (handler or handler.Dispatch) then
+    if not (handler or handler.dispatch) then
         Backend:debug("[ThreadManager] No handler for API version: %s", EnumTostring(eAPIVersion, API_VER))
         return
     end
@@ -253,7 +254,7 @@ function ThreadManager:CreateNewThread(name, func, suspended, is_debug_thread)
     end
 
     if string.isnullorwhitespace(name) then
-        name = string.random(5):upper()
+        name = string.random(5, true):upper()
     end
 
     if self:IsThreadRegistered(name) then
@@ -408,11 +409,11 @@ function ThreadManager:UpdateMockRoutines()
     while (API_VER == eAPIVersion.L54) do
         for i = #self.m_mock_routines, 1, -1 do
             local co = self.m_mock_routines[i]
-            if coroutine.status(co) == "dead" then
+            if (coroutine.status(co) == "dead") then
                 table.remove(self.m_mock_routines, i)
             else
                 local ok, err = coroutine.resume(co)
-                if not ok then
+                if (not ok) then
                     Backend:debug("[Coroutine error]: %s", err)
                     table.remove(self.m_mock_routines, i)
                 end

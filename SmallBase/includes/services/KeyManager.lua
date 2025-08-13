@@ -196,6 +196,7 @@ local WM_XBUTTONUP   <const> = 0x020C
 --------------------------------------
 -- Subclass: Key
 --------------------------------------
+---@ignore
 ---@class Key
 ---@field code integer https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 ---@field name string The key name

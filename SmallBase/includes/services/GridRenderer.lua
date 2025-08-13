@@ -9,10 +9,7 @@
 
 --#region GridItem
 
---------------------------------------
--- Class: GridItem
---------------------------------------
--- Class representing an ImGui item.
+---@ignore
 ---@class GridItem
 ---@field item_type string
 ---@field label string

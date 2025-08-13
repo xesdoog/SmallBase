@@ -7,16 +7,53 @@ function DummyFunc(...)
     return ...
 end
 
-function IsInstance(object, class)
-    local mt = getmetatable(object)
-    while mt do
-        if (mt == class) then
-            return true
+---@param object any
+---@param T any  -- can be: class/metatable table, type string, or example object
+---@return boolean
+function IsInstance(object, T)
+    local T_type <const> = type(T)
+    local types <const> = {
+        ["table"]    = true,
+        ["string"]   = true,
+        ["number"]   = true,
+        ["boolean"]  = true,
+        ["function"] = true,
+        ["userdata"] = true
+    }
+
+    if (T_type == "table") then
+        local T_mt = getmetatable(T)
+        local is_obj = rawget(T, "__index") ~= nil
+            or rawget(T, "__type") ~= nil
+            or rawget(T, "__base") ~= nil
+            or T_mt ~= nil
+            or (type(T_mt) == "table" and rawget(T_mt, "__call") ~= nil)
+
+        if (is_obj) then
+            local mt = getmetatable(object)
+            while mt do
+                if mt == T then
+                    return true
+                end
+                mt = rawget(mt, "__base")
+            end
+            return false
+        else
+            local obj_mt = getmetatable(object)
+            local sample_mt = getmetatable(T)
+            if (obj_mt or sample_mt) then
+                return obj_mt == sample_mt
+            end
+
+            return type(object) == T_type
         end
-        mt = rawget(mt, "__base")
     end
 
-    return false
+    if types[T] then
+        return (type(object) == T and getmetatable(object) == nil)
+    end
+
+    return type(object) == T_type
 end
 
 ---@param t table
@@ -451,7 +488,15 @@ end
 ---@param str? string
 ---@return boolean
 string.isnull = function(str)
-    return (str == nil or str == "")
+    return str == nil
+end
+
+string.isempty = function(str)
+    return str == ""
+end
+
+string.isnullorempty = function(str)
+    return string.isnull(str) or str:isempty()
 end
 
 ---@param str string?
@@ -460,7 +505,7 @@ string.isnullorwhitespace = function(str)
     if str == nil then
         return true
     end
-    return str:isnull() or str:iswhitespace()
+    return string.isnull(str) or str:iswhitespace()
 end
 
 -- Returns whether a string starts with the provided prefix.
