@@ -20,7 +20,7 @@ jobs:
           python-version: "3.12.x"
 
       - name: Run doc generator
-        run: python scripts/generate_docs.py
+        run: python ../scripts/generate_docs.py
 
       - name: Commit changes
         run: |
