@@ -14,6 +14,7 @@ function Vehicle:IsValid()
     return self:Exists() and ENTITY.IS_ENTITY_A_VEHICLE(self:GetHandle())
 end
 
+-- Internal.
 function Vehicle:ReadMemoryLayout()
     if not self:IsValid() then
         self:Destroy()
