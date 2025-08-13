@@ -916,7 +916,7 @@ function Vehicle:GetHandlingFlag(flag)
     return Bit.is_set(flag_bits, flag)
 end
 
--- Enables or disables a vehicle's handling flag.
+-- Enables/disables a vehicle's handling flag.
 ---@param flag number
 ---@param toggle boolean
 function Vehicle:SetHandlingFlag(flag, toggle)
@@ -986,7 +986,7 @@ function Vehicle:GetModelInfoFlag(flag)
     return Bit.is_set(flag_bits, bit_pos)
 end
 
--- Enables or disables a vehicle's model info flag.
+-- Enables/disables a vehicle's model info flag.
 ---@param flag integer
 ---@param toggle boolean
 function Vehicle:SetModelInfoFlag(flag, toggle)
