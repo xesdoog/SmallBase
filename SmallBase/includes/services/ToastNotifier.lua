@@ -72,6 +72,7 @@ local SCREEN_RESOLUTION <const> = Game and Game.ScreenResolution or GetScreenRes
 --------------------------------------
 -- Private Subclass: Toast
 --------------------------------------
+---@ignore
 ---@class Toast
 ---@field caller string The notification title.
 ---@field message string The notification body.
