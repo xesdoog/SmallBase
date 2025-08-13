@@ -1,0 +1,30 @@
+name: Generate Docs
+
+on:
+  push:
+    paths:
+      - "/SmallBase/includes/modules/**.lua"
+      - "/SmallBase/includes/services/**.lua"
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.x"
+
+      - name: Run doc generator
+        run: python scripts/generate_docs.py
+
+      - name: Commit changes
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add docs/
+          git diff --cached --quiet || git commit -m "Auto-update docs"
+          git push
