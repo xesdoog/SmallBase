@@ -5,6 +5,7 @@ on:
     paths:
       - "/SmallBase/includes/modules/**.lua"
       - "/SmallBase/includes/services/**.lua"
+  workflow_dispatch:
 
 jobs:
   generate:
