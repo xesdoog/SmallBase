@@ -844,7 +844,7 @@ function Vehicle:WarpPed(ped_handle, seatIndex)
     PED.SET_PED_INTO_VEHICLE(ped_handle, self:GetHandle(), seatIndex)
 end
 
----@param step integer 1 next seat | -1 previous seat
+---@param step integer 1 next seat|-1 previous seat
 function Vehicle:ShuffleSeats(step)
     ThreadManager:RunInFiber(function()
         if not self:IsLocalPlayerInVehicle() then
