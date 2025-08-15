@@ -1,8 +1,7 @@
 # Player
 
-**Description:** Class: Player
-**Global.**
-**Parent:** `Ped`.
+**Description:**
+
 Class representing a GTA V player (Unfinished).
 
 ## Methods
@@ -10,7 +9,6 @@ Class representing a GTA V player (Unfinished).
 ### `IsPlaying`
 
 Returns whether the player is currently playing by checking their game state.
-
 
 **Returns:**
 - `boolean` 

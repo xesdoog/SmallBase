@@ -1,8 +1,5 @@
 # Memory
 
-**Description:** Class: Memory
-[[**Global Singleton.**]]
-
 ## Methods
 
 ### `Dump`
@@ -11,40 +8,38 @@
 - `ptr` pointer
 - `size` integer
 
+
+
 ### `GetVec3`
 
 **Parameters:**
 - `ptr` pointer
+
 
 **Returns:**
 - `vec3` 
 
 ### `GetGameVersion`
 
-
 **Returns:**
 - `table` 
 
 ### `GetGameState`
-
 
 **Returns:**
 - `number` |nil
 
 ### `GetGameTime`
 
-
 **Returns:**
 - `number` 
 
 ### `GetScreenResolution`
 
-
 **Returns:**
 - `vec2` 
 
 ### `GetVehicleInfo`
-
 
 **Returns:**
 - `CVehicle` |nil
@@ -57,6 +52,7 @@ Checks if a vehicle's handling flag is set.
 - `vehicle` number
 - `flag` number
 
+
 **Returns:**
 - `boolean` | nil
 
@@ -65,6 +61,7 @@ Checks if a vehicle's handling flag is set.
 **Parameters:**
 - `vehicle` integer
 - `flag` integer
+
 
 **Returns:**
 - `boolean` 
@@ -78,6 +75,7 @@ Returns the model type of an entity (ped, object, vehicle, MLO, time, etc...)
 **Parameters:**
 - `entity` integer
 
+
 **Returns:**
 - `number` 
 
@@ -86,6 +84,7 @@ Returns the model type of an entity (ped, object, vehicle, MLO, time, etc...)
 **Parameters:**
 - `ped` integer A Ped ID, not a Player ID.
 
+
 **Returns:**
 - `CPed` | nil
 
@@ -93,4 +92,6 @@ Returns the model type of an entity (ped, object, vehicle, MLO, time, etc...)
 
 **Parameters:**
 - `dword` integer
+
+
 

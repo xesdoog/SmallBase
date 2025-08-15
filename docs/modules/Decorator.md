@@ -1,8 +1,8 @@
 # Decorator
 
-**Description:** Class: Decorator
-**Global Singleton.**
-- Custom decorator to mark entities owned by this script.
+**Description:**
+
+Custom decorator to mark entities owned by this script.
 
 ## Methods
 
@@ -12,12 +12,16 @@
 - `entity` integer
 - `key` string
 
+
+
 ### `ExistsOn`
 
 **Parameters:**
 - `entity` integer
 - `key` string
 - `expectedValue` any
+
+
 
 ### `RegisterEntity`
 
@@ -26,11 +30,15 @@
 - `key` string
 - `value` any
 
+
+
 ### `RemoveEntity`
 
 **Parameters:**
 - `entity` integer
 - `key` string
+
+
 
 ### `Validate`
 
@@ -39,8 +47,12 @@ only bool decorators for now
 **Parameters:**
 - `entity` integer
 
+
+
 ### `DebugDump`
 
 **Parameters:**
 - `entity` integer
+
+
 

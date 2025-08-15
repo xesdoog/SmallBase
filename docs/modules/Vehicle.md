@@ -1,12 +1,12 @@
 # Vehicle
 
-**Description:** Class: Vehicle
-[[**Global** - Prarent: `Entity`]]
+**Description:**
+
+Class representing a GTA V vehicle.
 
 ## Methods
 
 ### `IsValid`
-
 
 **Returns:**
 - `boolean` 
@@ -18,30 +18,25 @@ Internal.
 
 ### `GetName`
 
-
 **Returns:**
 - `string` 
 
 ### `GetManufacturer`
-
 
 **Returns:**
 - `string` 
 
 ### `GetClassID`
 
-
 **Returns:**
 - `number` |nil
 
 ### `GetClassName`
 
-
 **Returns:**
 - `string` 
 
 ### `GetOccupants`
-
 
 **Returns:**
 - `table` 
@@ -52,86 +47,74 @@ Internal.
 - `seatIndex` number
 - `isTaskRunning?` boolean
 
-### `IsAnySeatFree`
 
+
+### `IsAnySeatFree`
 
 **Returns:**
 - `boolean` 
 
 ### `IsEmpty`
 
-
 **Returns:**
 - `boolean` 
 
 ### `IsEnemyVehicle`
-
 
 **Returns:**
 - `boolean` 
 
 ### `IsWeaponized`
 
-
 **Returns:**
 - `boolean` 
 
 ### `IsCar`
-
 
 **Returns:**
 - `boolean` 
 
 ### `IsBike`
 
-
 **Returns:**
 - `boolean` 
 
 ### `IsQuad`
-
 
 **Returns:**
 - `boolean` 
 
 ### `IsPlane`
 
-
 **Returns:**
 - `boolean` 
 
 ### `IsHeli`
-
 
 **Returns:**
 - `boolean` 
 
 ### `IsSubmersible`
 
-
 **Returns:**
 - `boolean` 
 
 ### `IsBicycle`
-
 
 **Returns:**
 - `boolean` 
 
 ### `HasABS`
 
-
 **Returns:**
 - `boolean` 
 
 ### `IsSports`
 
-
 **Returns:**
 - `boolean` 
 
 ### `IsSportsOrSuper`
-
 
 **Returns:**
 - `boolean` 
@@ -139,7 +122,6 @@ Internal.
 ### `IsElectric`
 
 Returns whether the vehicle is a pussy shaver.
-
 
 **Returns:**
 - `boolean` 
@@ -161,13 +143,16 @@ equipped with hydraulic suspension.
 **Parameters:**
 - `toggle` boolean
 
+
+
 ### `SetAcceleration`
 
 **Parameters:**
 - `multiplier` float
 
-### `GetDeformation`
 
+
+### `GetDeformation`
 
 **Returns:**
 - `float` |nil
@@ -177,32 +162,29 @@ equipped with hydraulic suspension.
 **Parameters:**
 - `multiplier` float
 
-### `GetExhaustBones`
 
+
+### `GetExhaustBones`
 
 **Returns:**
 - `table` 
 
 ### `GetCustomWheels`
 
-
 **Returns:**
 - `table` 
 
 ### `GetWindowStates`
-
 
 **Returns:**
 - `table` 
 
 ### `GetToggleMods`
 
-
 **Returns:**
 - `table` 
 
 ### `GetNeonLights`
-
 
 **Returns:**
 - `table` 
@@ -212,8 +194,9 @@ equipped with hydraulic suspension.
 **Parameters:**
 - `tNeonData` table
 
-### `GetMods`
 
+
+### `GetMods`
 
 **Returns:**
 - `VehicleMods` 
@@ -224,6 +207,7 @@ equipped with hydraulic suspension.
 - `modType` number
 - `index` number
 
+
 **Returns:**
 - `boolean` 
 
@@ -232,10 +216,14 @@ equipped with hydraulic suspension.
 **Parameters:**
 - `tModData` VehicleMods
 
+
+
 ### `Clone`
 
 **Parameters:**
 - `opts?` { spawn_pos?: vec3, warp_into?: boolean }
+
+
 
 ### `WarpPed`
 
@@ -243,10 +231,14 @@ equipped with hydraulic suspension.
 - `ped_handle` number
 - `seatIndex?` number
 
+
+
 ### `ShuffleSeats`
 
 **Parameters:**
 - `step` integer 1 next seat|-1 previous seat
+
+
 
 ### `ModifyTopSpeed`
 
@@ -255,10 +247,13 @@ Must be called on tick.
 **Parameters:**
 - `value` number speed modifier
 
+
+
 ### `GetHandlingFlag`
 
 **Parameters:**
 - `flag` number
+
 
 **Returns:**
 - `boolean` 
@@ -271,15 +266,20 @@ Enables/disables a vehicle's handling flag.
 - `flag` number
 - `toggle` boolean
 
+
+
 ### `GetModelFlag`
 
 **Parameters:**
 - `flag` eVehicleModelFlags
 
+
+
 ### `GetModelInfoFlag`
 
 **Parameters:**
 - `flag` eVehicleModelInfoFlags
+
 
 **Returns:**
 - `boolean` 
@@ -292,6 +292,8 @@ Enables/disables a vehicle's model info flag.
 - `flag` integer
 - `toggle` boolean
 
+
+
 ### `SaveToJSON`
 
 Serializes a vehicle to JSON.
@@ -300,6 +302,8 @@ If a name isn't provided, the vehicle's name will be used.
 
 **Parameters:**
 - `name?` string
+
+
 
 ### `CreateFromJSON`
 
@@ -310,4 +314,6 @@ Spawns a vehicle from JSON and returns a new `Vehicle` instance.
 **Parameters:**
 - `filename` string
 - `warp_into?` boolean
+
+
 

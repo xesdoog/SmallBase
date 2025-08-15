@@ -1,9 +1,8 @@
 # Self
 
-**Description:** Class: Self
-**Global.**
-**Parent:** `Player`.
-- Class representing the local player.
+**Description:**
+
+Class representing the local player.
 
 ## Methods
 
@@ -11,12 +10,10 @@
 
 override
 
-
 **Returns:**
 - `number` 
 
 ### `GetPlayerID`
-
 
 **Returns:**
 - `number` 
@@ -28,11 +25,11 @@ Returns the entity localPlayer is aiming at.
 **Parameters:**
 - `skipPlayers?` boolean
 
+
 **Returns:**
 - `integer` | nil
 
 ### `GetDeltaTime`
-
 
 **Returns:**
 - `integer` 
@@ -44,6 +41,8 @@ Teleports localPlayer to the provided coordinates.
 **Parameters:**
 - `where` integer|vec3 -- blip or coordinates
 - `keepVehicle?` boolean
+
+
 
 ### `IsBrowsingApps`
 
@@ -60,10 +59,14 @@ Returns whether the player is inside a modshop.
 **Parameters:**
 - `pedHandle` integer
 
+
+
 ### `RemoveAttachments`
 
 A helper method to quickly remove player attachments
 
 **Parameters:**
 - `lookup_table?` table
+
+
 

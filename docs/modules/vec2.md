@@ -1,7 +1,8 @@
 # vec2
 
-**Description:** Class: vec2
-**Global.** - Class representing a 2D vector.
+**Description:**
+
+Class representing a 2D vector.
 
 ## Methods
 
@@ -9,6 +10,7 @@
 
 **Parameters:**
 - `arg` any
+
 
 **Returns:**
 - `boolean` 
@@ -19,11 +21,11 @@
 - `x` float
 - `y` float
 
+
 **Returns:**
 - `vec2` 
 
 ### `zero`
-
 
 **Returns:**
 - `vec2` 
@@ -33,6 +35,7 @@
 **Parameters:**
 - `b` number|vec2
 
+
 **Returns:**
 - `vec2` 
 
@@ -40,6 +43,7 @@
 
 **Parameters:**
 - `b` number|vec2
+
 
 **Returns:**
 - `vec2` 
@@ -49,6 +53,7 @@
 **Parameters:**
 - `b` number|vec2
 
+
 **Returns:**
 - `vec2` 
 
@@ -56,6 +61,7 @@
 
 **Parameters:**
 - `b` number|vec2
+
 
 **Returns:**
 - `vec2` 
@@ -65,6 +71,7 @@
 **Parameters:**
 - `b` number|vec2
 
+
 **Returns:**
 - `boolean` 
 
@@ -72,6 +79,7 @@
 
 **Parameters:**
 - `b` number|vec2
+
 
 **Returns:**
 - `boolean` 
@@ -81,23 +89,21 @@
 **Parameters:**
 - `b` number|vec2
 
+
 **Returns:**
 - `boolean` 
 
 ### `__unm`
-
 
 **Returns:**
 - `vec2` 
 
 ### `unpack`
 
-
 **Returns:**
 - `float` , float
 
 ### `length`
-
 
 **Returns:**
 - `number` 
@@ -107,53 +113,46 @@
 **Parameters:**
 - `b` vec2
 
+
 **Returns:**
 - `number` 
 
 ### `cross_product`
-
 
 **Returns:**
 - `number` 
 
 ### `dot_product`
 
-
 **Returns:**
 - `number` 
 
 ### `normalize`
-
 
 **Returns:**
 - `vec2` 
 
 ### `inverse`
 
-
 **Returns:**
 - `vec2` 
 
 ### `copy`
-
 
 **Returns:**
 - `vec2` 
 
 ### `is_zero`
 
-
 **Returns:**
 - `boolean` 
 
 ### `perpendicular`
 
-
 **Returns:**
 - `vec2` 
 
 ### `angle`
-
 
 **Returns:**
 - `number` 
@@ -164,6 +163,7 @@
 - `b` vec2
 - `dt` number Delta time
 
+
 **Returns:**
 - `vec2` 
 
@@ -171,6 +171,7 @@
 
 **Parameters:**
 - `n` number
+
 
 **Returns:**
 - `vec2` 
@@ -180,11 +181,11 @@
 **Parameters:**
 - `atLength` number
 
+
 **Returns:**
 - `vec2` 
 
 ### `to_polar`
-
 
 **Returns:**
 - `number` , number
@@ -195,11 +196,11 @@
 - `angle` number
 - `radius?` number
 
+
 **Returns:**
 - `vec2` 
 
 ### `serialize`
-
 
 **Returns:**
 - `table` 

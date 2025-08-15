@@ -1,25 +1,22 @@
 # Game
 
-**Description:** Class: Game
-**Global Singleton.**
+**Description:**
+
 Native wrappers.
 
 ## Methods
 
 ### `GetLanguage`
 
-
 **Returns:**
 - `string` , string
 
 ### `GetKeyPressed`
 
-
 **Returns:**
 - `integer` | nil, string | nil
 
 ### `IsOnline`
-
 
 **Returns:**
 - `boolean` 
@@ -29,6 +26,7 @@ Native wrappers.
 **Parameters:**
 - `handle` integer
 
+
 **Returns:**
 - `boolean` 
 
@@ -37,6 +35,7 @@ Native wrappers.
 **Parameters:**
 - `value` integer | string
 
+
 **Returns:**
 - `boolean` 
 
@@ -44,6 +43,7 @@ Native wrappers.
 
 **Parameters:**
 - `input` any
+
 
 **Returns:**
 - `integer` 
@@ -57,6 +57,8 @@ Native wrappers.
 - `is_networked?` boolean
 - `is_sripthost_ped?` boolean
 
+
+
 ### `CreateVehicle`
 
 **Parameters:**
@@ -65,6 +67,8 @@ Native wrappers.
 - `heading?` integer
 - `is_networked?` boolean
 - `is_scripthost_veh?` boolean
+
+
 
 ### `CreateObject`
 
@@ -77,11 +81,15 @@ Native wrappers.
 - `should_place_on_ground?` boolean
 - `heading?` integer
 
+
+
 ### `DeleteEntity`
 
 **Parameters:**
 - `entity` integer
 - `entity_type?` eEntityTypes
+
+
 
 ### `BusySpinnerOn`
 
@@ -89,10 +97,14 @@ Native wrappers.
 - `text` string
 - `spinner_type` integer
 
+
+
 ### `ShowButtonPrompt`
 
 **Parameters:**
 - `text` string
+
+
 
 ### `DrawProgressBar`
 
@@ -104,6 +116,8 @@ Native wrappers.
 - `bgCol` Color
 - `value` number
 
+
+
 ### `DrawText`
 
 **Parameters:**
@@ -113,6 +127,8 @@ Native wrappers.
 - `scale` vec2 | table
 - `font` number
 - `center?` boolean
+
+
 
 ### `AddBlipForEntity`
 
@@ -124,10 +140,14 @@ Native wrappers.
 - `name?` string
 - `alpha?` number
 
+
+
 ### `RemoveBlipFromEntity`
 
 **Parameters:**
 - `handle` integer
+
+
 
 ### `SetBlipSprite`
 
@@ -137,6 +157,8 @@ Blip Sprites: https://wiki.rage.mp/index.php?title=Blips
 - `blip` number
 - `icon` number
 
+
+
 ### `SetBlipName`
 
 Sets a custom name for a blip. Custom names appear on the pause menu and the world map.
@@ -145,11 +167,15 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 - `blip` integer
 - `name` string
 
+
+
 ### `SetEntityHeading`
 
 **Parameters:**
 - `i_entity` integer
 - `i_heading` integer
+
+
 
 ### `SetEntityCoords`
 
@@ -161,6 +187,8 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 - `z_axis?` boolean
 - `should_clear_area?` boolean
 
+
+
 ### `SetEntityCoordsNoOffset`
 
 **Parameters:**
@@ -170,10 +198,13 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 - `y_axis?` boolean
 - `z_axis?` boolean
 
+
+
 ### `RequestModel`
 
 **Parameters:**
 - `model` integer
+
 
 **Returns:**
 - `boolean` 
@@ -183,6 +214,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 **Parameters:**
 - `dict` string
 
+
 **Returns:**
 - `boolean` 
 
@@ -190,6 +222,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 
 **Parameters:**
 - `clipset` string
+
 
 **Returns:**
 - `boolean` 
@@ -199,6 +232,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 **Parameters:**
 - `dict` string
 
+
 **Returns:**
 - `boolean` 
 
@@ -206,6 +240,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 
 **Parameters:**
 - `dict` string
+
 
 **Returns:**
 - `boolean` 
@@ -215,6 +250,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 **Parameters:**
 - `weapon` integer
 
+
 **Returns:**
 - `boolean` 
 
@@ -222,6 +258,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 
 **Parameters:**
 - `scr` string
+
 
 **Returns:**
 - `boolean` 
@@ -232,6 +269,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 - `entity` integer
 - `is_alive` boolean
 
+
 **Returns:**
 - `vec3` 
 
@@ -241,6 +279,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 - `entity` integer
 - `order?` integer
 
+
 **Returns:**
 - `vec3` 
 
@@ -248,6 +287,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 
 **Parameters:**
 - `entity` integer
+
 
 **Returns:**
 - `number` 
@@ -257,6 +297,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 **Parameters:**
 - `entity` integer
 
+
 **Returns:**
 - `number` 
 
@@ -265,6 +306,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 **Parameters:**
 - `entity` integer
 
+
 **Returns:**
 - `number` 
 
@@ -272,6 +314,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 
 **Parameters:**
 - `entity` integer
+
 
 **Returns:**
 - `vec3` 
@@ -282,6 +325,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 - `ped` integer
 - `boneID` integer
 
+
 **Returns:**
 - `integer` 
 
@@ -290,6 +334,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 **Parameters:**
 - `ped` integer
 - `boneID` integer
+
 
 **Returns:**
 - `vec3` 
@@ -300,6 +345,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 - `entity` integer
 - `boneName` string
 
+
 **Returns:**
 - `integer` 
 
@@ -308,6 +354,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 **Parameters:**
 - `entity` integer
 - `bone` number | string
+
 
 **Returns:**
 - `vec3` 
@@ -318,6 +365,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 - `entity` integer
 - `bone` integer | string
 
+
 **Returns:**
 - `vec3` 
 
@@ -327,6 +375,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 - `entity` integer
 - `bone` integer | string
 
+
 **Returns:**
 - `vec3` 
 
@@ -334,6 +383,7 @@ Sets a custom name for a blip. Custom names appear on the pause menu and the wor
 
 **Parameters:**
 - `entity` integer
+
 
 **Returns:**
 - `integer` 
@@ -345,6 +395,7 @@ Returns the entity localPlayer is aiming at.
 **Parameters:**
 - `player` integer
 
+
 **Returns:**
 - `integer` | nil
 
@@ -352,6 +403,7 @@ Returns the entity localPlayer is aiming at.
 
 **Parameters:**
 - `entity` integer
+
 
 **Returns:**
 - `integer` 
@@ -361,6 +413,7 @@ Returns the entity localPlayer is aiming at.
 **Parameters:**
 - `entity` integer
 
+
 **Returns:**
 - `integer` 
 
@@ -369,6 +422,7 @@ Returns the entity localPlayer is aiming at.
 **Parameters:**
 - `entity` integer
 
+
 **Returns:**
 - `string` 
 
@@ -376,6 +430,7 @@ Returns the entity localPlayer is aiming at.
 
 **Parameters:**
 - `model` integer
+
 
 **Returns:**
 - `vec3` , vec3
@@ -389,6 +444,7 @@ is sitting in (-1 driver, 0 front passenger, etc...).
 **Parameters:**
 - `ped` integer
 
+
 **Returns:**
 - `integer` | nil
 
@@ -396,6 +452,8 @@ is sitting in (-1 driver, 0 front passenger, etc...).
 
 **Parameters:**
 - `netID` integer
+
+
 
 ### `StartSyncedPtfxLoopedOnEntityBone`
 
@@ -408,6 +466,7 @@ is sitting in (-1 driver, 0 front passenger, etc...).
 - `v_Pos` vec3
 - `v_Rot` vec3
 - `color?` Color
+
 
 **Returns:**
 - `table` | nil
@@ -423,17 +482,23 @@ is sitting in (-1 driver, 0 front passenger, etc...).
 - `v_Rot` vec3
 - `f_Scale` integer
 
+
+
 ### `StopParticleEffects`
 
 **Parameters:**
 - `fxHandles` table
 - `dict?` string
 
+
+
 ### `ApplyPedComponents`
 
 **Parameters:**
 - `ped` number
 - `components` table
+
+
 
 ### `GetClosestVehicle`
 
@@ -445,6 +510,7 @@ Returns a handle for the closest vehicle to a provided entity or coordinates.
 - `excludeEntity?` integer **Optional**: a specific vehicle to ignore.
 - `nonPlayerVehicle?` boolean -- **Optional**: if true, ignores player vehicles
 - `maxSpeed?` number  -- **Optional**: if set, skips vehicles faster than this speed (m/s)
+
 
 **Returns:**
 - `integer` -- vehicle handle or 0
@@ -458,6 +524,7 @@ Returns a handle for the closest human ped to a provided entity or coordinates.
 - `range` integer
 - `aliveOnly` boolean **Optional**: if true, ignores dead peds.
 
+
 **Returns:**
 - `integer` 
 
@@ -465,12 +532,10 @@ Returns a handle for the closest human ped to a provided entity or coordinates.
 
 Temporary workaround to fix auto-pilot's "fly to objective" option.
 
-
 **Returns:**
 - `boolean` , vec3
 
 ### `GetWaypointCoords`
-
 
 **Returns:**
 - `vec3` |nil
@@ -484,6 +549,7 @@ Starts a Line Of Sight world probe shape test.
 - `dest` vec3
 - `traceFlags` integer
 
+
 **Returns:**
 - `boolean` , vec3, integer
 
@@ -492,10 +558,14 @@ Starts a Line Of Sight world probe shape test.
 **Parameters:**
 - `toggle` boolean
 
+
+
 ### `DisableOceanWaves`
 
 **Parameters:**
 - `toggle` boolean
+
+
 
 ### `MarkSelectedEntity`
 
@@ -505,35 +575,49 @@ Draws a green chevron down element on top of an entity in the game world.
 - `entity` integer
 - `offset?` float
 
+
+
 ### `GetModelType`
 
 **Parameters:**
 - `modelHash` number|string
+
+
 
 ### `GetPedHash`
 
 **Parameters:**
 - `modelName` string
 
+
+
 ### `GetPedName`
 
 **Parameters:**
 - `modelHash` integer
+
+
 
 ### `GetPedTypeFromModel`
 
 **Parameters:**
 - `model` integer|string
 
+
+
 ### `GetPedGenderFromModel`
 
 **Parameters:**
 - `model` integer|string
 
+
+
 ### `IsPedModelHuman`
 
 **Parameters:**
 - `model` integer|string
+
+
 
 ### `FindSpawnPointInDirection`
 
@@ -541,6 +625,7 @@ Draws a green chevron down element on top of an entity in the game world.
 - `coords` vec3
 - `forwardVector` vec3
 - `distance` integer
+
 
 **Returns:**
 - `vec3` |nil
@@ -550,11 +635,14 @@ Draws a green chevron down element on top of an entity in the game world.
 **Parameters:**
 - `distance` integer
 
+
+
 ### `GetClosestVehicleNodeWithHeading`
 
 **Parameters:**
 - `coords` vec3
 - `nodeType` integer
+
 
 **Returns:**
 - `vec3` , integer
@@ -564,8 +652,12 @@ Draws a green chevron down element on top of an entity in the game world.
 **Parameters:**
 - `entity` integer | table
 
+
+
 ### `FadeInEntity`
 
 **Parameters:**
 - `entity` integer | table
+
+
 

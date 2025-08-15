@@ -1,7 +1,8 @@
 # vec3
 
-**Description:** Class: vec3
-**Global.** - Class representing a 3D vector.
+**Description:**
+
+Class representing a 3D vector.
 
 ## Methods
 
@@ -9,6 +10,7 @@
 
 **Parameters:**
 - `arg` any
+
 
 **Returns:**
 - `boolean` 
@@ -18,6 +20,7 @@
 **Parameters:**
 - `b` number|vec3
 
+
 **Returns:**
 - `vec3` 
 
@@ -25,6 +28,7 @@
 
 **Parameters:**
 - `b` number|vec3
+
 
 **Returns:**
 - `vec3` 
@@ -34,6 +38,7 @@
 **Parameters:**
 - `b` number|vec3
 
+
 **Returns:**
 - `vec3` 
 
@@ -41,6 +46,7 @@
 
 **Parameters:**
 - `b` number|vec3
+
 
 **Returns:**
 - `vec3` 
@@ -50,6 +56,7 @@
 **Parameters:**
 - `b` number|vec3
 
+
 **Returns:**
 - `boolean` 
 
@@ -57,6 +64,7 @@
 
 **Parameters:**
 - `b` number|vec3
+
 
 **Returns:**
 - `boolean` 
@@ -66,17 +74,16 @@
 **Parameters:**
 - `b` number|vec3
 
+
 **Returns:**
 - `boolean` 
 
 ### `__unm`
 
-
 **Returns:**
 - `vec3` 
 
 ### `length`
-
 
 **Returns:**
 - `number` 
@@ -86,11 +93,11 @@
 **Parameters:**
 - `b` vec3
 
+
 **Returns:**
 - `number` 
 
 ### `normalize`
-
 
 **Returns:**
 - `vec3` 
@@ -100,6 +107,7 @@
 **Parameters:**
 - `b` vec3
 
+
 **Returns:**
 - `vec3` 
 
@@ -107,6 +115,7 @@
 
 **Parameters:**
 - `b` vec3
+
 
 **Returns:**
 - `number` 
@@ -117,6 +126,7 @@
 - `to` vec3
 - `dt` number Delta time
 
+
 **Returns:**
 - `vec3` 
 
@@ -125,41 +135,36 @@
 **Parameters:**
 - `includeZ?` boolean
 
+
 **Returns:**
 - `vec3` 
 
 ### `trim`
-
 
 **Returns:**
 - `vec3` 
 
 ### `copy`
 
-
 **Returns:**
 - `vec3` 
 
 ### `unpack`
-
 
 **Returns:**
 - `float` , float, float
 
 ### `zero`
 
-
 **Returns:**
 - `vec3` 
 
 ### `is_zero`
 
-
 **Returns:**
 - `boolean` 
 
 ### `heading`
-
 
 **Returns:**
 - `number` 
@@ -169,6 +174,7 @@
 **Parameters:**
 - `z` float
 
+
 **Returns:**
 - `vec3` 
 
@@ -176,12 +182,10 @@
 
 Converts a rotation vector to direction
 
-
 **Returns:**
 - `vec3` 
 
 ### `serialize`
-
 
 **Returns:**
 - `table` 
