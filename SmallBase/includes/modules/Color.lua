@@ -3,6 +3,9 @@
 --------------------------------------
 -- Class: Color
 --------------------------------------
+-- Color instances can be created using color names defined in `Color.string_colors`,
+-- self-regsitered color names (using the `RegisterNamedColor` method),
+-- hex strings, ABGR uint_32, RGBA floats (0 - 1), and RGBA numbers (0 - 255).
 ---@class Color
 ---@overload fun(...): Color
 Color = Class("Color")
@@ -25,6 +28,7 @@ Color.string_colors = {
     ["purple"] = { 1.0, 0.0, 1.0, 1.0 },
 }
 
+---@ignore
 function Color:__tostring()
     if not self.value or not self.type then
         return string.format(
@@ -61,10 +65,12 @@ function Color:__tostring()
     )
 end
 
+---@ignore
 function Color:print()
     print(self:__tostring())
 end
 
+---@ignore
 function Color:GetValue()
     if not self.type or not self.arg or not self.arg[1] then
         return "None"
@@ -165,16 +171,14 @@ function Color.new(...)
 end
 
 -- Allows you to register new named colors in the Color class itself
---
--- that you can call later using `Color.new("your_custom_color_name")`
+-- that you can call later using `Color("your_custom_color_name")`
 --
 -- Example usage:
 --
---      Color:RegisterNamedColor("Magenta", "#FF00FF")
---
--- You can then use it like so:
---
---      local r, g, b, a = Color.new("Magenta"):AsRGBA()
+-- ```lua
+-- Color:RegisterNamedColor("Magenta", "#FF00FF")
+-- local r, g, b, a = Color("Magenta"):AsRGBA()
+-- ```
 ---@param name string
 ---@param ... any
 function Color:RegisterNamedColor(name, ...)
@@ -249,6 +253,7 @@ function Color:AsRGBA()
 end
 
 -- Returns a color in float format.
+---@return float, float, float, float
 function Color:AsFloat()
     if not self.type then
         return 0, 0, 0, 0
@@ -262,6 +267,8 @@ function Color:AsFloat()
     end
 end
 
+-- Returns a color hex string.
+---@return string|nil
 function Color:AsHex()
     if not self.type then
         return
@@ -275,7 +282,7 @@ function Color:AsHex()
     end
 end
 
--- Returns a uint32 color in **ABGR** format.
+-- Returns a uint_32 color in **ABGR** format.
 ---@return number
 function Color:AsU32()
     if not self.type then
@@ -290,14 +297,16 @@ function Color:AsU32()
     end
 end
 
+---@ignore
 function Color:serialize()
     return { __type = "color", arg = self.arg }
 end
 
+---@ignore
 function Color.deserialize(t)
     if (type(t) ~= "table" or not t.arg) then
         log.warning("[Color]: Deserialization failed: invalid data!")
-        return Color.new(0, 0, 0, 1)
+        return Color.new("black")
     end
 
     return Color.new(t.arg)

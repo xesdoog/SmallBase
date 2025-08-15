@@ -31,8 +31,8 @@ end
 
 if (not io["exists"]) then
     io.exists = function(filepath)
-        local f, _ = io.open(filepath, "r")
-        if not f then
+        local ok, f = pcall(io.open, filepath, "r")
+        if not ok or not f then
             return false
         end
 

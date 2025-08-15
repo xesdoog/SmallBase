@@ -3,7 +3,7 @@
 --------------------------------------
 -- **Global Singleton.**
 --
--- - Custom decorator to mark entities owned by this script.
+-- Custom decorator to mark entities owned by this script.
 ---@class Decorator
 Decorator = {}
 Decorator.RegisteredEntities = {}

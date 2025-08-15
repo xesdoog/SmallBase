@@ -2,6 +2,7 @@ import os
 import re
 from pathlib import Path
 
+DOC_COMMENT = re.compile(r"(^--\s+)|(^---\s+)")
 CLASS_ANNOTATION = re.compile(r"^---@class\s+(\w+)(.*)$")
 METHOD_DEF = re.compile(r"^function\s+([\w_]+)[:.]([\w_]+)|([\w_]+)\s*=\s*function")
 RETURN_ANNOTATION = re.compile(r"^---@return\s+(\w+)(.*)$")
@@ -14,13 +15,6 @@ EXCLUSIONS = [
     "Logger.lua",
     "Time.lua",
     "ThreadManager.lua",
-    "Translator.lua",
-]
-IGNORE_ANNOTATIONS = [
-    "---@field",
-    "---@overload",
-    "---@diagnostic",
-    "---@deprecated",
 ]
 
 
@@ -70,7 +64,7 @@ def parse_lua_file(path):
 
             desc_lines = []
             for ann in reversed(annotations):
-                if ann.startswith("--") and not ann.startswith("---@"):
+                if DOC_COMMENT.match(ann):
                     text = ann.lstrip("-").strip()
                     if text:
                         desc_lines.insert(0, text)
@@ -95,7 +89,7 @@ def parse_lua_file(path):
                         doc_block.insert(0, ann)
                     else:
                         break
-                if doc_block:
+                if doc_block and not any(IGNORE_TAG in ann for ann in annotations):
                     methods.append((method_name, *format_annotation_block(doc_block)))
 
                 annotations = []
@@ -113,7 +107,7 @@ def generate_docs(docs, output_path):
         with open(out_path, "w", encoding="utf-8") as md:
             md.write(f"# {class_name}\n\n")
             if class_desc:
-                md.write(f"**Description:** {class_desc}\n\n")
+                md.write(f"**Description:**\n\n{class_desc}\n\n")
             if not methods:
                 md.write("_No annotated methods found._\n")
                 continue
@@ -129,8 +123,10 @@ def generate_docs(docs, output_path):
                     for p in params:
                         param_name, param_desc = p.split(" ", 1)
                         md.write(f"- `{param_name}` {param_desc}\n")
+                    md.write("\n\n")
+
                 if returns:
-                    md.write("\n**Returns:**\n")
+                    md.write("**Returns:**\n")
                     for rtype, desc in returns:
                         md.write(f"- `{rtype}` {desc}\n")
                 md.write("\n")

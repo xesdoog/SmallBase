@@ -5,7 +5,7 @@ local loaded, en = pcall(require, "lib.translations.en-US")
 --------------------------------------
 -- Class: Translator
 --------------------------------------
--- **Global Singleton.**
+--**Global Singleton.**
 ---@class Translator
 ---@field labels table<string, string>
 ---@field lang_code string
@@ -130,7 +130,7 @@ function Translator:Translate(label)
     return text
 end
 
--- #### Wrapper for `Translator:Translate`
+-- Wrapper for `Translator:Translate`
 ---@param label string
 function _T(label)
     return Translator:Translate(label)

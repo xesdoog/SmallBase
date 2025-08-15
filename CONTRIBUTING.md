@@ -1,0 +1,196 @@
+# Introduction
+
+SmallBase is a lightweight Lua framework designed to provide developers with the tools and foundations to create their own scripts, without imposing specific features.
+
+With that out of the way, thank you for considering contributing to this small project. It's people like you that make these open source projects great!
+
+## Commit Convention
+
+These are recommended, but not enforced yet. SmallBase follows similar commit guidelines to [YimMenu](https://github.com/Mr-X-GTA/YimMenu/blob/master/CONTRIBUTING.md):
+
+### Commit Structure
+
+  ```text
+  <type>(scope): <description>
+
+  [optional body]
+
+  [optional footer]
+  ```
+
+- **Types (lowercase only):**
+  - feat: New features.
+  - fix: Bug fixes.
+  - style: Feature and updates related to styling.
+  - refactor: Refactoring a specific section of the codebase.
+  - test: Everything related to testing.
+  - docs: Everything related to documentation.
+  - chore: Regular code maintenance.
+
+- **Scope:**
+  - A scope is a phrase describing parts of the code affected by the changes. For example `(translations)`.
+
+- **Body (Optional):**
+  - The commit body can provide additional contextual information. For breaking changes, the body MUST start with "BREAKING CHANGE".
+
+- **Footer (Optional):**
+  - A commit footer is used to reference issues affected by the code changes. For example: "Fixes #13". It can also be used to indicate breaking changes by starting with "BREAKING CHANGE".
+
+- **Example:**
+
+  ```text
+  fix(SomeFeature): fix constructor returning an empty object.
+  docs(Readme): document coding conventions
+  ```
+
+## Coding Standards
+
+### Annotations
+
+Annotate all enums, classes, and class methods using [LuaLS](https://luals.github.io/wiki/annotations/)'s style.
+
+Annotations are critical for readability, code completion, error checking, and automatic generation of class documentations.
+
+For comments/summaries/descriptions, you can use as many dashes as you want but please leave a space between the last dash and the text.
+
+- **Example:**
+
+    ```lua
+    -- Calculates the sum of two numbers.
+    ---@param a number The first number
+    ---@param b number The second number
+    ---@return number The sum of both numbers
+    function MyClass:Add(a, b)
+        return a + b
+    end
+    ```
+
+### Global Variables
+
+There are two ways to declare globals:
+
+1. Globals that should be serialized to JSON:
+Index SmallBase's `GVars` table. Even if the variable was never declared before:
+
+    ```lua
+    GVars.some_feature_enabled, _ = ImGui.Checkbox("My Checkbox", GVars.some_feature_enabled)
+    ```
+
+2. Regular globals:
+Use Lua's default global table `_G`:
+
+    ```lua
+    some_global_number = 123
+    ```
+
+### Style
+
+You are free to use any style you want, except in these cases:
+
+| Scope | Naming | Example |
+| ----------- | ----------- | ---------- |
+| Global Functions | PascalCase | `function DoSomething(...) end` |
+| Local Functions | any (consistent) | You are free to use any style as long as it stays consistent throughout the whole file |
+| Standard Lib Extensions | Use the lib's default style | `string.somefunc = function(...) end` |
+| Enums | PascalCase prefixed with a lowercase `e` | `eExampleEnum` |
+| Enum Members | Preferably UPPER_SNAKE_CASE but PascalCase is also allowed | `eExampleEnum.SOME_MEMBER`/`eExampleEnum.SomeMember` |
+| Classes | PascalCase | `MyNewClass = Class("MyNewClass")` |
+| Class Methods | PascalCase | `function MyNewClass:ExampleMethod(...) end` |
+| Class Private Variables | snake_case prefixed with an `m` | `m_handle` |
+
+### Formatting
+
+- **Indentations:**
+  - Does not matter. If using tabs, make sure one tab equals **four** spaces.
+
+- **Line Wrapping:**
+  - Try to wrap wide lines using either your IDE's formatter or a Pythonic way.
+
+    - Example:
+
+        ```lua
+        SomeFunc(param1, param2, param3, param4, param5, param6, param7, param8, param9, ...)
+        ```
+
+    - Preferred (Pythonic) style:
+
+        ```lua
+        SomeFunc(
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+            param6,
+            param7,
+            param8,
+            param9,
+            ...
+        )
+        ```
+
+- **Nested `if` Statements:**
+
+  - Always try to use guarded if statements when applicable.
+
+    - Example:
+
+        ```lua
+        local cond_1 = false
+        local cond_2 = nil
+        local cond_3 = true
+
+        if cond_1 then
+            if cond_2 then
+                if cond_3 then
+                    DoSomething()
+                end
+            end
+        end
+        ```
+
+    - Preferred approach:
+
+        ```lua
+        local cond_1 = false
+        local cond_2 = nil
+        local cond_3 = true
+
+        if not cond_1 then
+            return
+        end
+
+        if not cond_2 then
+            return
+        end
+
+        if not cond_3 then
+            return
+        end
+
+        DoSomething()
+        ```
+
+    - Shorter version:
+
+        ```lua
+        local cond_1 = false
+        local cond_2 = nil
+        local cond_3 = true
+
+        if not (cond_1 and cond_2 and cond_3) then
+            return
+        end
+
+        DoSomething()
+        ```
+
+## What To Avoid
+
+Avoid adding end-user features directly to the project (example: A drift minigame, a business manager, animations, etc.).
+
+SmallBase is, as the name suggests, a base. It provides the tools and the foundations to create new scripts.
+
+Two scripts can both use this project as a template and offer completely different sets of features.
+
+If you want to share a feature, make it a standalone module that uses SmallBase.

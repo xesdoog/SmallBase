@@ -1,7 +1,6 @@
 -- Basic compatibility layers/API stubs
 ---@diagnostic disable: lowercase-global
 
----@class Compat
 local Compat = {}
 Compat.__index = Compat
 

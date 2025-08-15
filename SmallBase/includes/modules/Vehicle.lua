@@ -1,7 +1,7 @@
 --------------------------------------
 -- Class: Vehicle
 --------------------------------------
---[[**Global** - Prarent: `Entity`]]
+-- Class representing a GTA V vehicle.
 ---@class Vehicle : Entity
 ---@field private layout CVehicle
 ---@field private m_class_id number

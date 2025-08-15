@@ -38,7 +38,7 @@ end
 --------------------------------------
 -- Class: GridRenderer
 --------------------------------------
--- **Global** - Renders ImGui widgets (buttons, checkboxes, radio buttons) in a grid layout.
+-- Renders ImGui widgets (buttons, checkboxes, radio buttons) in a grid layout.
 ---@class GridRenderer : ClassMeta<GridRenderer>
 ---@field columns number
 ---@field elements GridItem[]

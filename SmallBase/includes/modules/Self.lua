@@ -7,7 +7,7 @@
 --
 -- **Parent:** `Player`.
 --
--- - Class representing the local player.
+-- Class representing the local player.
 ---@class Self: Player
 Self = Class("Self", Player)
 Self.new = nil

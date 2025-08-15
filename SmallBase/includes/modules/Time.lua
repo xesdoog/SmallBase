@@ -7,7 +7,7 @@
 --------------------------------------
 -- Class: Time
 --------------------------------------
--- **Global Singleton.**
+--**Global Singleton.**
 ---@class Time
 local Time = {}
 Time.__index = Time
