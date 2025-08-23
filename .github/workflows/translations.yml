@@ -1,4 +1,4 @@
-name: Generate Docs
+name: Generate Translations
 
 on:
   push:
@@ -11,6 +11,23 @@ jobs:
   Generate_Translations:
     runs-on: ubuntu-latest
     steps:
+      - name: Wait
+        run: |
+          WORKFLOW_NAME="Generate Docs"
+          REPO="${GITHUB_REPOSITORY}"
+          while true; do
+            STATUS=$(gh api repos/$REPO/actions/workflows --jq \
+              '.workflows[] | select(.name=="'"$WORKFLOW_NAME"'") | .id' \
+            | xargs -I {} gh api repos/$REPO/actions/workflows/{}/runs --jq \
+              '.workflow_runs[0].status')
+
+            if [ "$STATUS" = "completed" ]; then
+              break
+            fi
+  
+            sleep 20
+          done
+
       - name: Checkout
         uses: actions/checkout@v4
 
