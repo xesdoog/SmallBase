@@ -49,18 +49,18 @@
 Checks if a vehicle's handling flag is set.
 
 **Parameters:**
-- `vehicle` number
-- `flag` number
+- `vehicle` integer
+- `flag` eVehicleHandlingFlags
 
 
 **Returns:**
-- `boolean` | nil
+- `boolean` |nil
 
 ### `GetVehicleModelFlag`
 
 **Parameters:**
 - `vehicle` integer
-- `flag` integer
+- `flag` eVehicleModelFlags
 
 
 **Returns:**
@@ -86,12 +86,5 @@ Returns the model type of an entity (ped, object, vehicle, MLO, time, etc...)
 
 
 **Returns:**
-- `CPed` | nil
-
-### `SetWeaponEffectGroup`
-
-**Parameters:**
-- `dword` integer
-
-
+- `CPed` |nil
 

@@ -121,7 +121,7 @@ Internal.
 
 ### `IsElectric`
 
-Returns whether the vehicle is a pussy shaver.
+Returns whether the vehicle is a pubic hair shaver.
 
 **Returns:**
 - `boolean` 
@@ -133,9 +133,12 @@ Returns whether the vehicle is an F1 race car.
 
 ### `IsLowrider`
 
-Returns whether the vehicle is a lowrider
+Returns whether the vehicle is a lowrider equipped with hydraulic suspension.
 
-equipped with hydraulic suspension.
+
+### `MaxPerformance`
+
+Maximizes the vehicle's performance mods.
 
 
 ### `LockDoors`
@@ -252,7 +255,7 @@ Must be called on tick.
 ### `GetHandlingFlag`
 
 **Parameters:**
-- `flag` number
+- `flag` eVehicleHandlingFlags
 
 
 **Returns:**
@@ -263,7 +266,7 @@ Must be called on tick.
 Enables/disables a vehicle's handling flag.
 
 **Parameters:**
-- `flag` number
+- `flag` eVehicleHandlingFlags
 - `toggle` boolean
 
 
@@ -289,7 +292,7 @@ Enables/disables a vehicle's handling flag.
 Enables/disables a vehicle's model info flag.
 
 **Parameters:**
-- `flag` integer
+- `flag` eVehicleModelInfoFlags
 - `toggle` boolean
 
 
@@ -298,7 +301,7 @@ Enables/disables a vehicle's model info flag.
 
 Serializes a vehicle to JSON.
 
-If a name isn't provided, the vehicle's name will be used.
+If a file name isn't provided, the vehicle's name will be used.
 
 **Parameters:**
 - `name?` string
