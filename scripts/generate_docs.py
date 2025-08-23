@@ -9,10 +9,10 @@ RETURN_ANNOTATION = re.compile(r"^---@return\s+(\w+)(.*)$")
 IGNORE_TAG = "@ignore"
 EXCLUSIONS = [
     "Accessor.lua",
-    "Class.lua",
     "CommandExecutor.lua",
     "GUI.lua",
     "Logger.lua",
+    "Serializer.lua",
     "Time.lua",
     "ThreadManager.lua",
 ]

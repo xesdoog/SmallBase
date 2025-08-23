@@ -36,4 +36,3 @@ Translates text to the user's language.
 
 **Returns:**
 - `string` 
-

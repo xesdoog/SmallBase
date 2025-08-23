@@ -275,7 +275,7 @@ function Vehicle:IsSportsOrSuper()
     )
 end
 
--- Returns whether the vehicle is a pussy shaver.
+-- Returns whether the vehicle is a pubic hair shaver.
 ---@return boolean
 function Vehicle:IsElectric()
     return self:GetModelInfoFlag(eVehicleModelInfoFlags.IS_ELECTRIC)
@@ -287,14 +287,13 @@ function Vehicle:IsFormulaOne()
         or (self:GetClassID() == eVehicleClasses.OpenWheel)
 end
 
--- Returns whether the vehicle is a lowrider
---
--- equipped with hydraulic suspension.
+-- Returns whether the vehicle is a lowrider equipped with hydraulic suspension.
 function Vehicle:IsLowrider()
     return self:GetModelInfoFlag(eVehicleModelInfoFlags.HAS_LOWRIDER_HYDRAULICS)
         or self:GetModelInfoFlag(eVehicleModelInfoFlags.HAS_LOWRIDER_DONK_HYDRAULICS)
 end
 
+-- Maximizes the vehicle's performance mods.
 function Vehicle:MaxPerformance()
     local handle = self:GetHandle()
 
@@ -304,40 +303,31 @@ function Vehicle:MaxPerformance()
         return
     end
 
-    local maxArmor = VEHICLE.GET_NUM_VEHICLE_MODS(handle, 16) - 1
-    while VEHICLE.IS_VEHICLE_MOD_GEN9_EXCLUSIVE(handle, 16, maxArmor) do
-        maxArmor = maxArmor - 1
-        yield()
+    local function SetPlatformAppropriateMod(modType, modIndex)
+        if (Backend:GetAPIVersion() == eAPIVersion.V1) then
+            while VEHICLE.IS_VEHICLE_MOD_GEN9_EXCLUSIVE(handle, modType, modIndex) do
+                modIndex = modIndex - 1
+                yield()
+            end
+        end
+
+        VEHICLE.SET_VEHICLE_MOD(handle, modType, modIndex, false)
     end
-    VEHICLE.SET_VEHICLE_MOD(handle, 16, maxArmor, false)
+
+    local maxArmor = VEHICLE.GET_NUM_VEHICLE_MODS(handle, 16) - 1
+    SetPlatformAppropriateMod(16, maxArmor)
 
     local maxEngine = VEHICLE.GET_NUM_VEHICLE_MODS(handle, 11) - 1
-    while VEHICLE.IS_VEHICLE_MOD_GEN9_EXCLUSIVE(handle, 11, maxEngine) do
-        maxEngine = maxEngine - 1
-        yield()
-    end
-    VEHICLE.SET_VEHICLE_MOD(handle, 11, maxEngine, false)
+    SetPlatformAppropriateMod(11, maxEngine)
 
     local maxBrakes = VEHICLE.GET_NUM_VEHICLE_MODS(handle, 12) - 1
-    while VEHICLE.IS_VEHICLE_MOD_GEN9_EXCLUSIVE(handle, 12, maxBrakes) do
-        maxBrakes = maxBrakes - 1
-        yield()
-    end
-    VEHICLE.SET_VEHICLE_MOD(handle, 12, maxBrakes, false)
+    SetPlatformAppropriateMod(12, maxBrakes)
 
     local maxTrans = VEHICLE.GET_NUM_VEHICLE_MODS(handle, 13) - 1
-    while VEHICLE.IS_VEHICLE_MOD_GEN9_EXCLUSIVE(handle, 13, maxTrans) do
-        maxTrans = maxTrans - 1
-        yield()
-    end
-    VEHICLE.SET_VEHICLE_MOD(handle, 13, maxTrans, false)
+    SetPlatformAppropriateMod(13, maxTrans)
 
     local maxSusp = VEHICLE.GET_NUM_VEHICLE_MODS(handle, 15) - 1
-    while VEHICLE.IS_VEHICLE_MOD_GEN9_EXCLUSIVE(handle, 15, maxSusp) do
-        maxSusp = maxSusp - 1
-        yield()
-    end
-    VEHICLE.SET_VEHICLE_MOD(handle, 15, maxSusp, false)
+    SetPlatformAppropriateMod(15, maxSusp)
 
     VEHICLE.TOGGLE_VEHICLE_MOD(handle, 18, true)
     VEHICLE.TOGGLE_VEHICLE_MOD(handle, 22, true)
@@ -470,14 +460,15 @@ function Vehicle:GetExhaustBones()
         return {}
     end
 
-    local bones             = {}
-    local count             = VEHICLE.GET_VEHICLE_MAX_EXHAUST_BONE_COUNT_() - 1
-    local bParam, boneIndex = false, -1
+    local bones   = {}
+    local count   = VEHICLE.GET_VEHICLE_MAX_EXHAUST_BONE_COUNT_() - 1 -- for some reason all vehicles have an additional exhaust bone sticking out of the top of the engine
+    local bParam  = false
+    local boneIdx = -1
 
     for i = 0, count do
-        bParam, boneIndex = VEHICLE.GET_VEHICLE_EXHAUST_BONE_(handle, i, boneIndex, bParam)
+        bParam, boneIdx = VEHICLE.GET_VEHICLE_EXHAUST_BONE_(handle, i, boneIdx, bParam)
         if bParam then
-            table.insert(bones, boneIndex)
+            table.insert(bones, boneIdx)
         end
     end
 
@@ -896,7 +887,7 @@ function Vehicle:ModifyTopSpeed(value)
     VEHICLE.MODIFY_VEHICLE_TOP_SPEED(self:GetHandle(), value)
 end
 
----@param flag number
+---@param flag eVehicleHandlingFlags
 ---@return boolean
 function Vehicle:GetHandlingFlag(flag)
     if not self:IsValid() then
@@ -918,7 +909,7 @@ function Vehicle:GetHandlingFlag(flag)
 end
 
 -- Enables/disables a vehicle's handling flag.
----@param flag number
+---@param flag eVehicleHandlingFlags
 ---@param toggle boolean
 function Vehicle:SetHandlingFlag(flag, toggle)
     if not self:IsValid() or not (self:IsCar() or self:IsBike() or self:IsQuad()) then
@@ -988,7 +979,7 @@ function Vehicle:GetModelInfoFlag(flag)
 end
 
 -- Enables/disables a vehicle's model info flag.
----@param flag integer
+---@param flag eVehicleModelInfoFlags
 ---@param toggle boolean
 function Vehicle:SetModelInfoFlag(flag, toggle)
     if not self:IsValid() then
@@ -1020,7 +1011,7 @@ end
 
 -- Serializes a vehicle to JSON.
 --
--- If a name isn't provided, the vehicle's name will be used.
+-- If a file name isn't provided, the vehicle's name will be used.
 ---@param name? string
 function Vehicle:SaveToJSON(name)
     if not self:IsValid() then
@@ -1031,6 +1022,7 @@ function Vehicle:SaveToJSON(name)
         name = self:GetName()
     end
 
+    name = name:gsub("%.[^%.]+$", "")
     local filename = GenerateUniqueFilename(name, ".json")
     local modelhash = self:GetModelHash()
     local mods = self:GetMods()
@@ -1050,7 +1042,7 @@ end
 ---@param warp_into? boolean
 function Vehicle.CreateFromJSON(filename, warp_into)
     if (type(filename) ~= "string") then
-        Toast:ShowError("Vehicle", "Failed to read vehicle data from JSON!", true)
+        Toast:ShowError("Vehicle", "Failed to read vehicle data from JSON: Invalid filename.", true)
         return
     end
 
@@ -1060,7 +1052,7 @@ function Vehicle.CreateFromJSON(filename, warp_into)
 
     local data = Serializer:ReadFromFile(filename)
     if (type(data) ~= "table") then
-        Toast:ShowError("Vehicle", "Failed to read vehicle data from JSON!", true)
+        Toast:ShowError("Vehicle", "Failed to read vehicle data from JSON. Unable to read file", true)
         return
     end
 
@@ -1070,8 +1062,9 @@ function Vehicle.CreateFromJSON(filename, warp_into)
         return
     end
 
-    local spawnpos = Self:GetVehicle():GetSpawnPosInFront()
-    local new_veh = Vehicle:Create(modelhash, eEntityTypes.Vehicle, spawnpos, Self:GetHeading())
+    local entity   = Self:GetVehicle() ~= nil and Self:GetVehicle() or Self
+    local spawnpos = entity:GetSpawnPosInFront()
+    local new_veh  = Vehicle:Create(modelhash, eEntityTypes.Vehicle, spawnpos, Self:GetHeading())
     if (new_veh:IsValid() and type(data.mods) == "table") then
         new_veh:ApplyMods(data.mods)
     end

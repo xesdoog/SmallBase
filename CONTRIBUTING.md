@@ -185,12 +185,34 @@ You are free to use any style you want, except in these cases:
         DoSomething()
         ```
 
+## Translations
+
+- The primary language for all labels is English (US) (`/lib/translations/en-US.lua`).
+- To add a new language, add its name and ISO code to `/lib/translations/locales.lua`.
+- To add a new label, update `/lib/translations/en-US.lua`.
+- All other language files will be automatically generated via GitHub Actions (you can also manually run `/scripts/generate_translations.py`).
+
+**Example usage:**
+Suppose you want to draw some text that gets automatically translated:
+
+1. Open `/lib/translations/en-US.lua`.
+2. Add a key-value pair for your new label:
+
+    ```lua
+    return {
+      ...
+      ["MY_LABEL"] = "My label's text in English."
+    }
+    ```
+
+3. Use the `key` with the `_T` wrapper for the [`Translator:Translate(...)`](docs/services/Translator.md) method:
+
+    ```lua
+    ImGui.Text(_T("MY_LABEL"))
+    ```
+
 ## What To Avoid
 
-Avoid adding end-user features directly to the project (example: A drift minigame, a business manager, animations, etc.).
+- Manually editing any language file except `en-US.lua`. They are auto-generated.
 
-SmallBase is, as the name suggests, a base. It provides the tools and the foundations to create new scripts.
-
-Two scripts can both use this project as a template and offer completely different sets of features.
-
-If you want to share a feature, make it a standalone module that uses SmallBase.
+- Adding end-user features directly to the project *(ex: A drift minigame, a business manager, animations, etc.)*.

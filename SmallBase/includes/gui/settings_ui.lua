@@ -48,7 +48,7 @@ local selected_l_type_idx = 1
 local selected_entity_type = 1
 local TVehList = {}
 local g_offsets = {}
-local l_Offsets = {}
+local l_offsets = {}
 local state_colors <const> = {
     [eThreadState.UNK] = GREY,
     [eThreadState.DEAD] = RED,
@@ -243,7 +243,7 @@ local function DrawGlobalsAndLocals()
 
     ImGui.SameLine()
 
-    if GUI:Button(("Clear##%s"):format("globals")) then
+    if GUI:Button("Clear##globals") then
         init_g_addr = 0
         g_offset_count = 0
         g_offsets = {}
@@ -298,11 +298,11 @@ local function DrawGlobalsAndLocals()
 
     ImGui.BeginDisabled(string.isempty(l_scr_name) or init_l_addr == 0)
     ImGui.SameLine()
-    if GUI:Button(("Clear##%s"):format("locals")) then
+    if GUI:Button("Clear##locals") then
         l_scr_name = ""
         init_l_addr = 0
         l_offset_count = 0
-        l_Offsets = {}
+        l_offsets = {}
         selected_l_type_idx = 1
     end
 
@@ -315,8 +315,8 @@ local function DrawGlobalsAndLocals()
     ImGui.BeginDisabled(l_offset_count == 0)
     if GUI:Button("Remove Offset##locals") then
         l_offset_count = math.max(0, l_offset_count - 1)
-        if (#l_Offsets > 0) then
-            l_Offsets[#l_Offsets] = nil
+        if (#l_offsets > 0) then
+            l_offsets[#l_offsets] = nil
         end
     end
     ImGui.EndDisabled()
@@ -326,8 +326,8 @@ local function DrawGlobalsAndLocals()
         for i = 1, l_offset_count do
             ImGui.Text(".f_")
             ImGui.SameLine()
-            l_Offsets[i], _ = ImGui.InputInt("##test_local_offset" .. i, l_Offsets[i] or 0)
-            l_Offsets[i] = math.max(0, l_Offsets[i])
+            l_offsets[i], _ = ImGui.InputInt("##test_local_offset" .. i, l_offsets[i] or 0)
+            l_offsets[i] = math.max(0, l_offsets[i])
         end
     end
     ImGui.PopItemWidth()
@@ -345,9 +345,9 @@ local function DrawGlobalsAndLocals()
     if GUI:Button(("Read %s##locals"):format(selected_L_type or "")) then
         local method_name = selected_L_type == "Pointer" and "GetPointer" or "Read" .. selected_L_type
         local l = ScriptLocal(init_l_addr, l_scr_name)
-        if (#l_Offsets > 0) then
-            for i = 1, #l_Offsets do
-                l = l:At(l_Offsets[i])
+        if (#l_offsets > 0) then
+            for i = 1, #l_offsets do
+                l = l:At(l_offsets[i])
             end
         end
 
@@ -357,7 +357,7 @@ local function DrawGlobalsAndLocals()
 end
 
 local function DrawSerializerDebug()
-    local eState =  ThreadManager:GetThreadState("SB_SERIALIZER")
+    local eState = ThreadManager:GetThreadState("SB_SERIALIZER")
 
     ImGui.BulletText("Thread State:")
     ImGui.SameLine()
@@ -404,14 +404,12 @@ local function PopulateVehlistOnce()
 end
 
 local function DrawDummyVehSpawnMenu()
+    ImGui.Text("Lightweight Vehicle Preview Test")
     PopulateVehlistOnce()
 
     if ImGui.BeginListBox("##dummyvehlist", -1, 0) then
         for _, veh in ipairs(TVehList) do
-            local is_selected = false
-
-            ImGui.Selectable(veh.displayname, is_selected)
-
+            ImGui.Selectable(veh.displayname, false)
             if ImGui.IsItemHovered() then
                 local item_min = vec2:new(ImGui.GetItemRectMin())
                 hovered_y = item_min.y
@@ -420,7 +418,6 @@ local function DrawDummyVehSpawnMenu()
                 hovered_y = nil
             end
         end
-
         ImGui.EndListBox()
     end
 
@@ -482,7 +479,6 @@ debug_tab:RegisterGUI(function()
     end
 
     if ImGui.BeginTabItem("Preview Test") then
-        ImGui.Text("Lightweight Vehicle Preview Test")
         DrawDummyVehSpawnMenu()
         ImGui.EndTabItem()
     end

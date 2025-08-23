@@ -22,7 +22,7 @@ local DEFAULT_CONFIG <const> = {
 }
 
 require("includes.lib.utils")
-require("includes.modules.Class")
+require("includes.lib.class")
 require("includes.backend")
 require("includes.modules.Memory")
 

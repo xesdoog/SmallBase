@@ -129,9 +129,9 @@ function Memory.GetVehicleInfo(vehicle)
 end
 
 -- Checks if a vehicle's handling flag is set.
----@param vehicle number
----@param flag number
----@return boolean | nil
+---@param vehicle integer
+---@param flag eVehicleHandlingFlags
+---@return boolean|nil
 function Memory.GetVehicleHandlingFlag(vehicle, flag)
     if not (ENTITY.DOES_ENTITY_EXIST(vehicle) or ENTITY.IS_ENTITY_A_VEHICLE(vehicle)) then
         return
@@ -144,7 +144,7 @@ function Memory.GetVehicleHandlingFlag(vehicle, flag)
 end
 
 ---@param vehicle integer
----@param flag integer
+---@param flag eVehicleModelFlags
 ---@return boolean
 function Memory.GetVehicleModelFlag(vehicle, flag)
     local CVehicle = Memory.GetVehicleInfo(vehicle)
@@ -191,7 +191,7 @@ function Memory.GetEntityType(entity)
 end
 
 ---@param ped integer A Ped ID, not a Player ID.
----@return CPed | nil
+---@return CPed|nil
 function Memory.GetPedInfo(ped)
     if not ENTITY.DOES_ENTITY_EXIST(ped) or not ENTITY.IS_ENTITY_A_PED(ped) then
         return
@@ -256,7 +256,8 @@ function Memory.GetPedInfo(ped)
 end
 
 --[[
----@deprecated
+---@ignore
+---@unused
 ---@param dword integer
 function Memory.SetWeaponEffectGroup(dword)
     local pedPtr = memory.handle_to_ptr(self.get_ped())

@@ -27,6 +27,14 @@ end)
 
 ## Usage
 
+### Running Code In The Game's Thread
+
+```lua
+ThreadManager:RunInFiber(function()
+    DoSomething()
+end)
+```
+
 ### Registering a Thread
 
 ```lua
@@ -80,7 +88,6 @@ Threads appear in a debug tab with color-coded states and controls:
 - Uses `script.run_in_fiber` or `script.run_in_callback` based on API version.
 - Falls back to a noop in mock/test environment.
 
-## Design Notes
+## Notes
 
 - Threads can be created in a suspended state by setting the last optional parameter to `true` in the `RegisterNewThread` method.
-- Suspended threads sleep in 1ms intervals until resumed.
