@@ -31,8 +31,8 @@ for module in MODULES:
 from slpp import slpp as Lua
 from alive_progress import alive_bar
 from deep_translator import GoogleTranslator
+from langcodes import Language as Lang
 import deep_translator.exceptions
-import langcodes as Lang
 import re
 
 
@@ -57,8 +57,6 @@ def write_lua_table(path: str, table: dict):
         Lua_file.write("\n")
 
 
-from langcodes import Language as Lang
-
 LOCALES = read_lua_table(LOCALES_PATH)
 LABELS  = read_lua_table(EN_STR_PATH)
 
@@ -67,10 +65,10 @@ def get_lang_name(iso: str):
     unk = False
     try:
         name = Lang.get(iso).display_name()
-        unk = (name.find("Unknown") != -1 or name is None)
+        unk = (name is None or name.find("Unknown") != -1)
     except Exception:
         name = Lang.get(iso[:2]).display_name()
-        unk = (name.find("Unknown") != -1 or name is None)
+        unk = (name is None or name.find("Unknown") != -1)
 
     if unk:
         return f"({iso})"
@@ -89,7 +87,6 @@ def generate_translations():
 
     with alive_bar(len(LOCALES) - 1) as bar1:
         for label, text in LABELS.items():
-            label_content = text
             for dictionary in LOCALES:
                 lang = dictionary["iso"]
                 fname = f"{lang}.lua"
@@ -98,9 +95,10 @@ def generate_translations():
                     continue
 
                 print(f"Generating translations for {get_lang_name(lang)}...")
-                translated_text = safe_translate(lang, label_content)
+                translated_text = safe_translate(lang, text)
                 if fname not in translations:
                     translations[fname] = {}
+
                 translations[fname][label] = translated_text
                 bar1()
 
