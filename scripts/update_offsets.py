@@ -34,9 +34,9 @@ def read_lua_table(path: str):
     return Lua.decode(data)
 
 
-def digits(s: str):
+def digits(s: str, default=None):
     m = re.search(r"\d+", s or "")
-    return int(m.group()) if m else 0
+    return int(m.group()) if m else default
 
 
 def script_file_path(root: str, filepath: str):
@@ -80,16 +80,6 @@ def scan_entry(entry: dict, path: str):
                 "offset_values": offsets,
             }
     return None
-
-
-def fix_lua_long_string(s: str) -> str:
-    level = 0
-    while f"]{'=' * level}]" in s:
-        level += 1
-
-    opening_bracket = f"[{'=' * level}["
-    closing_bracket = f"]{'=' * level}]"
-    return f"{opening_bracket}{s}{closing_bracket}"
 
 
 def serialize_lua(v, indent=0):
@@ -168,8 +158,8 @@ def main():
 
         if "offsets" in ver and result["offset_values"]:
             for i, newv in enumerate(result["offset_values"]):
-                print(f"\tFound offset for {name} ({version_key}): {newv}")
                 if newv is not None and i < len(ver["offsets"]):
+                    print(f"\tFound offset for {name} ({version_key}): .f_{newv}")
                     ver["offsets"][i]["value"] = newv
 
     data = serialize_lua(offsets_table)
