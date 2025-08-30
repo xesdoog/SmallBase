@@ -100,7 +100,7 @@ function GetScriptGlobalOrLocal(name, get_full_table)
     local map = { [eAPIVersion.V1] = "LEGACY", [eAPIVersion.V2] = "ENHANCED" }
     local ret = T[map[Backend:GetAPIVersion()]] or T.LEGACY
     ---@diagnostic disable-next-line: return-type-mismatch
-    return not get_full_table and ret or ret.value
+    return get_full_table and ret or ret.value
 end
 
 -- Lua version of Bob Jenskins' "Jenkins One At A Time" hash function
