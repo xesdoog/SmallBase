@@ -86,6 +86,23 @@ function EnumTostring(t, enum)
     return ""
 end
 
+---@param name string The global or local's name as it's set in `/includes/data/globals_locals.lua`
+---@param get_full_table? boolean
+---@return number|table|nil -- If `get_full_table` is true, returns the full table; otherwise, returns the value.
+function GetScriptGlobalOrLocal(name, get_full_table)
+    SG_SL = SG_SL or require("includes.data.globals_locals")
+    local T = SG_SL[name]
+    if not T then
+        log.fwarning("GetScriptGlobalOrLocal(): Unknown script global/local name '%s'", name)
+        return
+    end
+
+    local map = { [eAPIVersion.V1] = "LEGACY", [eAPIVersion.V2] = "ENHANCED" }
+    local ret = T[map[Backend:GetAPIVersion()]] or T.LEGACY
+    ---@diagnostic disable-next-line: return-type-mismatch
+    return not get_full_table and ret or ret.value
+end
+
 -- Lua version of Bob Jenskins' "Jenkins One At A Time" hash function
 --
 -- https://en.wikipedia.org/wiki/Jenkins_hash_function

@@ -42,6 +42,34 @@ require("includes.modules.Game")
 -- For temporary or internal state that should not be saved, use `_G` directly.
 GVars = {}
 
+-- ### Script Globals & Script Locals
+--
+-- It is highly recommended to not index `SG_SL` directly and instead use the `GetScriptGlobalOrLocal` function.
+-- ___
+-- - Example 1:
+--
+--```lua
+-- local pv_global = GetScriptGlobalOrLocal("personal_vehicle_global") -- returns the value of the script global/local
+-- -- create your script global object
+-- local pv_global_object = ScriptGlobal(pv_global)
+--```
+--
+-- - Example 2:
+--
+--```lua
+-- local pv_global_table = GetScriptGlobalOrLocal("personal_vehicle_global", true) -- returns the full table.
+-- -- create your script global object
+-- local pv_global_object = ScriptGlobal(pv_global_table.value)
+--```
+--
+-- - Not Recommended:
+--
+--```lua
+-- local pv_global = SG_SL.personal_vehicle_global.LEGACY.value -- direct indexing is not recommended.
+--```
+SG_SL = require("includes.data.globals_locals")
+
+
 Time      = require("includes.modules.Time")
 Timer     = Time.Timer
 TimePoint = Time.TimePoint

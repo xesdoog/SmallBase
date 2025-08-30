@@ -7,9 +7,9 @@
 
 ---@enum eAPIVersion
 eAPIVersion = {
-    L54 = -1, -- Mock environment (Lua54)
-    V1  = 0,  -- YimMenu V1 (Lua54)
-    V2  = 1,  -- YimMenu V2 (LuaJIT) // placeholder
+    V1  = 1,  -- YimMenu V1 (Lua54)
+    V2  = 2,  -- YimMenu V2 (LuaJIT) // placeholder
+    L54 = 99, -- Mock environment (Lua54)
 }
 
 ---@enum eBackendEvent
