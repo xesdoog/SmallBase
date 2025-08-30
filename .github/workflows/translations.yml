@@ -7,40 +7,16 @@ on:
       - "SmallBase/includes/lib/translations/locales.lua"
   workflow_dispatch:
 
+concurrency:
+  group: auto-generate-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   Generate_Translations:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-    - name: Wait
-      run: |
-        WORKFLOW_NAME="Generate Docs"
-        REPO="${GITHUB_REPOSITORY}"
-        WORKFLOW_ID=$(gh api repos/$REPO/actions/workflows --jq \
-          '.workflows[] | select(.name=="'"$WORKFLOW_NAME"'") | .id')
-
-        if [ -z "$WORKFLOW_ID" ]; then
-          echo "Workflow '$WORKFLOW_NAME' not found. Skipping wait."
-          exit 0
-        fi
-
-        LATEST_RUN=$(gh api repos/$REPO/actions/workflows/$WORKFLOW_ID/runs --jq '.workflow_runs[0]')
-
-        if [ "$LATEST_RUN" = "null" ]; then
-          echo "No runs found for '$WORKFLOW_NAME'. Skipping wait."
-          exit 0
-        fi
-
-        while true; do
-          STATUS=$(gh api repos/$REPO/actions/runs/$(echo $LATEST_RUN | jq -r '.id') --jq '.status')
-          if [ "$STATUS" = "completed" ]; then
-            break
-          fi
-
-          echo "Waiting for docs workflow to finish..."
-          sleep 15
-        done
 
     - name: Checkout
       uses: actions/checkout@v4

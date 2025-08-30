@@ -65,6 +65,10 @@ def scan_entry(entry: dict, path: str):
             offsets = []
 
             for offset in entry.get("offsets", []):
+                if not offset or "value" not in offset:
+                    offsets.append(None)
+                    continue
+
                 offset_capture_group = int(offset.get("capture_group", 0))
                 try:
                     result = match.group(offset_capture_group)

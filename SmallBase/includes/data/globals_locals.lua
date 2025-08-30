@@ -7,7 +7,7 @@ return {
             pattern = [[if \(\((Global_.......?)\[\w+0\] != 0 && func_.....?\(\w+0\)\) && \w+2\)]],
             capture_group = 1
         },
-        ENHANCED = {},
+        ENHANCED = {}
     },
     personal_vehicle_global = {
         description = "Personal Vehicle Global",
@@ -17,7 +17,7 @@ return {
             pattern = [[if \(VEHICLE::GET_IS_VEHICLE_ENGINE_RUNNING\((Global_.......?)\)\)]],
             capture_group = 1
         },
-        ENHANCED = {},
+        ENHANCED = {}
     },
     gb_contraband_sell_local = {
         description = "Contraband Sell Local",
@@ -27,7 +27,7 @@ return {
             pattern = [[MISC::CLEAR_BIT\(.*?(Local_...?)\.f_1\), .*?Param0]],
             capture_group = 1
         },
-        ENHANCED = {},
+        ENHANCED = {}
     },
     gb_biker_contraband_sell_local = {
         description = "Biker Contraband Sell Local",
@@ -40,9 +40,9 @@ return {
                 {
                     value = 122,
                     capture_group = 2
-                }
+                },
             }
         },
-        ENHANCED = {},
-    },
+        ENHANCED = {}
+    }
 }

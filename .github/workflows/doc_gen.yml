@@ -7,6 +7,10 @@ on:
       - "SmallBase/includes/services/*.lua"
   workflow_dispatch:
 
+concurrency:
+  group: auto-generate-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   Generate_Docs:
     runs-on: ubuntu-latest
