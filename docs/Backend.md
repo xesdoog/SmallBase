@@ -16,11 +16,9 @@ Initializes internal state and registers the current environment version (V1, V2
 
 Returns one of the following from `eAPIVersion`:
 
-- -1: (L54) - Vanilla Lua 5.4 (mock/dev mode).
-
-- 0: (V1) - YimMenu V1.
-
-- 1: (V2) - YimMenu V2.
+- 1: (V1) - YimMenu V1.
+- 2: (V2) - YimMenu V2.
+- 3: (L54) - Vanilla Lua 5.4 (mock/dev mode).
 
 Used to map environment-specific features in `Compat.lua`
 
