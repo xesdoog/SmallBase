@@ -1,28 +1,18 @@
 # Memory
 
+**Description:**
+
+Handles most interactions with the game's memory.
+
 ## Methods
 
-### `Dump`
-
-**Parameters:**
-- `ptr` pointer
-- `size` integer
-
-
-
-### `GetVec3`
-
-**Parameters:**
-- `ptr` pointer
-
+### `init`
 
 **Returns:**
-- `vec3` 
+- `Memory` 
 
 ### `GetGameVersion`
 
-**Returns:**
-- `table` 
 
 ### `GetGameState`
 
@@ -41,8 +31,21 @@
 
 ### `GetVehicleInfo`
 
+**Parameters:**
+- `vehicle` integer vehicle handle
+
+
 **Returns:**
 - `CVehicle` |nil
+
+### `GetPedInfo`
+
+**Parameters:**
+- `ped` integer A Ped ID, not a Player ID.
+
+
+**Returns:**
+- `CPed` |nil
 
 ### `GetVehicleHandlingFlag`
 
@@ -54,9 +57,9 @@ Checks if a vehicle's handling flag is set.
 
 
 **Returns:**
-- `boolean` |nil
+- `boolean` 
 
-### `GetVehicleModelFlag`
+### `GetVehicleModelInfoFlag`
 
 **Parameters:**
 - `vehicle` integer
@@ -78,13 +81,4 @@ Returns the model type of an entity (ped, object, vehicle, MLO, time, etc...)
 
 **Returns:**
 - `number` 
-
-### `GetPedInfo`
-
-**Parameters:**
-- `ped` integer A Ped ID, not a Player ID.
-
-
-**Returns:**
-- `CPed` |nil
 

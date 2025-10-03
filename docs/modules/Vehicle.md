@@ -13,8 +13,8 @@ Class representing a GTA V vehicle.
 
 ### `ReadMemoryLayout`
 
-Internal.
-
+**Returns:**
+- `CVehicle` |nil
 
 ### `GetName`
 
@@ -317,6 +317,21 @@ Spawns a vehicle from JSON and returns a new `Vehicle` instance.
 **Parameters:**
 - `filename` string
 - `warp_into?` boolean
+
+
+
+### `GetBoneMatrix`
+
+**Parameters:**
+- `bone_index` number
+
+
+
+### `SetBoneMatrix`
+
+**Parameters:**
+- `bone_index` number
+- `matrix` fMatrix44
 
 
 

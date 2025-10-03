@@ -45,6 +45,11 @@ Class representing a GTA V entity.
 **Returns:**
 - `number` 
 
+### `GetPointer`
+
+**Returns:**
+- `pointer` |nil
+
 ### `GetPos`
 
 **Parameters:**

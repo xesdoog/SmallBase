@@ -2,12 +2,14 @@
 
 **Description:**
 
-Class representing a GTA V NPC.
+Class representing a GTA V Ped.
 
 ## Methods
 
 ### `ReadMemoryLayout`
 
+**Returns:**
+- `CPed` |nil
 
 ### `IsValid`
 

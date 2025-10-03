@@ -6,6 +6,14 @@ Native wrappers.
 
 ## Methods
 
+### `GetVersion`
+
+
+### `GetScreenResolution`
+
+**Returns:**
+- `vec2` 
+
 ### `GetLanguage`
 
 **Returns:**
