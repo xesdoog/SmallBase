@@ -23,16 +23,16 @@ function Player:IsPlaying()
 
     self:ReadMemoryLayout()
     if not self.layout then
-        error("Failed to read CPed", 0)
+        return false
     end
 
     local CPlayerInfo = self.layout.CPlayerInfo
     if not CPlayerInfo then
-        error("Failed to read CPlayerInfo", 0)
+        return false
     end
 
-    local iState = CPlayerInfo.GetGameState()
-    return (iState ~= eGameState.Invalid and iState ~= eGameState.LeftGame)
+    local state = CPlayerInfo:GetGameState()
+    return (state ~= eGameState.Invalid and state ~= eGameState.LeftGame)
 end
 
 -- [WIP]

@@ -5,27 +5,25 @@
 --
 -- **Parent:** `Entity`.
 --
--- Class representing a GTA V NPC.
+-- Class representing a GTA V Ped.
 ---@class Ped : Entity
----@field private layout CPed
+---@field private layout CPed?
 ---@field Create fun(_, modelHash: number, entityType: eEntityTypes, pos?: vec3, heading?: number, isNetwork?: boolean, isScriptHostPed?: boolean): Ped
 ---@overload fun(handle: integer): Ped
 Ped = Class("Ped", Entity)
 
+---@return CPed|nil
 function Ped:ReadMemoryLayout()
-    if self.layout then
-        return
-    end
-
     if not self:IsValid() then
         self:Destroy()
         return
     end
 
-    local CPed = Memory.GetPedInfo(self:GetHandle())
-    if CPed then
-        self.layout = CPed
+    if not self.layout then
+        self.layout = CPed(self:GetHandle())
     end
+
+    return self.layout
 end
 
 ---@return boolean

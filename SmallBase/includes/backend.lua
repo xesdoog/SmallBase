@@ -109,7 +109,8 @@ end
 
 ---@return boolean
 function Backend:IsUpToDate()
-    return (self.target_build == "any") or (Game.Version._build and self.target_build == Game.Version._build)
+    local game_ver = Game.GetVersion()
+    return (self.target_build == "any") or (game_ver._build and self.target_build == game_ver._build)
 end
 
 ---@param handle integer

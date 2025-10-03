@@ -426,14 +426,14 @@ local function DrawDummyVehSpawnMenu()
         local texture_name = selected_veh_name
         local window_pos   = vec2:new(ImGui.GetWindowPos())
         local abs_pos      = vec2:new(window_pos.x + ImGui.GetWindowWidth(), hovered_y)
-        local draw_pos     = abs_pos / Game.ScreenResolution
+        local draw_pos     = abs_pos / Game.GetScreenResolution()
 
         ThreadManager:RunInFiber(function()
             if Game.RequestTextureDict(texture_dict) then
                 local sprite_w = 256
                 local sprite_h = 128
-                local norm_w   = sprite_w / Game.ScreenResolution.x
-                local norm_h   = sprite_h / Game.ScreenResolution.y
+                local norm_w   = sprite_w / Game.GetScreenResolution().x
+                local norm_h   = sprite_h / Game.GetScreenResolution().y
 
                 GRAPHICS.DRAW_SPRITE(
                     texture_dict,

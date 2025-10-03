@@ -3,7 +3,7 @@
 --------------------------------------
 -- Class: vec3
 --------------------------------------
--- Class representing a 3D vector.
+-- A 3D vector utility class with arithmetic, geometric, and serialization helpers.
 ---@class vec3
 ---@overload fun(x: number, y: number, z: number): vec3
 ---@overload fun(pos: { x: number, y: number, z: number } | { [1]: number, [2]: number, [3]: number }): vec3
@@ -17,7 +17,16 @@
 ---@operator lt(vec3): boolean
 
 vec3.__type = "vec3"
+vec3.magnitude = vec3.length
+vec3.mag = vec3.length
 
+
+--------------------------------------
+-- Constructors & Utils
+--------------------------------------
+-- ctor and __tostring are defined in YimMenu, hence their absence here.
+
+-- Checks if the given argument is a valid vec3, raises on failure.
 ---@param arg any
 ---@return boolean
 function vec3:assert(arg)
@@ -30,6 +39,36 @@ function vec3:assert(arg)
     end
 end
 
+-- Returns a copy of this vector.
+---@return vec3
+function vec3:copy()
+    return vec3:new(self.x, self.y, self.z)
+end
+
+-- Unpacks the components of the vector.
+---@return float x, float y, float z
+function vec3:unpack()
+    return self.x, self.y, self.z
+end
+
+-- Returns a zero vector (0, 0, 0).
+---@return vec3
+function vec3:zero()
+    return vec3:new(0, 0, 0)
+end
+
+-- Returns true if all components are zero.
+---@return boolean
+function vec3:is_zero()
+    return (self.x == 0) and (self.y == 0) and (self.z == 0)
+end
+
+
+--------------------------------------
+-- Arithmetic Metamethods
+--------------------------------------
+
+-- Addition between vectors or vector + number.
 ---@param b number|vec3
 ---@return vec3
 function vec3:__add(b)
@@ -41,6 +80,7 @@ function vec3:__add(b)
     return vec3:new(self.x + b.x, self.y + b.y, self.z + b.z)
 end
 
+-- Subtraction between vectors or vector - number.
 ---@param b number|vec3
 ---@return vec3
 function vec3:__sub(b)
@@ -52,6 +92,7 @@ function vec3:__sub(b)
     return vec3:new(self.x - b.x, self.y - b.y, self.z - b.z)
 end
 
+-- Multiplication between vectors or vector * number.
 ---@param b number|vec3
 ---@return vec3
 function vec3:__mul(b)
@@ -63,6 +104,7 @@ function vec3:__mul(b)
     return vec3:new(self.x * b.x, self.y * b.y, self.z * b.z)
 end
 
+-- Division between vectors or vector / number.
 ---@param b number|vec3
 ---@return vec3
 function vec3:__div(b)
@@ -74,6 +116,7 @@ function vec3:__div(b)
     return vec3:new(self.x / b.x, self.y / b.y, self.z / b.z)
 end
 
+-- Equality check between two vectors.
 ---@param b number|vec3
 ---@return boolean
 function vec3:__eq(b)
@@ -81,6 +124,7 @@ function vec3:__eq(b)
     return self.x == b.x and self.y == b.y and self.z == b.z
 end
 
+-- Less-than check between two vectors.
 ---@param b number|vec3
 ---@return boolean
 function vec3:__lt(b)
@@ -88,6 +132,7 @@ function vec3:__lt(b)
     return self.x < b.x and self.y < b.y and self.z < b.z
 end
 
+-- Less-or-equal check between two vectors.
 ---@param b number|vec3
 ---@return boolean
 function vec3:__le(b)
@@ -95,16 +140,24 @@ function vec3:__le(b)
     return self.x <= b.x and self.y <= b.y and self.z <= b.z
 end
 
+-- Unary negation (returns the inverse vector).
 ---@return vec3
 function vec3:__unm()
     return vec3:new(-self.x, -self.y, -self.z)
 end
 
+
+--------------------------------------
+-- Vector Operations
+--------------------------------------
+
+-- Returns the magnitude (length) of the vector.
 ---@return number
 function vec3:length()
     return math.sqrt(self.x ^ 2 + self.y ^ 2 + self.z ^ 2)
 end
 
+-- Returns the distance between this vector and another.
 ---@param b vec3
 ---@return number
 function vec3:distance(b)
@@ -116,6 +169,7 @@ function vec3:distance(b)
     return math.sqrt(dist_x + dist_y + dist_z)
 end
 
+-- Returns a normalized version of the vector.
 ---@return vec3
 function vec3:normalize()
     local len = self:length()
@@ -127,6 +181,7 @@ function vec3:normalize()
     return self / len
 end
 
+-- Cross product of this vector and another.
 ---@param b vec3
 ---@return vec3
 function vec3:cross_product(b)
@@ -139,6 +194,7 @@ function vec3:cross_product(b)
     )
 end
 
+-- Dot product of this vector and another.
 ---@param b vec3
 ---@return number
 function vec3:dot_product(b)
@@ -146,6 +202,7 @@ function vec3:dot_product(b)
     return self.x * b.x + self.y * b.y + self.z * b.z
 end
 
+-- Linearly interpolates between this vector and another.
 ---@param to vec3
 ---@param dt number Delta time
 ---@return vec3
@@ -157,12 +214,14 @@ function vec3:lerp(to, dt)
     )
 end
 
----@param includeZ? boolean
+-- Returns the inverse (negated) vector.
+---@param includeZ? boolean Whether to also negate the z component
 ---@return vec3
 function vec3:inverse(includeZ)
     return vec3:new(-self.x, -self.y, includeZ and -self.z or self.z)
 end
 
+-- Trims the vector to a maximum length.
 ---@return vec3
 function vec3:trim(atLength)
     local len = self:length()
@@ -175,31 +234,18 @@ function vec3:trim(atLength)
     return self * s
 end
 
----@return vec3
-function vec3:copy()
-    return vec3:new(self.x, self.y, self.z)
-end
 
----@return float, float, float
-function vec3:unpack()
-    return self.x, self.y, self.z
-end
+--------------------------------------
+-- Conversions
+--------------------------------------
 
----@return vec3
-function vec3:zero()
-    return vec3:new(0, 0, 0)
-end
-
----@return boolean
-function vec3:is_zero()
-    return (self.x == 0) and (self.y == 0) and (self.z == 0)
-end
-
+-- Returns the heading angle (XY plane).
 ---@return number
 function vec3:heading()
     return math.atan(self.y, self.x)
 end
 
+-- Returns a new vec3 with the z component replaced.
 ---@param z float
 ---@return vec3
 function vec3:with_z(z)
@@ -217,6 +263,7 @@ function vec3:to_direction()
     )
 end
 
+-- Converts the vector into a plain table (for serialization).
 ---@return table
 function vec3:serialize()
     return {
@@ -227,6 +274,9 @@ function vec3:serialize()
     }
 end
 
+-- Deserializes a table into a vec3 **(static method)**.
+---@param t { __type: string, x: float, y: float, z: float }
+---@return vec3
 function vec3.deserialize(t)
     if (type(t) ~= "table" or not (t.x and t.y and t.z)) then
         return vec3:zero()
@@ -234,6 +284,11 @@ function vec3.deserialize(t)
 
     return vec3:new(t.x, t.y, t.z)
 end
+
+
+--------------------------------------
+-- Conversion Helpers (Optional)
+--------------------------------------
 
 if Serializer and not Serializer.class_types["vec3"] then
     Serializer:RegisterNewType("vec3", vec3.serialize, vec3.deserialize)

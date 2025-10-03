@@ -1,4 +1,3 @@
----@diagnostic disable: lowercase-global
 math.randomseed(os.time())
 
 --#region Global functions
@@ -184,23 +183,105 @@ end
 
 --#endregion
 
---#region stdlib extensions
+--#region extensions
 
----@param t_LookupTable table
----@param key string | number
----@param value any
-table.matchbykey = function(t_LookupTable, key, value)
-    if not t_LookupTable or (#t_LookupTable == 0) then
-        return false
+
+-- Retrieves a 32-bit displacement value from the memory address, optionally adding an offset and adjustment.
+--
+-- **Example Usage:**
+-- ```lua
+-- displacement = pointer:get_disp32(offset, adjust)
+-- ```
+---@param offset? integer
+---@param adjust? integer
+---@return number -- imm32 displacement
+function memory.pointer:get_disp32(offset, adjust)
+    if self:is_null() then
+        log.warning("Failed to get imm32 displacement!")
+        return 0
     end
 
-    for i = 1, #t_LookupTable do
-        if t_LookupTable[i][key] == value then
-            return true
+    local val = self:add(offset or 0):get_int()
+    return val + (adjust or 0)
+end
+
+---@return vec3
+function memory.pointer:get_vec3()
+    local x = self:add(0x4):get_float()
+    local y = self:add(0x8):get_float()
+    local z = self:add(0xC):get_float()
+    return vec3:new(x, y, z)
+end
+
+---@param vector3 vec3
+function memory.pointer:set_vec3(vector3)
+    self:add(0x4):set_float(vector3.x)
+    self:add(0x8):set_float(vector3.y)
+    self:add(0xC):set_float(vector3.z)
+end
+
+---@return vec4
+function memory.pointer:get_vec4()
+    local x = self:add(0x4):get_float()
+    local y = self:add(0x8):get_float()
+    local z = self:add(0xC):get_float()
+    local w = self:add(0x10):get_float()
+    return vec4:new(x, y, z, w)
+end
+
+---@param vector4 vec4
+function memory.pointer:set_vec4(vector4)
+    self:add(0x4):get_float(vector4.x)
+    self:add(0x8):get_float(vector4.y)
+    self:add(0xC):get_float(vector4.z)
+    self:add(0x10):get_float(vector4.w)
+end
+
+function memory.pointer:dump(size)
+    size = size or 16
+    if self:is_null() then
+        log.debug("Memory Dump: <null pointer>")
+        return
+    end
+
+    local result = {}
+
+    for i = 0, size - 1 do
+        local byte = self:add(i):get_byte()
+        table.insert(result, string.format("%02X", byte))
+    end
+
+    log.debug("Memory Dump: " .. table.concat(result, " "))
+end
+
+---@param t table
+---@param key string|number
+---@param value any
+table.matchbykey = function(t, key, value)
+    if not t or (table.getlen(t) == 0) then
+        return
+    end
+
+    for k, v in pairs(t) do
+        if k == key then
+            return v
         end
     end
+end
 
-    return false
+---@param t table
+---@param value any
+---@return string|number|nil -- the table key where the value was found or nil
+table.matchbyvalue = function(t, value)
+    if not t or (table.getlen(t) == 0) then
+        return
+    end
+
+    for k, v in pairs(t) do
+        if v == value then
+            return k
+        end
+    end
 end
 
 ---@param t table
@@ -464,7 +545,7 @@ string.random = function(size, isalnum)
     size = math.min(size, 128)
 
     if isalnum then
-        chraset = charset .. "0123456789"
+        charset = charset .. "0123456789"
     end
 
     for _ = 1, size do

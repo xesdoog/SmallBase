@@ -154,5 +154,6 @@ def gen_docs_from_dir(dirname):
 
 
 if __name__ == "__main__":
+    gen_docs_from_dir("classes")
     gen_docs_from_dir("modules")
     gen_docs_from_dir("services")

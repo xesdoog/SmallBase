@@ -83,17 +83,28 @@ end
 
 if (not memory) then
     memory = {
-        scan_pattern = function(ida_ptrn)
-            print("[mock pattern scan]", ida_ptrn)
-            return {
-                is_null = function(_)
-                    return true
-                end,
-                is_valid = function(_)
-                    return false
-                end
-            }
-        end
+        pointer = {
+            add = function(self, offset) return memory.pointer end,
+            sub = function(self, offset) return memory.pointer end,
+            get_byte = function(self) return 0 end,
+            get_word = function(self) return 0 end,
+            get_dword = function(self) return 0 end,
+            get_qword = function(self) return 0 end,
+            get_int = function(self) return 0 end,
+            get_float = function(self) return 0.0 end,
+            get_vec3 = function(self) return vec3:zero() end,
+            get_address = function(self) return 0x0 end,
+            get_disp32 = function(self, offset, adjust) return 0 end,
+            is_null = function(self) return true end,
+            is_valid = function(self) return false end
+        },
+
+        scan_pattern = function(ida_ptrn) return memory.pointer end,
+        allocate = function(size) return memory.pointer end,
+        free = function(ptr) end,
+        handle_to_ptr = function(handle) return memory.pointer end,
+        ptr_to_handle = function(ptr) return 0x0 end,
+        dynamic_call = function(addr, ret_type, arg_types, ...) end
     }
 end
 

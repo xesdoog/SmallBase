@@ -249,7 +249,7 @@ local GUI = Class("GUI")
 ---@return GUI
 function GUI:init()
     local instance = setmetatable({ m_tabs = {}, m_guis = {} }, self)
-    instance.m_screen_resolution = Game.ScreenResolution
+    instance.m_screen_resolution = Game.GetScreenResolution()
     return instance
 end
 
@@ -361,6 +361,10 @@ function GUI:RegisterIndependentGUI(drawfunc)
 end
 
 function GUI:Draw()
+    if self.m_screen_resolution:is_zero() then
+        self.m_screen_resolution = Game.GetScreenResolution()
+    end
+
     for _, entry in pairs(self.m_tabs) do
         self:RecursiveAddTab(entry.this, entry.api_obj)
     end
@@ -371,12 +375,16 @@ function GUI:Draw()
 end
 
 -- Calculates a new window size percentage and center position vectors in relation to the screen resolution.
----@param x_pecent float
+---@param x_percent float
 ---@param y_percent float
 ---@return vec2, vec2
-function GUI:GetNewWindowSizeAndCenterPos(x_pecent, y_percent)
+function GUI:GetNewWindowSizeAndCenterPos(x_percent, y_percent)
+    if self.m_screen_resolution:is_zero() then
+        self.m_screen_resolution = Game.GetScreenResolution()
+    end
+
     local size = vec2:new(
-        self.m_screen_resolution.x * x_pecent,
+        self.m_screen_resolution.x * x_percent,
         self.m_screen_resolution.y * y_percent
     )
     local center = vec2:new(

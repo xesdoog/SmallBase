@@ -7,6 +7,7 @@
 ---@class Entity : ClassMeta<Entity>
 ---@field private m_handle number
 ---@field private m_modelhash number
+---@field private m_ptr pointer
 ---@field private layout pointer[]
 ---@overload fun(handle: integer): Entity
 Entity = Class("Entity")
@@ -33,6 +34,7 @@ function Entity.new(handle)
         {
             m_handle = handle,
             m_modelhash = Game.GetEntityModel(handle),
+            m_ptr = memory.handle_to_ptr(handle),
             layout = nil
         },
         Entity
@@ -43,6 +45,7 @@ function Entity:Destroy()
     self.m_handle    = nil
     self.m_modelhash = nil
     self.layout      = nil
+    self.m_ptr       = nil
 end
 
 ---@param modelHash number
@@ -89,6 +92,23 @@ end
 ---@return number
 function Entity:GetModelHash()
     return self.m_modelhash
+end
+
+---@return pointer|nil
+function Entity:GetPointer()
+    if not self.m_ptr then
+        local handle = self:GetHandle()
+        local ptr = memory.handle_to_ptr(handle)
+
+        if not ptr:is_valid() then
+            log.fwarning("Failed to get pointer for entity with handle %d", handle)
+            return
+        end
+
+        self.m_ptr = ptr
+    end
+
+    return self.m_ptr
 end
 
 ---@param bIsAlive? boolean

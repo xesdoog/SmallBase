@@ -7,8 +7,16 @@
 ---@class Game
 Game = {}
 Game.__index = Game
-Game.Version = Memory and Memory.GetGameVersion() or { _build = "nil", _online = "nil" }
-Game.ScreenResolution = Memory and Memory.GetScreenResolution() or vec2:zero()
+
+---@return { _build: string, _online: string }
+function Game.GetVersion()
+    return Memory:GetGameVersion()
+end
+
+---@return vec2
+function Game.GetScreenResolution()
+    return Memory:GetScreenResolution()
+end
 
 ---@return string, string
 function Game.GetLanguage()

@@ -1,7 +1,5 @@
 require("includes.init")
 
-GUI:Draw()
-
 CommandExecutor:RegisterCommand("clonepv", function(args)
     ThreadManager:RunInFiber(function()
         local PV = Self:GetVehicle()
@@ -56,22 +54,22 @@ end, {
 -- main loop from temu
 -------------------------
 -- Note: If you're in a test/mock environment, anything after this block will not be reachable.
-
+--
 -- Keep this at the very bottom of this file or remove it if you don't plan on testing coroutines in mock env.
-local function mock_main()
-    if not (Backend:IsMockEnv()) then
-        return
-    end
+-- local function mock_main()
+--     if not (Backend:IsMockEnv()) then
+--         return
+--     end
 
-    local suspended_thread = false
-    local debug_only = true
+--     local suspended_thread = false
+--     local debug_only = true
 
-    ThreadManager:CreateNewThread("MOCK_TEST", function()
-        printf("Doing important stuff... [%s]", string.random())
-        sleep(5e3)
-    end, suspended_thread, debug_only)
+--     ThreadManager:CreateNewThread("MOCK_TEST", function()
+--         printf("Doing important stuff... [%s]", string.random())
+--         sleep(5e3)
+--     end, suspended_thread, debug_only)
 
-    ThreadManager:UpdateMockRoutines()
-end
+--     ThreadManager:UpdateMockRoutines()
+-- end
 
-mock_main()
+-- mock_main()

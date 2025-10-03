@@ -120,6 +120,8 @@ end
 ---@class CommandExecutor : ClassMeta<CommandExecutor>
 ---@field commands table<string, { callback: fun(...), args: string[], description: string, alias?: string[], is_alias?: boolean }>
 ---@field suggestions table<number, {name: string, def: string}>
+---@field screen_size vec2
+---@field window_size vec2
 local CommandExecutor = Class("CommandExecutor")
 CommandExecutor.user_cmd      = ""
 CommandExecutor.cmd_index     = 0
@@ -129,8 +131,9 @@ CommandExecutor.is_typing     = false
 CommandExecutor.hint_text     = ">_"
 CommandExecutor.history       = {}
 CommandExecutor.suggestions   = {}
-CommandExecutor.screen_size   = Game.ScreenResolution
-CommandExecutor.window_size   = GUI:GetNewWindowSizeAndCenterPos(0.3, 0.37)
+CommandExecutor.screen_size   = vec2:zero()
+CommandExecutor.window_size   = vec2:zero()
+CommandExecutor.window_pos    = vec2:zero()
 CommandExecutor.gui           = {
     should_draw = false,
     bottom_text = "All built-in commands are prefixed with an exclamation mark <!>.",
@@ -469,6 +472,11 @@ end
 
 function CommandExecutor:Draw()
     if self.gui.should_draw then
+        if self.screen_size:is_zero() or self.window_size:is_zero() then
+            self.screen_size = Game.GetScreenResolution()
+            self.window_size, self.window_pos = GUI:GetNewWindowSizeAndCenterPos(0.3, 0.37)
+        end
+
         ImGui.SetNextWindowSize(self.window_size.x, self.window_size.y)
         ImGui.SetNextWindowPos(
             self.screen_size.x / 2 - (self.window_size.x / 2),

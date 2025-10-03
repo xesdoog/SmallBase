@@ -3,7 +3,7 @@
 --------------------------------------
 -- Class representing a GTA V vehicle.
 ---@class Vehicle : Entity
----@field private layout CVehicle
+---@field private layout CVehicle?
 ---@field private m_class_id number
 ---@field Create fun(_, modelHash: number, entityType: eEntityTypes, pos?: vec3, heading?: number, isNetwork?: boolean, isScriptHostPed?: boolean): Vehicle
 ---@overload fun(handle: integer): Vehicle
@@ -14,23 +14,18 @@ function Vehicle:IsValid()
     return self:Exists() and ENTITY.IS_ENTITY_A_VEHICLE(self:GetHandle())
 end
 
--- Internal.
+---@return CVehicle|nil
 function Vehicle:ReadMemoryLayout()
     if not self:IsValid() then
         self:Destroy()
         return
     end
 
-    if self.layout then
-        return
+    if not self.layout then
+        self.layout = CVehicle(self:GetHandle())
     end
 
-    local CVehicle = Memory.GetVehicleInfo(self:GetHandle())
-    if not CVehicle then
-        error("Failed to read CVehicle", 0)
-    end
-
-    self.layout = CVehicle
+    return self.layout
 end
 
 ---@return string
@@ -1076,7 +1071,28 @@ function Vehicle.CreateFromJSON(filename, warp_into)
     return new_veh
 end
 
+---@param bone_index number
+function Vehicle:GetBoneMatrix(bone_index)
+    if not self:IsValid() then return end
+    if not self.layout then self:ReadMemoryLayout() end
 
+    local CVehicle = self.layout
+    if not CVehicle then return end
+
+    return CVehicle:GetBoneMatrix(bone_index)
+end
+
+---@param bone_index number
+---@param matrix fMatrix44
+function Vehicle:SetBoneMatrix(bone_index, matrix)
+    if not self:IsValid() then return end
+    if not self.layout then self:ReadMemoryLayout() end
+
+    local CVehicle = self.layout
+    if not CVehicle then return end
+
+    CVehicle:SetBoneMatrix(bone_index, matrix)
+end
 
 -------------------------
 -- Struct: VehicleMods 

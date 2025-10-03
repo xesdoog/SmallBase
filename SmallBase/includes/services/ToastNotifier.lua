@@ -54,6 +54,10 @@ local function logError(caller, message)
 end
 
 local function GetScreenResolution()
+    if PointerScanner:IsDone() then
+        return Game.GetScreenResolution()
+    end
+
     local pScreenResolution = memory.scan_pattern("66 0F 6E 0D ? ? ? ? 0F B7 3D")
     if pScreenResolution:is_null() then
         return { x = 0, y = 0}
@@ -65,7 +69,7 @@ local function GetScreenResolution()
     }
 end
 
-local SCREEN_RESOLUTION <const> = Game and Game.ScreenResolution or GetScreenResolution()
+local SCREEN_RESOLUTION = GetScreenResolution()
 
 --#region Toast
 

@@ -8,7 +8,7 @@ local eAccessorType <const> = {
 
 -- Wrapper around native API script global and local accessors but with ease of use and debug-friendliness in mind.
 ---@class Accessor: ClassMeta<Accessor>
----@field private m_address integer
+---@field private m_index integer
 ---@field private m_type eAccessorType
 ---@field m_script? string
 ---@field m_path integer[] -- offset chain
@@ -25,7 +25,7 @@ local AccessorDispatch = {
             return
         end
 
-        table.insert(args, 1, self:GetAddress())
+        table.insert(args, 1, self:GetIndex())
         return callback(table.unpack(args))
     end,
     [eAccessorType.LOCAL] = function(self, method, args)
@@ -35,7 +35,7 @@ local AccessorDispatch = {
             return
         end
 
-        table.insert(args, 1, self:GetAddress())
+        table.insert(args, 1, self:GetIndex())
         table.insert(args, 1, self.m_script)
         return callback(table.unpack(args))
     end,
@@ -46,7 +46,7 @@ local AccessorDispatch = {
 ---@param ... any
 ---@return any
 local function Call(self, method, ...)
-    if not self.CanAccess() then
+    if not self:CanAccess() then
         log.warning("Cannot access globals & locals at the moment.")
         return -1
     end
@@ -70,7 +70,7 @@ function Accessor.new(m_base, m_type, script, path)
 
     return setmetatable(
         {
-            m_address = m_base,
+            m_index = m_base,
             m_type = m_type or 0,
             m_script = script,
             m_path = path or {}
@@ -80,16 +80,8 @@ function Accessor.new(m_base, m_type, script, path)
 end
 
 ---@return boolean
-function Accessor.CanAccess(_)
-    local gs, gt = Memory.GetGameState(), Memory.GetGameTime()
-    return (gs and gs == 0) and gt >= 2e4 and not script.is_active("maintransition")
-end
-
-function Accessor:At(offset)
-    local newPath = { table.unpack(self.m_path or {}) }
-    table.insert(newPath, offset)
-
-    return Accessor.new(self.m_address, self.m_type, self.m_script, newPath)
+function Accessor:CanAccess()
+    return self:GetPointer():is_valid()
 end
 
 function Accessor:GetType()
@@ -98,13 +90,25 @@ end
 
 ---@return number
 function Accessor:GetAddress()
-    local addr = self.m_address
+    return self:GetPointer():get_address()
+end
+
+---@return number
+function Accessor:GetIndex()
+    local addr = self.m_index
 
     for _, offset in ipairs(self.m_path or {}) do
         addr = addr + offset
     end
 
     return addr
+end
+
+function Accessor:At(offset)
+    local newPath = { table.unpack(self.m_path or {}) }
+    table.insert(newPath, offset)
+
+    return Accessor.new(self.m_index, self.m_type, self.m_script, newPath)
 end
 
 function Accessor:__tostring()
@@ -119,7 +123,7 @@ function Accessor:__tostring()
         suffix = ":" .. self.m_script
     end
 
-    return string.format("<%s_%d%s%s>", prefix, self.m_address, chain, suffix)
+    return string.format("<%s_%d%s%s>", prefix, self.m_index, chain, suffix)
 end
 
 
@@ -161,8 +165,13 @@ end
 
 ---@return pointer
 function Accessor:GetPointer()
-    ---@type pointer
-    return Call(self, "get_pointer")
+    if self.m_type == eAccessorType.GLOBAL then
+        return globals.get_pointer(self:GetIndex())
+    elseif self.m_type == eAccessorType.LOCAL then
+        return locals.get_pointer(self.m_script, self:GetIndex())
+    end
+
+    return nil
 end
 
 ---------------------------

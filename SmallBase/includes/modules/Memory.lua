@@ -1,153 +1,164 @@
+---@diagnostic disable: param-type-mismatch
+
+require("includes.classes.CPlayerInfo")
+require("includes.classes.CPed")
+require("includes.classes.CWheel")
+require("includes.classes.CVehicle")
+
+
 --------------------------------------
 -- Class: Memory
 --------------------------------------
+---
 --**Global Singleton.**
----@class Memory
-Memory = {}
-Memory.__index = Memory
+--
+-- Handles most interactions with the game's memory.
+---@class Memory : ClassMeta<Memory>
+---@field m_game_version { _build: string, _online: string }
+---@field m_game_state pointer
+---@field m_game_time pointer
+---@field m_screen_res { width: pointer, height: pointer }
+---@overload fun(_: any): Memory
+local Memory = Class("Memory")
 
----@param ptr pointer
----@param size integer
-function Memory.Dump(ptr, size)
-    size = size or 4
-    local result = {}
-
-    for i = 0, size - 1 do
-        local byte = ptr:add(i):get_byte()
-        table.insert(result, string.format("%02X", byte))
-    end
-
-    log.debug("Memory Dump: " .. table.concat(result, " "))
+---@return Memory
+function Memory:init()
+    return setmetatable({}, Memory)
 end
 
----@param ptr pointer
----@return vec3
-function Memory.GetVec3(ptr)
-    if ptr:is_null() then
-        return vec3:zero()
+---@return { _build: string, _online: string }
+function Memory:GetGameVersion()
+    if self.m_game_version then
+        return self.m_game_version
     end
 
-    return vec3:new(
-        ptr:get_float(),
-        ptr:add(0x4):get_float(),
-        ptr:add(0x8):get_float()
-    )
-end
-
----@return table
-function Memory.GetGameVersion()
-    local pGameVersion = memory.scan_pattern("8B C3 33 D2 C6 44 24 20")
-    if pGameVersion:is_null() then
-        log.warning("Failed to find pattern (Game Version)")
-        return {_build = "nil", _online = "nil"}
+    local pGameVersion = GPointers.GameVersion:Get()
+    if not pGameVersion or pGameVersion:is_null() then
+        log.warning("Failed to find pointer (Game Version)")
+        return { _build = "nil", _online = "nil" }
     end
 
     local pGameBuild = pGameVersion:add(0x24):rip()
     local pOnlineVersion = pGameBuild:add(0x20)
-
-    return {
+    local _t = {
         _build  = pGameBuild:get_string(),
         _online = pOnlineVersion:get_string()
     }
+    self.m_game_version = _t
+
+    return _t
 end
 
 ---@return number|nil
-function Memory.GetGameState()
-    local pGameState = memory.scan_pattern("83 3D ? ? ? ? ? 75 17 8B 43 20 25")
-    if pGameState:is_null() then
-        log.warning("Failed to find pattern (Game State)")
-        return
+function Memory:GetGameState()
+    if self.m_game_state then
+        return self.m_game_state:get_byte()
     end
 
-    return pGameState:add(0x2):rip():add(0x1):get_byte()
-end
-
----@return number
-function Memory.GetGameTime()
-    local pGameTime = memory.scan_pattern("8B 05 ? ? ? ? 89 ? 48 8D 4D C8")
-    if pGameTime:is_null() then
-        log.warning("Failed to find pattern (Game Time)")
+    if not PointerScanner:IsDone() then
         return 0
     end
 
-    return pGameTime:add(0x2):rip():get_dword()
+    local pGameState = GPointers.GameState:Get()
+    if not pGameState or pGameState:is_null() then
+        log.warning("Failed to find pointer (Game State)")
+        return
+    end
+
+    local ptr = pGameState:add(0x2):rip():add(0x1)
+    self.m_game_state = ptr
+
+    return ptr:get_byte()
+end
+
+---@return number
+function Memory:GetGameTime()
+    if self.m_game_time then
+        return self.m_game_time:get_dword()
+    end
+
+    if not PointerScanner:IsDone() then
+        return 0
+    end
+
+    local pGameTime = GPointers.GameTime:Get()
+    if not pGameTime or pGameTime:is_null() then
+        log.warning("Failed to find pointer (Game Time)")
+        return 0
+    end
+
+    local ptr = pGameTime:add(0x2):rip()
+    self.m_game_time = ptr
+
+    return ptr:get_dword()
 end
 
 ---@return vec2
-function Memory.GetScreenResolution()
-    local pScreenResolution = memory.scan_pattern("66 0F 6E 0D ? ? ? ? 0F B7 3D")
-    if pScreenResolution:is_null() then
-        log.warning("Failed to find pattern (Screen Resolution)")
-        return vec2:new(0, 0)
+function Memory:GetScreenResolution()
+    if not PointerScanner:IsDone() then
+        return vec2:zero()
     end
 
-    return vec2:new(
-        pScreenResolution:sub(0x4):rip():get_word(),
-        pScreenResolution:add(0x4):rip():get_word()
-    )
+    if self.m_screen_res then
+        return vec2:new(
+            self.m_screen_res.width:get_word(),
+            self.m_screen_res.height:get_word()
+        )
+    end
+
+    local pScreenResolution = GPointers.ScreenResolution:Get()
+    if not pScreenResolution or pScreenResolution:is_null() then
+        log.warning("Failed to find pointer (Screen Resolution)")
+        return vec2:zero()
+    end
+
+    local x = pScreenResolution:sub(0x4):rip()
+    local y = pScreenResolution:add(0x4):rip()
+
+    self.m_screen_res = { width = x, height = y }
+
+    return vec2:new(x:get_word(), y:get_word())
 end
 
+---@param vehicle integer vehicle handle
 ---@return CVehicle|nil
-function Memory.GetVehicleInfo(vehicle)
-    if not (ENTITY.DOES_ENTITY_EXIST(vehicle) or ENTITY.IS_ENTITY_A_VEHICLE(vehicle)) then
-        return
-    end
+function Memory:GetVehicleInfo(vehicle)
+    return CVehicle(vehicle)
+end
 
-    local pEntity = memory.handle_to_ptr(vehicle)
-    if pEntity:is_null() then
-        return
-    end
-
-    ---@class CVehicle
-    local CVehicle = {}
-    CVehicle.__index = CVehicle
-
-    CVehicle.CHandlingData           = pEntity:add(0x0960):deref() -- `class`
-    CVehicle.CVehicleModelInfo       = pEntity:add(0x20):deref() -- `class`
-    CVehicle.CVehicleDamage          = pEntity:add(0x0420) -- `class`
-    CVehicle.CBaseSubHandlingData    = CVehicle.CHandlingData:add(0x158):deref() -- `rage::atArray`
-    CVehicle.CVehicleModelInfoLayout = CVehicle.CVehicleModelInfo:add(0x00B0):deref() -- `class`
-
-    CVehicle.m_model_info_flags           = CVehicle.CVehicleModelInfo:add(0x057C)
-    CVehicle.m_initial_drag_coeff         = CVehicle.CHandlingData:add(0x0010) -- `float`
-    CVehicle.m_drive_bias_rear            = CVehicle.CHandlingData:add(0x0044) -- `float`
-    CVehicle.m_drive_bias_front           = CVehicle.CHandlingData:add(0x0048) -- `float`
-    CVehicle.m_acceleration               = CVehicle.CHandlingData:add(0x004C) -- `float`
-    CVehicle.m_initial_drive_gears        = CVehicle.CHandlingData:add(0x0050) -- `uint8_t`
-    CVehicle.m_initial_drive_force        = CVehicle.CHandlingData:add(0x0060) -- `float`
-    CVehicle.m_drive_max_flat_velocity    = CVehicle.CHandlingData:add(0x0064) -- `float`
-    CVehicle.m_initial_drive_max_flat_vel = CVehicle.CHandlingData:add(0x0068) -- `float`
-    CVehicle.m_monetary_value             = CVehicle.CHandlingData:add(0x0118) -- `uint32_t`
-    CVehicle.m_model_flags                = CVehicle.CHandlingData:add(0x0124) -- `uint32_t`
-    CVehicle.m_handling_flags             = CVehicle.CHandlingData:add(0x0128) -- `uint32_t`
-    CVehicle.m_damage_flags               = CVehicle.CHandlingData:add(0x012C) -- `uint32_t`
-    CVehicle.m_deformation_mult           = CVehicle.CHandlingData:add(0x00F8) -- `float`
-    CVehicle.m_deform_god                 = pEntity:add(0x096C)
-    CVehicle.m_water_damage               = pEntity:add(0xD8)
-
-    return CVehicle
+---@param ped integer A Ped ID, not a Player ID.
+---@return CPed|nil
+function Memory:GetPedInfo(ped)
+    return CPed(ped)
 end
 
 -- Checks if a vehicle's handling flag is set.
 ---@param vehicle integer
 ---@param flag eVehicleHandlingFlags
----@return boolean|nil
-function Memory.GetVehicleHandlingFlag(vehicle, flag)
+---@return boolean
+function Memory:GetVehicleHandlingFlag(vehicle, flag)
     if not (ENTITY.DOES_ENTITY_EXIST(vehicle) or ENTITY.IS_ENTITY_A_VEHICLE(vehicle)) then
-        return
+        return false
     end
 
-    local m_handling_flags = Memory.GetVehicleInfo(vehicle).m_handling_flags
-    if m_handling_flags:is_valid() then
-        return Bit.is_set(m_handling_flags:get_dword(), flag)
+    local CVehicle = self:GetVehicleInfo(vehicle)
+    if not CVehicle then
+        return false
     end
+
+    local m_handling_flags = CVehicle.m_handling_flags
+    if m_handling_flags:is_null() then
+        return false
+    end
+
+    return Bit.is_set(m_handling_flags:get_dword(), flag)
 end
 
 ---@param vehicle integer
 ---@param flag eVehicleModelFlags
 ---@return boolean
-function Memory.GetVehicleModelFlag(vehicle, flag)
-    local CVehicle = Memory.GetVehicleInfo(vehicle)
+function Memory:GetVehicleModelInfoFlag(vehicle, flag)
+    local CVehicle = self:GetVehicleInfo(vehicle)
     if not CVehicle then
         return false
     end
@@ -170,7 +181,7 @@ end
 -- Returns the model type of an entity (ped, object, vehicle, MLO, time, etc...)
 ---@param entity integer
 ---@return number
-function Memory.GetEntityType(entity)
+function Memory:GetEntityType(entity)
     if not ENTITY.DOES_ENTITY_EXIST(entity) then
         return 0
     end
@@ -190,76 +201,11 @@ function Memory.GetEntityType(entity)
     return b_IsMemSafe and i_EntityType or 0
 end
 
----@param ped integer A Ped ID, not a Player ID.
----@return CPed|nil
-function Memory.GetPedInfo(ped)
-    if not ENTITY.DOES_ENTITY_EXIST(ped) or not ENTITY.IS_ENTITY_A_PED(ped) then
-        return
-    end
-
-    local pEntity = memory.handle_to_ptr(ped)
-    if pEntity:is_null() then
-        return
-    end
-
-    ---@ignore
-    ---@class CPed
-    local CPed = {}
-    CPed.__index = CPed
-
-    CPed.CPedIntelligence  = pEntity:add(0x10A0):deref() -- `class`
-
-    CPed.CPedInventory     = pEntity:add(0x10B0):deref() -- `class`
-    CPed.CPedWeaponManager = pEntity:add(0x10B0):deref() -- `class`
-
-    CPed.m_velocity        = pEntity:add(0x0300) -- `rage::fvector3`
-    CPed.m_ped_type        = pEntity:add(0x1098) -- `uint32_t`
-    CPed.m_ped_task_flag   = pEntity:add(0x144B) -- `uint8_t`
-    CPed.m_seatbelt        = pEntity:add(0x143C) -- `uint8_t`
-    CPed.m_armor           = pEntity:add(0x150C) -- `float`
-
-    ---@return boolean
-    function CPed.CanPedRagdoll()
-        return (CPed.m_ped_type:get_dword() & 0x20) ~= 0
-    end;
-
-    ---@return boolean
-    function CPed.HasSeatbelt()
-        return (CPed.m_seatbelt:get_word() & 0x3) ~= 0
-    end;
-
-    if PED.IS_PED_A_PLAYER(ped) then
-        local pCPlayerInfo = pEntity:add(0x10A8):deref() -- `class`
-        if pCPlayerInfo:is_valid() then
-
-            ---@ignore
-            ---@class CPlayerInfo
-            CPed.CPlayerInfo = {}
-            CPed.CPlayerInfo.m_swim_speed           = pCPlayerInfo:add(0x01C8) -- `float`
-            CPed.CPlayerInfo.m_is_wanted            = pCPlayerInfo:add(0x08E0) -- `boolean`
-            CPed.CPlayerInfo.m_wanted_level         = pCPlayerInfo:add(0x08E8) -- `uint32_t`
-            CPed.CPlayerInfo.m_wanted_level_display = pCPlayerInfo:add(0x08EC) -- `uint32_t`
-            CPed.CPlayerInfo.m_run_speed            = pCPlayerInfo:add(0x0D50) -- `float`
-            CPed.CPlayerInfo.m_stamina              = pCPlayerInfo:add(0x0D54) -- `float`
-            CPed.CPlayerInfo.m_stamina_regen        = pCPlayerInfo:add(0x0D58) -- `float`
-            CPed.CPlayerInfo.m_weapon_damage_mult   = pCPlayerInfo:add(0x0D6C) -- `float`
-            CPed.CPlayerInfo.m_weapon_defence_mult  = pCPlayerInfo:add(0x0D70) -- `float`
-
-            ---@return number
-            function CPed.CPlayerInfo.GetGameState()
-                return pCPlayerInfo:add(0x0230):get_dword()
-            end;
-        end
-    end
-
-    return CPed
-end
-
 --[[
 ---@ignore
 ---@unused
 ---@param dword integer
-function Memory.SetWeaponEffectGroup(dword)
+function Memory:SetWeaponEffectGroup(dword)
     local pedPtr = memory.handle_to_ptr(self.get_ped())
     if pedPtr:is_valid() then
         local CPedWeaponManager = pedPtr:add(0x10B8):deref()
@@ -270,3 +216,7 @@ function Memory.SetWeaponEffectGroup(dword)
     end
 end
 --]]
+
+
+-- inline
+return Memory()

@@ -12,7 +12,8 @@ local state_colors <const> = {
 local demo_tab = GUI:GetMainTab():RegisterSubtab("Demo", function()
     ImGui.Spacing()
     ImGui.PushTextWrapPos(ImGui.GetWindowWidth() - 20)
-    ImGui.Text("Below are demo commands created using the custom GUI class and its internal Tab class's AddLoopedCommand method:")
+    ImGui.Text(
+    "Below are demo commands created using the custom GUI class and its internal Tab class's AddLoopedCommand method:")
     ImGui.PopTextWrapPos()
     ImGui.Dummy(1, 10)
 
