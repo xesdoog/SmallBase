@@ -119,12 +119,11 @@ function CVehicle.new(vehicle)
 
     local instance = setmetatable({}, CVehicle)
     instance.m_ptr = ptr
-    instance.CHandlingData = ptr:add(0x0960):deref()
     instance.CVehicleModelInfo = ptr:add(0x20):deref()
     instance.CVehicleDamage = ptr:add(0x0420)
+    instance.CHandlingData = ptr:add(0x0960):deref()
     instance.CBaseSubHandlingData = instance.CHandlingData:add(0x158)
     instance.CVehicleModelInfoLayout = instance.CVehicleModelInfo:add(0x00B0):deref()
-    instance.CCarHandlingData = instance:GetHandlingData()
     instance.m_physics_fragments = phFragInst(ptr:add(0x30):deref())
     instance.m_deform_god = ptr:add(0x096C)
     instance.m_water_damage = ptr:add(0xD8)
@@ -146,6 +145,8 @@ function CVehicle.new(vehicle)
     -- instance.m_camber_rear = instance.CHandlingData:add(0x0350)
     instance.m_wheel_scale = instance.CVehicleModelInfo:add(0x048C)
     instance.m_wheel_scale_rear = instance.CVehicleModelInfo:add(0x0490)
+
+    instance.CCarHandlingData = instance:GetHandlingData()
     instance:GetWheels()
 
     return instance
@@ -216,45 +217,35 @@ function CVehicle:GetHandlingData()
 end
 
 ---@param boneIndex integer
+---@return fMatrix44
 function CVehicle:GetBoneMatrix(boneIndex)
     local ph_frag_inst = self.m_physics_fragments
-    if not ph_frag_inst then return nil end
+    if not ph_frag_inst then
+        return fMatrix44:zero()
+    end
 
-    local this = ph_frag_inst:GetMatrixPtr(boneIndex)
-    if not (this and this:is_valid()) then return nil end
+    local ptr = ph_frag_inst:GetMatrixPtr(boneIndex)
+    if not (ptr and ptr:is_valid()) then
+        return fMatrix44:zero()
+    end
 
-    return fMatrix44:new(
-        this:add(0x00):get_float(), this:add(0x04):get_float(), this:add(0x08):get_float(), this:add(0x0C):get_float(),
-
-        this:add(0x10):get_float(), this:add(0x14):get_float(), this:add(0x18):get_float(), this:add(0x1C):get_float(),
-
-        this:add(0x20):get_float(), this:add(0x24):get_float(), this:add(0x28):get_float(), this:add(0x2C):get_float(),
-
-        this:add(0x30):get_float(), this:add(0x34):get_float(), this:add(0x38):get_float(), this:add(0x3C):get_float()
-    )
+    return ptr:get_matrix44()
 end
 
 ---@param boneIndex integer
----@param mat fMatrix44
-function CVehicle:SetBoneMatrix(boneIndex, mat)
+---@param matrix fMatrix44
+function CVehicle:SetBoneMatrix(boneIndex, matrix)
     local ph_frag_inst = self.m_physics_fragments
-    if not ph_frag_inst then return end
+    if not ph_frag_inst then
+        return
+    end
 
-    local this = ph_frag_inst:GetMatrixPtr(boneIndex)
-    if not (this and this:is_valid()) then return nil end
+    local ptr = ph_frag_inst:GetMatrixPtr(boneIndex)
+    if not (ptr and ptr:is_valid()) then
+        return
+    end
 
-    local m1 = mat:m1()
-    local m2 = mat:m2()
-    local m3 = mat:m3()
-    local m4 = mat:m4()
-
-    this:add(0x00):set_float(m1.x); this:add(0x04):set_float(m1.y); this:add(0x08):set_float(m1.z); this:add(0x0C):set_float(m1.w)
-
-    this:add(0x10):set_float(m2.x); this:add(0x14):set_float(m2.y); this:add(0x18):set_float(m2.z); this:add(0x1C):set_float(m2.w)
-
-    this:add(0x20):set_float(m3.x); this:add(0x24):set_float(m3.y); this:add(0x28):set_float(m3.z); this:add(0x2C):set_float(m3.w)
-
-    this:add(0x30):set_float(m4.x); this:add(0x34):set_float(m4.y); this:add(0x38):set_float(m4.z); this:add(0x3C):set_float(m4.w)
+    ptr:set_matrix44(matrix)
 end
 
 ---@param boneIndex integer

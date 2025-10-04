@@ -76,6 +76,26 @@ function fMatrix44:new(
     return instance
 end
 
+---@return fMatrix44
+function fMatrix44:zero()
+    return fMatrix44:new(
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0
+    )
+end
+
+---@return boolean
+function fMatrix44:is_zero()
+    local m1 = self:m1()
+    local m2 = self:m2()
+    local m3 = self:m3()
+    local m4 = self:m4()
+
+    return m1:is_zero() and m2:is_zero() and m3:is_zero() and m4:is_zero()
+end
+
 ---@param right fMatrix44
 function fMatrix44:__mul(right)
     return self:multiply(right)

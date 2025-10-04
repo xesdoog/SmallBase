@@ -4,9 +4,7 @@
 -- Class: Pointer
 --------------------------------------
 ---
--- Represents a single memory pattern pointer.
---
--- Used internally by `PointerScanner` to hold the scan pattern, result address, and name.
+-- Represents a single memory pattern pointer. Used internally by `PointerScanner` to hold the scan pattern, result address, and name.
 ---@class Pointer
 ---@field private m_name string
 ---@field private m_address integer
@@ -31,7 +29,7 @@ end
 -- Creates a new unresolved `Pointer`.
 ---@param name string
 ---@param pattern string
----@param func? function -- (Optional) A function to execute once the pointer is found
+---@param func? fun(ptr: pointer): any -- Optional resolver called with the found pointer
 ---@return Pointer
 function Pointer:new(name, pattern, func)
     local instance = setmetatable({}, Pointer)
@@ -85,9 +83,7 @@ end
 -- Class: PointerScanner
 --------------------------------------
 ---
--- A simple manager for scanning and storing multiple memory pointers.
---
--- Encapsulates pattern scanning logic so you can register pointers and scan them all at once.
+-- A simple manager for scanning and storing multiple memory pointers. Encapsulates pattern scanning logic so you can register pointers and scan them all at once.
 ---@class PointerScanner : ClassMeta<PointerScanner>
 ---@field private m_pointers Pointer[]
 ---@field private m_done boolean
@@ -107,7 +103,7 @@ end
 -- If a pointer with the same name already exists, it will be ignored.
 ---@param name string -- Unique name for the pointer
 ---@param pattern string -- AOB pattern string to scan for (IDA-style)
----@param func? fun(ptr: pointer): any -- Optional resolver called with the found pointer -- (Optional) A function to execute once the pointer is found
+---@param func? fun(ptr: pointer): any -- Optional resolver called with the found pointer
 ---@return Pointer|nil -- The created `Pointer` object or nil if a pointer with the same name already exists
 ---___
 -- **Important:** If you provide a function that returns a value, then the variable assigned to this function's

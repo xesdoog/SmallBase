@@ -3,6 +3,7 @@ name: Generate Docs
 on:
   push:
     paths:
+      - "SmallBase/includes/classes/*.lua"
       - "SmallBase/includes/modules/*.lua"
       - "SmallBase/includes/services/*.lua"
   workflow_dispatch:

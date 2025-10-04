@@ -226,6 +226,7 @@ function memory.pointer:get_vec4()
     local y = self:add(0x8):get_float()
     local z = self:add(0xC):get_float()
     local w = self:add(0x10):get_float()
+
     return vec4:new(x, y, z, w)
 end
 
@@ -237,10 +238,40 @@ function memory.pointer:set_vec4(vector4)
     self:add(0x10):get_float(vector4.w)
 end
 
+---@return fMatrix44
+function memory.pointer:get_matrix44()
+    return fMatrix44:new(
+        self:add(0x00):get_float(), self:add(0x04):get_float(), self:add(0x08):get_float(), self:add(0x0C):get_float(),
+
+        self:add(0x10):get_float(), self:add(0x14):get_float(), self:add(0x18):get_float(), self:add(0x1C):get_float(),
+
+        self:add(0x20):get_float(), self:add(0x24):get_float(), self:add(0x28):get_float(), self:add(0x2C):get_float(),
+
+        self:add(0x30):get_float(), self:add(0x34):get_float(), self:add(0x38):get_float(), self:add(0x3C):get_float()
+    )
+end
+
+---@param matrix fMatrix44
+function memory.pointer:set_matrix44(matrix)
+    local m1 = matrix:m1()
+    local m2 = matrix:m2()
+    local m3 = matrix:m3()
+    local m4 = matrix:m4()
+
+    self:add(0x00):set_float(m1.x); self:add(0x04):set_float(m1.y); self:add(0x08):set_float(m1.z); self:add(0x0C):set_float(m1.w)
+
+    self:add(0x10):set_float(m2.x); self:add(0x14):set_float(m2.y); self:add(0x18):set_float(m2.z); self:add(0x1C):set_float(m2.w)
+
+    self:add(0x20):set_float(m3.x); self:add(0x24):set_float(m3.y); self:add(0x28):set_float(m3.z); self:add(0x2C):set_float(m3.w)
+
+    self:add(0x30):set_float(m4.x); self:add(0x34):set_float(m4.y); self:add(0x38):set_float(m4.z); self:add(0x3C):set_float(m4.w)
+end
+
+---@param size? number bytes
 function memory.pointer:dump(size)
-    size = size or 16
+    size = size or 0x10
     if self:is_null() then
-        log.debug("Memory Dump: <null pointer>")
+        log.debug("Memory Dump: <nullptr>")
         return
     end
 
