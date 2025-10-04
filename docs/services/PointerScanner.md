@@ -2,7 +2,7 @@
 
 **Description:**
 
-Encapsulates pattern scanning logic so you can register pointers and scan them all at once.
+A simple manager for scanning and storing multiple memory pointers. Encapsulates pattern scanning logic so you can register pointers and scan them all at once.
 
 ## Methods
 
@@ -38,7 +38,7 @@ end)
 **Parameters:**
 - `name` string -- Unique name for the pointer
 - `pattern` string -- AOB pattern string to scan for (IDA-style)
-- `func?` fun(ptr: pointer): any -- Optional resolver called with the found pointer -- (Optional) A function to execute once the pointer is found
+- `func?` fun(ptr: pointer): any -- Optional resolver called with the found pointer
 
 
 **Returns:**

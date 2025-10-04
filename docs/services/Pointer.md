@@ -2,7 +2,7 @@
 
 **Description:**
 
-Used internally by `PointerScanner` to hold the scan pattern, result address, and name.
+Represents a single memory pattern pointer. Used internally by `PointerScanner` to hold the scan pattern, result address, and name.
 
 ## Methods
 
@@ -16,7 +16,7 @@ Creates a new unresolved `Pointer`.
 **Parameters:**
 - `name` string
 - `pattern` string
-- `func?` function -- (Optional) A function to execute once the pointer is found
+- `func?` fun(ptr: pointer): any -- Optional resolver called with the found pointer
 
 
 **Returns:**
