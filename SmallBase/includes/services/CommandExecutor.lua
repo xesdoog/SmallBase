@@ -572,13 +572,15 @@ function CommandExecutor:SetAutoClose(toggle)
 end
 
 function CommandExecutor:Close()
-    gui.override_mouse(false)
     self.gui.should_draw = false
     self.gui.popup.should_draw = false
     self.mutation_request = nil
     self.suggestions = {}
     self.user_cmd = ""
     self.hint_text = ">_"
+
+    gui.override_mouse(false)
+    Backend.disable_input = false
 end
 
 return CommandExecutor

@@ -594,19 +594,22 @@ function GUI:GetMainTab()
 end
 
 ---@param label string
----@param key boolean
+---@param bool boolean
 ---@param opts? { tooltip?: string, color?: Color }
-function GUI:Checkbox(label, key, opts)
+---@return boolean, boolean
+function GUI:Checkbox(label, bool, opts)
     local clicked = false
-    key, clicked = ImGui.Checkbox(label, key)
-    if clicked then
+    bool, clicked = ImGui.Checkbox(label, bool)
+
+    if (clicked) then
         self:PlaySound(self.Sounds.Checkbox)
     end
 
     if (opts and opts.tooltip) then
         self:Tooltip(opts.tooltip, opts)
     end
-    return key
+
+    return bool, clicked
 end
 
 ---@param label string
@@ -617,6 +620,7 @@ function GUI:Button(label, opts)
     ImGui.PushButtonRepeat(opts.repeatable)
     local pressed = ImGui.Button(label, opts.size.x, opts.size.y)
     ImGui.PopButtonRepeat()
+
     if (pressed) then
         self:PlaySound(self.Sounds.Button)
     end
@@ -641,6 +645,20 @@ function GUI:ButtonColored(label, color, hover_color, active_color, opts)
     end
 
     return pressed
+end
+
+--- Draws an ImGui item and handles enabling/disabling it on `condition`.
+---@generic T1, T2, T3, T4, T5
+---@param ImGuiItem fun(...: any): T1, T2, T3, T4, T5 ImGui item
+---@param condition boolean Disables the item when true
+---@param ... any
+---@return T1, T2, T3, T4, T5, ...
+function GUI:ConditionalItem(ImGuiItem, condition, ...)
+    ImGui.BeginDisabled(condition)
+    local ret = table.pack(ImGuiItem(...))
+    ImGui.EndDisabled()
+
+    return table.unpack(ret)
 end
 
 GUI.Sounds = {

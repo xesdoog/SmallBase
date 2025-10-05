@@ -2,8 +2,38 @@ math.randomseed(os.time())
 
 --#region Global functions
 
+---@generic T
+---@param ... T
+---@return T
 function DummyFunc(...)
     return ...
+end
+
+-- Theory: Get a pattern for a script global -> scan it -> get the address and pass it to this function -> get the index.
+--
+-- We can even directly wrap the return in a `ScriptGlobal` instance, essentially no longer needing to update script globals after game updates.
+--
+-- Useful if I figure out a way to make strong patterns for script globals
+---@param addr integer
+---@return integer
+function GlobalIndexFromAddress(addr)
+    local sg_base = GPointers.ScriptGlobals
+    if sg_base:is_null() then
+        log.warning("Script Globals base pointer is null!")
+        return 0
+    end
+
+    for page = 0, 63 do
+        local page_ptr = sg_base:add(page * 0x8):get_qword()
+        if page_ptr ~= 0 then
+            local offset = addr - page_ptr
+            if (offset >= 0 and offset < 0x3FFFF * 0x8 and offset % 0x8 == 0) then
+                return (page << 0x12) | (offset // 8)
+            end
+        end
+    end
+
+    return 0
 end
 
 ---@param object any
@@ -868,34 +898,50 @@ end
 ---@class Bit
 Bit = {}
 
+---@param n integer
+---@param pos integer
 Bit.get = function(n, pos)
     return (n >> pos) & 1
 end
 
+---@param n integer
+---@param pos integer
 Bit.set = function(n, pos)
     return n | (1 << pos)
 end
 
+---@param n integer
+---@param pos integer
 Bit.clear = function(n, pos)
-    return n & ~(1 << pos)
+    return n &~ (1 << pos)
 end
 
+---@param n integer
+---@param pos integer
 Bit.is_set = function(n, pos)
     return (n & (1 << pos)) ~= 0
 end
 
+---@param n integer
+---@param s integer
 Bit.lshift = function(n, s)
     return n << s
 end
 
+---@param n integer
+---@param s integer
 Bit.rshift = function(n, s)
     return n >> s
 end
 
+---@param n integer
+---@param bits integer
 Bit.rrotate = function(n, bits)
     return ((n >> bits) | (n << (32 - bits))) & 0xFFFFFFFF
 end
 
+---@param n integer
+---@param bits integer
 Bit.lrotate = function(n, bits)
     return ((n << bits) | (n >> (32 - bits))) & 0xFFFFFFFF
 end

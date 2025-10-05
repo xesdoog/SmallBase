@@ -54,7 +54,7 @@ local function logError(caller, message)
 end
 
 local function GetScreenResolution()
-    if PointerScanner:IsDone() then
+    if PatternScanner:IsDone() then
         return Game.GetScreenResolution()
     end
 

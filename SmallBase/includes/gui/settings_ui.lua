@@ -77,6 +77,7 @@ local input_1, input_2, input_3 = false, false, false
 local thread_name
 local thread_state
 local selected_thread
+local ptr_name
 local hovered_y
 local selected_veh_name
 
@@ -158,9 +159,10 @@ end
 local function DrawThreads()
     local thread_list = ThreadManager:ListThreads()
     local thread_count = table.getlen(thread_list)
+    local child_height = math.min(thread_count * 30, 300)
 
     ImGui.BulletText(string.format("Thread Count: [%d]", thread_count))
-    ImGui.BeginChild("##threadlist", 300, 160)
+    ImGui.BeginChild("##threadlist", 400, child_height)
     ImGui.SetNextWindowBgAlpha(0)
     if ImGui.BeginListBox("##thread_listbox", -1, -1) then
         for name, thread in pairs(thread_list) do
@@ -208,6 +210,45 @@ local function DrawThreads()
         end
     end
     ImGui.EndChild()
+end
+
+local function DrawPointers()
+    local ptr_list, failed_ptr_list = PatternScanner:ListPointers()
+    local total_count, failed_count = table.getlen(ptr_list), #failed_ptr_list
+    local child_height = math.min(total_count * 30, 300)
+
+    ImGui.BulletText(string.format("Total Count: [%d]", total_count))
+    ImGui.BeginChild("##ptr_list", 400, child_height)
+    ImGui.SetNextWindowBgAlpha(0)
+    if ImGui.BeginListBox("##ptr_listbox", -1, -1) then
+        for name, ptr in pairs(ptr_list) do
+            if (ptr) then
+                local address = ptr:GetAddress()
+
+                if (address == 0) then
+                    ImGui.PushStyleColor(ImGuiCol.Text, RED:AsRGBA())
+                end
+
+                if ImGui.Selectable(string.format("%s @ 0x%X", name, address), (name == ptr_name)) then
+                    ptr_name = name
+                end
+
+                if (address == 0) then
+                    ImGui.PopStyleColor()
+                end
+            end
+        end
+        ImGui.EndListBox()
+    end
+    ImGui.EndChild()
+
+    if (failed_count == 0) then
+        return
+    end
+
+    if ImGui.Button("Rescan Failed Pointers") then
+        PatternScanner:RetryScan()
+    end
 end
 
 local function DrawGlobalsAndLocals()
@@ -460,6 +501,11 @@ debug_tab:RegisterGUI(function()
 
     if ImGui.BeginTabItem("Threads") then
         DrawThreads()
+        ImGui.EndTabItem()
+    end
+
+    if ImGui.BeginTabItem("Pointers") then
+        DrawPointers()
         ImGui.EndTabItem()
     end
 

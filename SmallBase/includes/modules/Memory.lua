@@ -32,13 +32,12 @@ function Memory:GetGameVersion()
         return self.m_game_version
     end
 
-    local pGameVersion = GPointers.GameVersion:Get()
-    if not pGameVersion or pGameVersion:is_null() then
+    if not GPointers.GameVersion or GPointers.GameVersion:is_null() then
         log.warning("Failed to find pointer (Game Version)")
         return { _build = "nil", _online = "nil" }
     end
 
-    local pGameBuild = pGameVersion:add(0x24):rip()
+    local pGameBuild = GPointers.GameVersion:add(0x24):rip()
     local pOnlineVersion = pGameBuild:add(0x20)
     local _t = {
         _build  = pGameBuild:get_string(),
@@ -55,17 +54,16 @@ function Memory:GetGameState()
         return self.m_game_state:get_byte()
     end
 
-    if not PointerScanner:IsDone() then
+    if not PatternScanner:IsDone() then
         return 0
     end
 
-    local pGameState = GPointers.GameState:Get()
-    if not pGameState or pGameState:is_null() then
+    if not GPointers.GameState or GPointers.GameState:is_null() then
         log.warning("Failed to find pointer (Game State)")
         return
     end
 
-    local ptr = pGameState:add(0x2):rip():add(0x1)
+    local ptr = GPointers.GameState:add(0x2):rip():add(0x1)
     self.m_game_state = ptr
 
     return ptr:get_byte()
@@ -77,17 +75,16 @@ function Memory:GetGameTime()
         return self.m_game_time:get_dword()
     end
 
-    if not PointerScanner:IsDone() then
+    if not PatternScanner:IsDone() then
         return 0
     end
 
-    local pGameTime = GPointers.GameTime:Get()
-    if not pGameTime or pGameTime:is_null() then
+    if not GPointers.GameTime or GPointers.GameTime:is_null() then
         log.warning("Failed to find pointer (Game Time)")
         return 0
     end
 
-    local ptr = pGameTime:add(0x2):rip()
+    local ptr = GPointers.GameTime:add(0x2):rip()
     self.m_game_time = ptr
 
     return ptr:get_dword()
@@ -95,7 +92,7 @@ end
 
 ---@return vec2
 function Memory:GetScreenResolution()
-    if not PointerScanner:IsDone() then
+    if not PatternScanner:IsDone() then
         return vec2:zero()
     end
 
@@ -106,18 +103,16 @@ function Memory:GetScreenResolution()
         )
     end
 
-    local pScreenResolution = GPointers.ScreenResolution:Get()
-    if not pScreenResolution or pScreenResolution:is_null() then
+    if not GPointers.ScreenResolution or GPointers.ScreenResolution:is_null() then
         log.warning("Failed to find pointer (Screen Resolution)")
         return vec2:zero()
     end
 
-    local x = pScreenResolution:sub(0x4):rip()
-    local y = pScreenResolution:add(0x4):rip()
+    local pX = GPointers.ScreenResolution:sub(0x4):rip()
+    local pY = GPointers.ScreenResolution:add(0x4):rip()
+    self.m_screen_res = { width = pX, height = pY }
 
-    self.m_screen_res = { width = x, height = y }
-
-    return vec2:new(x:get_word(), y:get_word())
+    return vec2:new(pX:get_word(), pY:get_word())
 end
 
 ---@param vehicle integer vehicle handle

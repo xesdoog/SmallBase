@@ -1,4 +1,5 @@
 ---@diagnostic disable: undefined-doc-name
+
 ---@generic T
 ---@class ClassMeta<T>
 ---@field new? fun(...): T

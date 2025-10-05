@@ -162,7 +162,7 @@ function CVehicle:GetWheels()
         return self.m_num_wheels, self.m_wheels
     end
 
-    local CWheelOffsetPtr = GPointers.CWheelOffset:Get()
+    local CWheelOffsetPtr = GPointers.CWheelOffset
     if CWheelOffsetPtr:is_null() then
         return 0, nil
     end

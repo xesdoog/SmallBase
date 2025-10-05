@@ -156,7 +156,7 @@ GUI:GetMainTab():RegisterGUI(function()
         end
     end
 
-    ImGui.Text("A Lua base for YimMenu V1.\nSupport for cross-compatibility with V2 may be added in the future.")
+    ImGui.Text("A Lua base for YimMenu V1.\nCross-compatibility with V2 may be added in the future.")
     ImGui.Dummy(1, 10)
     ImGui.Separator()
 
