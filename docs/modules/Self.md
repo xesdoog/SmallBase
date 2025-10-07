@@ -11,12 +11,17 @@ Class representing the local player.
 override
 
 **Returns:**
-- `number` 
+- `Handle` 
 
 ### `GetPlayerID`
 
 **Returns:**
 - `number` 
+
+### `GetModelHash`
+
+**Returns:**
+- `Hash` 
 
 ### `GetEntityInCrosshairs`
 
@@ -27,12 +32,12 @@ Returns the entity localPlayer is aiming at.
 
 
 **Returns:**
-- `integer` | nil
+- `Handle` | nil
 
-### `GetDeltaTime`
+### `IsUsingAirctaftMG`
 
 **Returns:**
-- `integer` 
+- `boolean` , Hash
 
 ### `Teleport`
 
@@ -48,18 +53,24 @@ Teleports localPlayer to the provided coordinates.
 
 Returns whether the player is currently using any mobile or computer app.
 
+**Returns:**
+- `boolean` 
 
 ### `IsInCarModShop`
 
 Returns whether the player is inside a modshop.
 
+**Returns:**
+- `boolean` 
 
 ### `IsPedMyEnemy`
 
 **Parameters:**
-- `pedHandle` integer
+- `pedHandle` Handle
 
 
+**Returns:**
+- `boolean` 
 
 ### `RemoveAttachments`
 

@@ -64,7 +64,7 @@ Class representing a GTA V Ped.
 ### `GetVehicleWeapon`
 
 **Returns:**
-- `number` -- weapon hash or 0.
+- `Hash` -- weapon hash or 0.
 
 ### `GetRelationshipGroupHash`
 
@@ -117,7 +117,7 @@ Class representing a GTA V Ped.
 ### `WarpIntoVehicle`
 
 **Parameters:**
-- `vehicle_handle` number
+- `vehicle_handle` Handle
 - `seatIndex?` number
 
 

@@ -21,7 +21,7 @@ Class representing a GTA V entity.
 ### `Create`
 
 **Parameters:**
-- `modelHash` number
+- `modelHash` Hash
 - `entityType` eEntityTypes
 - `pos?` vec3
 - `heading?` number
@@ -38,12 +38,12 @@ Class representing a GTA V entity.
 ### `GetHandle`
 
 **Returns:**
-- `number` 
+- `Handle` 
 
 ### `GetModelHash`
 
 **Returns:**
-- `number` 
+- `Hash` 
 
 ### `GetPointer`
 

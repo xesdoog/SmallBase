@@ -39,7 +39,7 @@ Class representing a GTA V vehicle.
 ### `GetOccupants`
 
 **Returns:**
-- `table` 
+- `array` <Handle>
 
 ### `IsSeatFree`
 

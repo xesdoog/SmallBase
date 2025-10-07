@@ -19,6 +19,11 @@ Native wrappers.
 **Returns:**
 - `string` , string
 
+### `GetDeltaTime`
+
+**Returns:**
+- `integer` 
+
 ### `GetKeyPressed`
 
 **Returns:**

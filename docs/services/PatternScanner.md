@@ -20,11 +20,9 @@ Registers a new pointer to be scanned later. If a pointer with the same name alr
 **Parameters:**
 - `name` string -- Unique name for the pointer
 - `pattern` string -- AOB pattern string to scan for (IDA-style)
-- `func` fun(ptr: pointer): T -- Resolver called with the found pointer. If you don't need to run anything, simply provide a function that returns its own parameter (ptr). You can either write one or pass `DummyFunc`.
+- `func` fun(ptr: pointer) -- Resolver called with the found pointer.
 
 
-**Returns:**
-- `T` -- The result of the resolved pointer
 
 ### `Get`
 
@@ -46,7 +44,7 @@ Should be called on script init.
 
 Retries failed pointer scans (if any) asynchronously in a fiber.
 
-Manuallmy called.
+Manually called.
 
 
 ### `IsDone`
@@ -62,4 +60,9 @@ Returns whether a pattern scan is in-progress.
 
 **Returns:**
 - `boolean` 
+
+### `ListPointers`
+
+**Returns:**
+- `dict` <Pointer>, array<Pointer>
 

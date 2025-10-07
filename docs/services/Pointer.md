@@ -12,7 +12,7 @@ Creates a new unresolved `Pointer`.
 **Parameters:**
 - `name` string
 - `pattern` string
-- `func` fun(ptr: pointer): T -- Resolver called with the found pointer
+- `func` fun(ptr: pointer)
 
 
 **Returns:**
