@@ -13,7 +13,7 @@ Self = Class("Self", Player)
 Self.new = nil
 
 -- override
----@return number
+---@return Handle
 function Self:GetHandle()
     return PLAYER.PLAYER_PED_ID()
 end
@@ -23,13 +23,14 @@ function Self:GetPlayerID()
     return PLAYER.PLAYER_ID()
 end
 
+---@return Hash
 function Self:GetModelHash()
     return ENTITY.GET_ENTITY_MODEL(self:GetHandle())
 end
 
 -- Returns the entity localPlayer is aiming at.
 ---@param skipPlayers? boolean
----@return integer | nil
+---@return Handle | nil
 function Self:GetEntityInCrosshairs(skipPlayers)
     local bIsAiming, Entity, playerID = false, 0, self:GetPlayerID()
 
@@ -52,18 +53,14 @@ function Self:GetEntityInCrosshairs(skipPlayers)
     return bIsAiming and Entity or nil
 end
 
----@return integer
-function Self:GetDeltaTime()
-    return MISC.GET_FRAME_TIME()
-end
-
+---@return boolean, Hash
 function Self:IsUsingAirctaftMG()
     local veh = self:GetVehicle()
     if not veh then
         return false, 0
     end
 
-    if (veh:IsPlane() or veh:IsHeli() and veh:IsWeaponized()) then
+    if ((veh:IsPlane() or veh:IsHeli()) and veh:IsWeaponized()) then
         local weapon = self:GetVehicleWeapon()
         if (weapon == 0) then
             return false, 0
@@ -120,6 +117,7 @@ function Self:Teleport(where, keepVehicle)
 end
 
 -- Returns whether the player is currently using any mobile or computer app.
+---@return boolean
 function Self:IsBrowsingApps()
     for _, v in ipairs(t_AppScriptNames) do
         if script.is_active(v) then
@@ -131,6 +129,7 @@ function Self:IsBrowsingApps()
 end
 
 -- Returns whether the player is inside a modshop.
+---@return boolean
 function Self:IsInCarModShop()
     if not Self:IsOutside() then
         for _, v in ipairs(t_ModshopScriptNames) do
@@ -143,7 +142,8 @@ function Self:IsInCarModShop()
     return false
 end
 
----@param pedHandle integer
+---@param pedHandle Handle
+---@return boolean
 function Self:IsPedMyEnemy(pedHandle)
     local ped = Ped(pedHandle)
     if not ped:IsValid() then
@@ -205,9 +205,6 @@ function Self:RemoveAttachments(lookup_table)
 end
 
 -- inline
-Self.SwitchHandler = function()
-    Self:Destroy()
-end
-
+Self.SwitchHandler = function() Self:Destroy() end
 Backend:RegisterEventCallback(eBackendEvent.PLAYER_SWITCH, Self.SwitchHandler)
 Backend:RegisterEventCallback(eBackendEvent.SESSION_SWITCH, Self.SwitchHandler)

@@ -14,10 +14,6 @@ require("includes.classes.CVehicle")
 --
 -- Handles most interactions with the game's memory.
 ---@class Memory : ClassMeta<Memory>
----@field m_game_version { _build: string, _online: string }
----@field m_game_state pointer
----@field m_game_time pointer
----@field m_screen_res { width: pointer, height: pointer }
 ---@overload fun(_: any): Memory
 local Memory = Class("Memory")
 
@@ -28,91 +24,49 @@ end
 
 ---@return { _build: string, _online: string }
 function Memory:GetGameVersion()
-    if self.m_game_version then
-        return self.m_game_version
-    end
-
-    if not GPointers.GameVersion or GPointers.GameVersion:is_null() then
-        log.warning("Failed to find pointer (Game Version)")
-        return { _build = "nil", _online = "nil" }
-    end
-
-    local pGameBuild = GPointers.GameVersion:add(0x24):rip()
-    local pOnlineVersion = pGameBuild:add(0x20)
-    local _t = {
-        _build  = pGameBuild:get_string(),
-        _online = pOnlineVersion:get_string()
-    }
-    self.m_game_version = _t
-
-    return _t
+    return GPointers.GameVersion
 end
 
 ---@return number|nil
 function Memory:GetGameState()
-    if self.m_game_state then
-        return self.m_game_state:get_byte()
-    end
-
-    if not PatternScanner:IsDone() then
-        return 0
-    end
-
-    if not GPointers.GameState or GPointers.GameState:is_null() then
-        log.warning("Failed to find pointer (Game State)")
-        return
-    end
-
-    local ptr = GPointers.GameState:add(0x2):rip():add(0x1)
-    self.m_game_state = ptr
-
-    return ptr:get_byte()
+    return GPointers.GameState:get_byte()
 end
 
 ---@return number
 function Memory:GetGameTime()
-    if self.m_game_time then
-        return self.m_game_time:get_dword()
-    end
-
-    if not PatternScanner:IsDone() then
-        return 0
-    end
-
-    if not GPointers.GameTime or GPointers.GameTime:is_null() then
-        log.warning("Failed to find pointer (Game Time)")
-        return 0
-    end
-
-    local ptr = GPointers.GameTime:add(0x2):rip()
-    self.m_game_time = ptr
-
-    return ptr:get_dword()
+    return GPointers.GameTime:get_dword()
 end
 
 ---@return vec2
 function Memory:GetScreenResolution()
-    if not PatternScanner:IsDone() then
-        return vec2:zero()
+    return GPointers.ScreenResolution
+end
+
+-- Theory: Get a pattern for a script global -> scan it -> get the address and pass it to this function -> get the index.
+--
+-- We can even directly wrap the return in a `ScriptGlobal` instance, essentially no longer needing to update script globals after game updates.
+--
+-- Useful if I figure out a way to make strong patterns for script globals
+---@param addr integer
+---@return integer -- Script global index. Example: 262145
+function Memory:GlobalIndexFromAddress(addr)
+    local sg_base = GPointers.ScriptGlobals
+    if sg_base:is_null() then
+        log.warning("Script Globals base pointer is null!")
+        return 0
     end
 
-    if self.m_screen_res then
-        return vec2:new(
-            self.m_screen_res.width:get_word(),
-            self.m_screen_res.height:get_word()
-        )
+    for page = 0, 63 do
+        local page_ptr = sg_base:add(page * 0x8):get_qword()
+        if page_ptr ~= 0 then
+            local offset = addr - page_ptr
+            if (offset >= 0 and offset < 0x3FFFF * 0x8 and offset % 0x8 == 0) then
+                return (page << 0x12) | (offset // 8)
+            end
+        end
     end
 
-    if not GPointers.ScreenResolution or GPointers.ScreenResolution:is_null() then
-        log.warning("Failed to find pointer (Screen Resolution)")
-        return vec2:zero()
-    end
-
-    local pX = GPointers.ScreenResolution:sub(0x4):rip()
-    local pY = GPointers.ScreenResolution:add(0x4):rip()
-    self.m_screen_res = { width = pX, height = pY }
-
-    return vec2:new(pX:get_word(), pY:get_word())
+    return 0
 end
 
 ---@param vehicle integer vehicle handle

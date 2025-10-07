@@ -1,9 +1,3 @@
----@ignore
----@class seconds: number
-
----@ignore
----@class milliseconds: number
-
 --------------------------------------
 -- Class: Time
 --------------------------------------

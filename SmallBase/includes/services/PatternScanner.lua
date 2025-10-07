@@ -4,9 +4,7 @@
 -- Class: Pointer
 --------------------------------------
 -- Represents a single memory pattern pointer. Used internally by `PatternScanner` to hold the scan pattern, result address, and name.
---
 -- > [!Note]
---
 -- > This is just an intermediate object. There is no use for it outside of `PatternScanner`.
 ---@generic T
 ---@class Pointer<T> @internal
@@ -15,7 +13,6 @@
 ---@field private m_ptr pointer YimMenu API usertype
 ---@field private m_pattern string
 ---@field private m_func fun(ptr: pointer): any
----@field private m_gptr_key any
 ---@overload fun(name: string, pattern: string, func: fun(ptr: pointer): any): Pointer
 local Pointer = {}
 Pointer.__index = Pointer
@@ -30,10 +27,9 @@ function Pointer:__tostring()
 end
 
 -- Creates a new unresolved `Pointer`.
----@generic T
 ---@param name string
 ---@param pattern string
----@param func fun(ptr: pointer): T -- Resolver called with the found pointer
+---@param func fun(ptr: pointer)
 ---@return Pointer
 function Pointer:new(name, pattern, func)
     local instance = setmetatable({}, Pointer)
@@ -46,18 +42,6 @@ function Pointer:new(name, pattern, func)
     return instance
 end
 
----@ignore
----@generic T
----@param value? T
-function Pointer:SetGlobalPointer(value)
-    local key = self.m_gptr_key
-    value = value or self.m_ptr
-
-    if (key and (GPointers[key] == self)) then
-        GPointers[key] = value
-    end
-end
-
 -- Scans memory for this pointer's pattern and resolves its address.
 --
 -- Logs a debug message if successful.
@@ -65,24 +49,20 @@ end
 function Pointer:Scan()
     self.m_ptr = memory.scan_pattern(self.m_pattern)
     self.m_address = self.m_ptr:get_address()
-    self.m_gptr_key = self.m_gptr_key or table.matchbyvalue(GPointers, self)
 
     if (self.m_ptr:is_null()) then
-        log.fwarning("Failed to find pattern: %s", self.m_name)
-        self:SetGlobalPointer()
-        return false
+        log.fwarning("[PatternScanner]: Failed to find pattern: %s", self.m_name)
     end
 
     log.fdebug("[PatternScanner]: Found %s at 0x%X", self.m_name, self.m_address)
 
     local ok, result = pcall(self.m_func, self.m_ptr)
     if (not ok) then
-        log.fwarning("[PatternScanner]: Resolver failed for [%s]: %s", self.m_name, result)
+        log.fwarning("[PatternScanner]: Resolver failed for %s: %s", self.m_name, result)
         return false
     end
 
-    self:SetGlobalPointer(result)
-    return true
+    return self.m_ptr:is_valid()
 end
 
 function Pointer:GetAddress()
@@ -101,8 +81,8 @@ local eScannerState = {
 --------------------------------------
 -- A simple manager for storing and lazy scanning multiple memory patterns.
 ---@class PatternScanner : ClassMeta<PatternScanner>
----@field private m_pointers table<string, Pointer> dict
----@field private m_failed_pointers table<integer, Pointer> array
+---@field private m_pointers dict<Pointer>
+---@field private m_failed_pointers array<Pointer>
 ---@field private m_state eScannerState
 ---@overload fun(_: any): PatternScanner
 local PatternScanner = Class("PatternScanner")
@@ -124,8 +104,7 @@ end
 ---@generic T -- Type inference.
 ---@param name string -- Unique name for the pointer
 ---@param pattern string -- AOB pattern string to scan for (IDA-style)
----@param func fun(ptr: pointer): T -- Resolver called with the found pointer. If you don't need to run anything, simply provide a function that returns its own parameter (ptr). You can either write one or pass `DummyFunc`.
----@return T -- The result of the resolved pointer
+---@param func fun(ptr: pointer) -- Resolver called with the found pointer.
 function PatternScanner:Add(name, pattern, func)
     if self.m_pointers[name] then
         name = name .. string.random(4)
@@ -134,8 +113,6 @@ function PatternScanner:Add(name, pattern, func)
 
     local ptr = Pointer(name, pattern, func)
     self.m_pointers[name] = ptr
-
-    return ptr
 end
 
 -- Retrieves a previously registered `Pointer` by name.
@@ -170,7 +147,7 @@ end
 
 -- Retries failed pointer scans (if any) asynchronously in a fiber.
 --
--- Manuallmy called.
+-- Manually called.
 function PatternScanner:RetryScan()
     if (self:IsBusy()) then
         log.debug("PatternScanner is busy at the moment. Try again later.")
@@ -178,7 +155,6 @@ function PatternScanner:RetryScan()
     end
 
     local sizeof_failed = #self.m_failed_pointers
-
     if (sizeof_failed == 0) then
         log.debug("[PatternScanner] No failed pointers to rescan.")
         return
@@ -214,6 +190,7 @@ function PatternScanner:IsBusy()
     return self.m_state == eScannerState.BUSY
 end
 
+---@return dict<Pointer>, array<Pointer>
 function PatternScanner:ListPointers()
     return self.m_pointers, self.m_failed_pointers
 end

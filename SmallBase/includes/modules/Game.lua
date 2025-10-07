@@ -15,7 +15,7 @@ end
 
 ---@return vec2
 function Game.GetScreenResolution()
-    return Memory:GetScreenResolution()
+    return Memory:GetScreenResolution() or vec2:zero()
 end
 
 ---@return string, string
@@ -37,6 +37,11 @@ function Game.GetLanguage()
     end
 
     return lang_iso, lang_name
+end
+
+---@return integer
+function Game.GetDeltaTime()
+    return MISC.GET_FRAME_TIME()
 end
 
 ---@return integer | nil, string | nil

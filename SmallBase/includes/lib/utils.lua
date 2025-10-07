@@ -9,33 +9,6 @@ function DummyFunc(...)
     return ...
 end
 
--- Theory: Get a pattern for a script global -> scan it -> get the address and pass it to this function -> get the index.
---
--- We can even directly wrap the return in a `ScriptGlobal` instance, essentially no longer needing to update script globals after game updates.
---
--- Useful if I figure out a way to make strong patterns for script globals
----@param addr integer
----@return integer
-function GlobalIndexFromAddress(addr)
-    local sg_base = GPointers.ScriptGlobals
-    if sg_base:is_null() then
-        log.warning("Script Globals base pointer is null!")
-        return 0
-    end
-
-    for page = 0, 63 do
-        local page_ptr = sg_base:add(page * 0x8):get_qword()
-        if page_ptr ~= 0 then
-            local offset = addr - page_ptr
-            if (offset >= 0 and offset < 0x3FFFF * 0x8 and offset % 0x8 == 0) then
-                return (page << 0x12) | (offset // 8)
-            end
-        end
-    end
-
-    return 0
-end
-
 ---@param object any
 ---@param T any  -- can be: class/metatable table, type string, or example object
 ---@return boolean
@@ -86,33 +59,19 @@ function IsInstance(object, T)
 end
 
 ---@param t table
----@return table
-function ConstEnum(t)
-    return setmetatable({},
-        {
-            __index = t,
-            __newindex = function(_, key)
-                error(("Attempt to modify read-only enum: '%s'"):format(key))
-            end,
-            __metatable = false
-        }
-    )
-end
-
----@param t table
----@param enum number
-function EnumTostring(t, enum)
+---@param index number
+function EnumTostring(t, index)
     if (type(t) ~= "table") then
         return ""
     end
 
     for k, v in pairs(t) do
-        if (v == enum) then
+        if (v == index) then
             return tostring(k)
         end
     end
 
-    return ""
+    return "Unknown"
 end
 
 ---@param name string The global or local's name as it's set in `/includes/data/globals_locals.lua`
@@ -262,10 +221,10 @@ end
 
 ---@param vector4 vec4
 function memory.pointer:set_vec4(vector4)
-    self:add(0x4):get_float(vector4.x)
-    self:add(0x8):get_float(vector4.y)
-    self:add(0xC):get_float(vector4.z)
-    self:add(0x10):get_float(vector4.w)
+    self:add(0x4):set_float(vector4.x)
+    self:add(0x8):set_float(vector4.y)
+    self:add(0xC):set_float(vector4.z)
+    self:add(0x10):set_float(vector4.w)
 end
 
 ---@return fMatrix44
@@ -301,7 +260,7 @@ end
 function memory.pointer:dump(size)
     size = size or 0x10
     if self:is_null() then
-        log.debug("Memory Dump: <nullptr>")
+        log.debug("Memory Dump<nullptr>")
         return
     end
 
@@ -312,7 +271,12 @@ function memory.pointer:dump(size)
         table.insert(result, string.format("%02X", byte))
     end
 
-    log.debug("Memory Dump: " .. table.concat(result, " "))
+    log.fdebug(
+        "Memory Dump<0x%X + 0x%X>: %s",
+        self:get_address(),
+        size,
+        table.concat(result, " ")
+    )
 end
 
 ---@param t table
@@ -367,11 +331,41 @@ table.find = function(t, value)
     return false
 end
 
--- Serializes tables in pretty format and accounts for circular reference.
+---@generic T
+---@param t table<any, T>
+---@param pred Predicate<T>
+---@return T|nil
+function table.findfirst(t, pred)
+    for _, v in pairs(t) do
+        if pred(v) then
+            return v
+        end
+    end
+
+    return nil
+end
+
+---@generic T
+---@param arr array<T>
+---@param pred Predicate<T>
+---@return array<T>
+function table.filter(arr, pred)
+    local out = {}
+
+    for _, v in ipairs(arr) do
+        if pred(v) then
+            out[#out + 1] = v
+        end
+    end
+
+    return out
+end
+
+-- Serializes tables in pretty format and avoids circular reference.
 ---@param tbl table
 ---@param indent? number
 ---@param key_order? table
----@param seen? table
+---@param seen? set
 table.serialize = function(tbl, indent, key_order, seen)
     indent = indent or 2
     seen = seen or {}
@@ -535,7 +529,7 @@ table.removeduplicates = function(t, debug)
 end
 
 ---@param t table
----@param seen? table
+---@param seen? set
 table.copy = function(t, seen)
     seen = seen or {}
     if seen[t] then
@@ -556,9 +550,9 @@ table.copy = function(t, seen)
     return out
 end
 
----@param a any
----@param b any
----@param seen? table<table, true> Used internally to handle circular reference
+---@param a table
+---@param b table
+---@param seen? set<table, true>
 ---@return boolean
 function table.is_equal(a, b, seen)
     if (a == b) then
@@ -605,7 +599,7 @@ string.random = function(size, isalnum)
     size = size or math.random(1, 10)
     size = math.min(size, 128)
 
-    if isalnum then
+    if (isalnum) then
         charset = charset .. "0123456789"
     end
 

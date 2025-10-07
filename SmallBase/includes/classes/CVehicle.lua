@@ -1,5 +1,13 @@
 ---@diagnostic disable: param-type-mismatch, undefined-field
 
+---@class CHandlingData
+---@class CVehicleModelInfo
+---@class CVehicleDamage
+---@class CBaseSubHandlingData `rage::atArray`
+---@class CCarHandlingData
+---@class CVehicleModelInfoLayout
+
+
 --------------------------------------
 -- Struct: phFragInst
 --------------------------------------
@@ -9,8 +17,8 @@
 ---@field m_cache_entry pointer
 ---@field m_num_bones number
 ---@field m_skeleton pointer
----@field m_obj_matrices pointer `rage::fMatrix44`
----@field m_global_matrices pointer `rage::fMatrix44`
+---@field m_obj_matrices pointer<fMatrix44[]> `rage::fMatrix44`
+---@field m_global_matrices pointer<fMatrix44[]> `rage::fMatrix44`
 ---@overload fun(addr: pointer): phFragInst
 local phFragInst = {}
 phFragInst.__index = phFragInst
@@ -69,34 +77,34 @@ end
 ---@class CVehicle
 ---@field private m_ptr pointer
 ---@field m_physics_fragments phFragInst //0x30 `struct rage::phFragInst`
----@field CHandlingData pointer `class`
----@field CVehicleModelInfo pointer `class`
----@field CVehicleDamage pointer `class`
----@field CBaseSubHandlingData pointer `rage::atArray`
----@field CCarHandlingData pointer? `class`
----@field CVehicleModelInfoLayout pointer `class`
----@field m_deform_god pointer
----@field m_water_damage pointer
----@field m_model_info_flags pointer
----@field m_initial_drag_coeff pointer `float`
----@field m_drive_bias_rear pointer `float`
----@field m_drive_bias_front pointer `float`
----@field m_acceleration pointer `float`
----@field m_initial_drive_gears pointer `uint8_t`
----@field m_initial_drive_force pointer `float`
----@field m_drive_max_flat_velocity pointer `float`
----@field m_initial_drive_max_flat_vel pointer `float`
----@field m_monetary_value pointer `uint32_t`
----@field m_model_flags pointer `uint32_t`
----@field m_handling_flags pointer `uint32_t`
----@field m_damage_flags pointer `uint32_t`
----@field m_deformation_mult pointer `float`
----@field m_camber_front pointer `float`
----@field m_camber_rear pointer `float`
----@field m_wheel_scale pointer `float`
----@field m_wheel_scale_rear pointer `float`
+---@field CHandlingData pointer<CHandlingData>
+---@field CVehicleModelInfo pointer<CVehicleModelInfo>
+---@field CVehicleDamage pointer<CVehicleDamage>
+---@field CBaseSubHandlingData pointer<CBaseSubHandlingData> `rage::atArray`
+---@field CCarHandlingData pointer<CCarHandlingData>?
+---@field CVehicleModelInfoLayout pointer<CVehicleModelInfoLayout>
+---@field m_deform_god pointer<uint8_t>
+---@field m_water_damage pointer<uint32_t>
+---@field m_model_info_flags pointer<uint32_t>
+---@field m_initial_drag_coeff pointer<float>
+---@field m_drive_bias_rear pointer<float>
+---@field m_drive_bias_front pointer<float>
+---@field m_acceleration pointer<float>
+---@field m_initial_drive_gears pointer<uint8_t>
+---@field m_initial_drive_force pointer<float>
+---@field m_drive_max_flat_velocity pointer<float>
+---@field m_initial_drive_max_flat_vel pointer<float>
+---@field m_monetary_value pointer<uint32_t>
+---@field m_model_flags pointer<uint32_t>
+---@field m_handling_flags pointer<uint32_t>
+---@field m_damage_flags pointer<uint32_t>
+---@field m_deformation_mult pointer<float>
+---@field m_camber_front pointer<float>
+---@field m_camber_rear pointer<float>
+---@field m_wheel_scale pointer<float>
+---@field m_wheel_scale_rear pointer<float>
 ---@field m_num_wheels number
----@field m_wheels CWheel[]?
+---@field m_wheels array<CWheel>?
 ---@overload fun(vehicle: integer): CVehicle|nil
 CVehicle = {}
 CVehicle.__index = CVehicle
@@ -106,7 +114,7 @@ setmetatable(CVehicle, {
     end,
 })
 
----@param vehicle integer vehicle handle
+---@param vehicle Handle
 function CVehicle.new(vehicle)
     if not (ENTITY.DOES_ENTITY_EXIST(vehicle) or ENTITY.IS_ENTITY_A_VEHICLE(vehicle)) then
         return
@@ -162,19 +170,13 @@ function CVehicle:GetWheels()
         return self.m_num_wheels, self.m_wheels
     end
 
-    local CWheelOffsetPtr = GPointers.CWheelOffset
-    if CWheelOffsetPtr:is_null() then
-        return 0, nil
-    end
-
-    local num_wheels_offset = CWheelOffsetPtr:get_disp32(0x2)
-    if num_wheels_offset == 0 then
+    if (GPointers.CWheelOffset == 0) then
         log.warning("[CVehicle]: Failed to get offset to wheel array pointer!")
         return 0, nil
     end
 
-    local wheel_array_offset = num_wheels_offset - 0x8 -- 0xC30 as of b3586.0
-    local num_wheels = self.m_ptr:add(num_wheels_offset):get_int()
+    local wheel_array_offset = GPointers.CWheelOffset - 0x8 -- 0xC30 as of b3586.0
+    local num_wheels = self.m_ptr:add(GPointers.CWheelOffset):get_int()
     local wheels_array = self.m_ptr:add(wheel_array_offset):deref()
 
     if wheels_array:is_null() then

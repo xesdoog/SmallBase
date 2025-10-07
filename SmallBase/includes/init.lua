@@ -28,6 +28,7 @@ local DEFAULT_CONFIG <const> = {
     gamepad_keybinds = {},
 }
 
+require("includes.lib.types")
 require("includes.lib.utils")
 require("includes.lib.class")
 require("includes.data.pointers")
@@ -86,14 +87,17 @@ TimePoint = Time.TimePoint
 yield     = coroutine.yield
 sleep     = Time.sleep
 
--- These services must be loaded before any class that registers with/uses them
-ThreadManager   = require("includes.services.ThreadManager"):init()
+----------------------------------------------------------------------------------------------------
+-- These services must be loaded before any class that registers with/uses them -------------------
+ThreadManager = require("includes.services.ThreadManager"):init()
+GPointers:Init() -- needs ThreadManager
+
 Serializer      = require("includes.services.Serializer"):init(SCRIPT_NAME, DEFAULT_CONFIG, GVars)
 KeyManager      = require("includes.services.KeyManager"):init()
 GUI             = require("includes.services.GUI"):init()
 Toast           = require("includes.services.ToastNotifier").new()
 CommandExecutor = require("includes.services.CommandExecutor").new()
--------------------------------------------------------
+----------------------------------------------------------------------------------------------------
 
 local base_path = "includes"
 local packages = {
@@ -122,9 +126,7 @@ for _, package in ipairs(packages) do
     require(string.format("%s.%s", base_path, package))
 end
 
-
 Serializer:FlushObjectQueue()
 Backend:RegisterHandlers()
 Translator:Load()
-PatternScanner:Scan()
 GUI:Draw()

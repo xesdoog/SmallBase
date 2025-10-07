@@ -1,21 +1,25 @@
 ---@diagnostic disable: param-type-mismatch
 
+---@class CPedIntelligence
+---@class CPedInventory
+---@class CPedWeaponManager
+
 --------------------------------------
 -- Class: CPed
 --------------------------------------
 ---@ignore
 ---@class CPed
 ---@field private m_addr pointer
----@field CPedIntelligence pointer -- `class`
----@field CPedInventory pointer -- `class`
----@field CPedWeaponManager pointer -- `class`
----@field CPlayerInfo? CPlayerInfo -- `class`
----@field m_velocity pointer -- `rage::fvector3`
----@field m_ped_type pointer -- `uint32_t`
----@field m_ped_task_flag pointer -- `uint8_t`
----@field m_seatbelt pointer -- `uint8_t`
----@field m_armor pointer -- `float`
----@field m_cash pointer -- `uint16_t`
+---@field CPedIntelligence pointer<CPedIntelligence>
+---@field CPedInventory pointer<CPedInventory>
+---@field CPedWeaponManager pointer<CPedWeaponManager>
+---@field CPlayerInfo? CPlayerInfo
+---@field m_velocity pointer<vec3>
+---@field m_ped_type pointer<uint32_t>
+---@field m_ped_task_flag pointer<uint8_t>
+---@field m_seatbelt pointer<uint8_t>
+---@field m_armor pointer<float>
+---@field m_cash pointer<uint16_t>
 ---@overload fun(ped: integer): CPed|nil
 CPed = {}
 CPed.__index = CPed

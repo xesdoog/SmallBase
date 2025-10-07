@@ -8,7 +8,7 @@
 -- Class representing a GTA V player (Unfinished).
 ---@class Player : Ped
 ---@field private layout CPed
----@overload fun(handle: integer): Player
+---@overload fun(handle: Handle): Player
 Player = Class("Player", Ped)
 Player.Create = nil
 Player.Delete = nil

@@ -5,8 +5,8 @@
 ---@class Vehicle : Entity
 ---@field private layout CVehicle?
 ---@field private m_class_id number
----@field Create fun(_, modelHash: number, entityType: eEntityTypes, pos?: vec3, heading?: number, isNetwork?: boolean, isScriptHostPed?: boolean): Vehicle
----@overload fun(handle: integer): Vehicle
+---@field Create fun(_, modelHash: Hash, entityType: eEntityTypes, pos?: vec3, heading?: number, isNetwork?: boolean, isScriptHostPed?: boolean): Vehicle
+---@overload fun(handle: Handle): Vehicle
 Vehicle = Class("Vehicle", Entity)
 
 ---@return boolean
@@ -70,12 +70,13 @@ function Vehicle:GetClassName()
     return EnumTostring(eVehicleClasses, clsid)
 end
 
----@return table
+---@return array<Handle>
 function Vehicle:GetOccupants()
     if not self:IsValid() then
         return {}
     end
 
+    ---@type array<Handle>
     local passengers = {}
     local handle     = self:GetHandle()
     local max_seats  = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(self:GetModelHash())
@@ -137,7 +138,7 @@ function Vehicle:IsEmpty()
         return false -- ??
     end
 
-    local seats  = self:GetNumberOfSeats()
+    local seats = self:GetNumberOfSeats()
 
     for i = -1, seats do
         if self:IsSeatFree(i) then

@@ -8,8 +8,8 @@
 -- Class representing a GTA V Ped.
 ---@class Ped : Entity
 ---@field private layout CPed?
----@field Create fun(_, modelHash: number, entityType: eEntityTypes, pos?: vec3, heading?: number, isNetwork?: boolean, isScriptHostPed?: boolean): Ped
----@overload fun(handle: integer): Ped
+---@field Create fun(_, modelHash: Hash, entityType: eEntityTypes, pos?: vec3, heading?: number, isNetwork?: boolean, isScriptHostPed?: boolean): Ped
+---@overload fun(handle: Handle): Ped
 Ped = Class("Ped", Entity)
 
 ---@return CPed|nil
@@ -151,15 +151,15 @@ function Ped:GetVehicle()
     return Vehicle(PED.GET_VEHICLE_PED_IS_USING(self:GetHandle()))
 end
 
----@return number -- weapon hash or 0.
+---@return Hash -- weapon hash or 0.
 function Ped:GetVehicleWeapon()
     if not self:IsValid() or self:IsOnFoot() then
         return 0
     end
 
-    local armed, weapon = false, 0
-    armed, weapon = WEAPON.GET_CURRENT_PED_VEHICLE_WEAPON(self:GetHandle(), weapon)
-    return armed and weapon or 0
+    local weapon = 0
+    _, weapon = WEAPON.GET_CURRENT_PED_VEHICLE_WEAPON(self:GetHandle(), weapon)
+    return weapon
 end
 
 ---@return number
@@ -253,7 +253,7 @@ function Ped:SetComponenVariations(components)
     Game.ApplyPedComponents(self:GetHandle(), components)
 end
 
----@param vehicle_handle number
+---@param vehicle_handle Handle
 ---@param seatIndex? number
 function Ped:WarpIntoVehicle(vehicle_handle, seatIndex)
     if not (self:IsValid() or self:IsAlive() or ENTITY.DOES_ENTITY_EXIST(vehicle_handle)) then

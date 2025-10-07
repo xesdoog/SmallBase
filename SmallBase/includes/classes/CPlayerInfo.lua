@@ -6,16 +6,16 @@
 ---@ignore
 ---@class CPlayerInfo
 ---@field private m_addr pointer
----@field m_swim_speed pointer `float`
----@field m_is_wanted pointer `boolean`
----@field m_wanted_level pointer `uint32_t`
----@field m_wanted_level_display pointer `uint32_t`
----@field m_run_speed pointer `float`
----@field m_stamina pointer `float`
----@field m_stamina_regen pointer `float`
----@field m_weapon_damage_mult pointer `float`
----@field m_weapon_defence_mult pointer `float`
----@field m_game_state pointer `uint32_t`
+---@field m_swim_speed pointer<float>
+---@field m_is_wanted pointer<byte> bool
+---@field m_wanted_level pointer<uint32_t>
+---@field m_wanted_level_display pointer<uint32_t>
+---@field m_run_speed pointer<float>
+---@field m_stamina pointer<float>
+---@field m_stamina_regen pointer<float>
+---@field m_weapon_damage_mult pointer<float>
+---@field m_weapon_defence_mult pointer<float>
+---@field m_game_state pointer<uint32_t>
 ---@overload fun(addr: pointer): CPlayerInfo|nil
 CPlayerInfo = {}
 CPlayerInfo.__index = CPlayerInfo

@@ -215,21 +215,31 @@ end
 local function DrawPointers()
     local ptr_list, failed_ptr_list = PatternScanner:ListPointers()
     local total_count, failed_count = table.getlen(ptr_list), #failed_ptr_list
-    local child_height = math.min(total_count * 30, 300)
+    local resolution = Game.GetScreenResolution()
+    local child_width = resolution.x * 0.36
+    local child_height = math.min(total_count * 30, resolution.y * 0.3)
 
     ImGui.BulletText(string.format("Total Count: [%d]", total_count))
-    ImGui.BeginChild("##ptr_list", 400, child_height)
+    ImGui.BeginChild("##ptr_list", child_width, child_height, true)
     ImGui.SetNextWindowBgAlpha(0)
     if ImGui.BeginListBox("##ptr_listbox", -1, -1) then
         for name, ptr in pairs(ptr_list) do
             if (ptr) then
                 local address = ptr:GetAddress()
+                local value = GPointers[name]
+                local str = string.format(
+                    "%s @ 0x%X = [%s]",
+                    name,
+                    address,
+                    type(value) == "table" and table.serialize(value) or
+                    tostring(value)
+                )
 
                 if (address == 0) then
                     ImGui.PushStyleColor(ImGuiCol.Text, RED:AsRGBA())
                 end
 
-                if ImGui.Selectable(string.format("%s @ 0x%X", name, address), (name == ptr_name)) then
+                if ImGui.Selectable(str, (name == ptr_name)) then
                     ptr_name = name
                 end
 

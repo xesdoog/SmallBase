@@ -1,14 +1,16 @@
 ---@diagnostic disable: param-type-mismatch
 
+---@class CEntity -- Dummy
+
 --------------------------------------
 -- Class: Entity
 --------------------------------------
 -- Class representing a GTA V entity.
 ---@class Entity : ClassMeta<Entity>
----@field private m_handle number
----@field private m_modelhash number
+---@field private m_handle Handle
+---@field private m_modelhash Hash
 ---@field private m_ptr pointer
----@field private layout pointer[]
+---@field private layout CEntity?
 ---@overload fun(handle: integer): Entity
 Entity = Class("Entity")
 function Entity.__eq(this, other)
@@ -48,7 +50,7 @@ function Entity:Destroy()
     self.m_ptr       = nil
 end
 
----@param modelHash number
+---@param modelHash Hash
 ---@param entityType eEntityTypes
 ---@param pos? vec3
 ---@param heading? number
@@ -67,7 +69,8 @@ function Entity:Create(modelHash, entityType, pos, heading, isNetwork, isScriptH
         local handle = Game.CreateVehicle(modelHash, pos, heading, isNetwork, isScriptHostPed)
         return Vehicle(handle)
     else
-        -- TODO
+        local handle = Game.CreateObject(modelHash, pos, isNetwork, isScriptHostPed)
+        return Object(handle)
     end
 end
 
@@ -84,12 +87,12 @@ function Entity:Exists()
     return (self:GetHandle() and Game.IsScriptHandle(self:GetHandle()))
 end
 
----@return number
+---@return Handle
 function Entity:GetHandle()
     return self.m_handle
 end
 
----@return number
+---@return Hash
 function Entity:GetModelHash()
     return self.m_modelhash
 end
