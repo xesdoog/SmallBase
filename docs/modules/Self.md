@@ -2,50 +2,63 @@
 
 **Description:**
 
-Class representing the local player.
+A global singleton that always resolves to the current local player.
 
 ## Methods
 
 ### `GetHandle`
 
-override
+Returns the current local player's script handle.
 
 **Returns:**
-- `Handle` 
+- `handle` 
 
 ### `GetPlayerID`
+
+Returns the current local player's ID.
 
 **Returns:**
 - `number` 
 
 ### `GetModelHash`
 
+Returns the current local player's model hash.
+
 **Returns:**
-- `Hash` 
+- `hash` 
+
+### `GetVehicle`
+
 
 ### `GetEntityInCrosshairs`
 
-Returns the entity localPlayer is aiming at.
+Returns the entity local player is aiming at.
 
 **Parameters:**
-- `skipPlayers?` boolean
+- `skip_players?` boolean -- Ignore network players.
 
 
 **Returns:**
-- `Handle` | nil
+- `handle` | nil
 
 ### `IsUsingAirctaftMG`
 
+This is a leftover from [Samurai's Scripts](https://github.com/YimMenu-Lua/Samurais-Scripts).
+
+Returns whether local player is using an aircraft's machine gun.
+
+If true, returns `true` and the `weapon hash` resolved and cast to unsigned 32bit integer, else returns `false` and `0`.
+
 **Returns:**
-- `boolean` , Hash
+- `boolean` , hash
 
 ### `Teleport`
 
-Teleports localPlayer to the provided coordinates.
+Teleports local player to the provided coordinates.
 
 **Parameters:**
 - `where` integer|vec3 -- blip or coordinates
-- `keepVehicle?` boolean
+- `keep_vehicle?` boolean
 
 
 
@@ -66,7 +79,7 @@ Returns whether the player is inside a modshop.
 ### `IsPedMyEnemy`
 
 **Parameters:**
-- `pedHandle` Handle
+- `pedHandle` handle
 
 
 **Returns:**

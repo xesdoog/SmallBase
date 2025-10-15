@@ -100,7 +100,7 @@ Native wrappers.
 
 **Parameters:**
 - `entity` integer
-- `entity_type?` eEntityTypes
+- `entity_type?` eEntityType
 
 
 
@@ -415,7 +415,7 @@ Returns the entity localPlayer is aiming at.
 ### `GetEntityModel`
 
 **Parameters:**
-- `entity` integer
+- `entity` handle
 
 
 **Returns:**
@@ -424,16 +424,16 @@ Returns the entity localPlayer is aiming at.
 ### `GetEntityType`
 
 **Parameters:**
-- `entity` integer
+- `entity` handle
 
 
 **Returns:**
-- `integer` 
+- `eEntityType` 
 
 ### `GetEntityTypeString`
 
 **Parameters:**
-- `entity` integer
+- `entity` handle
 
 
 **Returns:**
@@ -442,7 +442,7 @@ Returns the entity localPlayer is aiming at.
 ### `GetModelDimensions`
 
 **Parameters:**
-- `model` integer
+- `model` joaat_t
 
 
 **Returns:**
@@ -455,7 +455,7 @@ Returns a number for the vehicle seat the provided ped
 is sitting in (-1 driver, 0 front passenger, etc...).
 
 **Parameters:**
-- `ped` integer
+- `ped` handle
 
 
 **Returns:**
@@ -671,6 +671,15 @@ Draws a green chevron down element on top of an entity in the game world.
 
 **Parameters:**
 - `entity` integer | table
+
+
+
+### `LoadGroundAtCoord`
+
+Loads ground at the given coordinates. **Must be called in a coroutine**.
+
+**Parameters:**
+- `coords` vec3
 
 
 

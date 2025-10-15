@@ -17,12 +17,12 @@ Handles most interactions with the game's memory.
 ### `GetGameState`
 
 **Returns:**
-- `number` |nil
+- `byte` 
 
 ### `GetGameTime`
 
 **Returns:**
-- `number` 
+- `uint32_t` 
 
 ### `GetScreenResolution`
 
@@ -56,7 +56,7 @@ Useful if I figure out a way to make strong patterns for script globals
 ### `GetPedInfo`
 
 **Parameters:**
-- `ped` integer A Ped ID, not a Player ID.
+- `ped` handle A Ped ID, not a Player ID.
 
 
 **Returns:**
@@ -67,7 +67,7 @@ Useful if I figure out a way to make strong patterns for script globals
 Checks if a vehicle's handling flag is set.
 
 **Parameters:**
-- `vehicle` integer
+- `vehicle` handle
 - `flag` eVehicleHandlingFlags
 
 
@@ -77,7 +77,7 @@ Checks if a vehicle's handling flag is set.
 ### `GetVehicleModelInfoFlag`
 
 **Parameters:**
-- `vehicle` integer
+- `vehicle` handle
 - `flag` eVehicleModelFlags
 
 
@@ -91,7 +91,7 @@ Unsafe for non-scripted entities.
 Returns the model type of an entity (ped, object, vehicle, MLO, time, etc...)
 
 **Parameters:**
-- `entity` integer
+- `entity` handle
 
 
 **Returns:**

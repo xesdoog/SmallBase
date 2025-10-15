@@ -17,6 +17,8 @@
 - `label` string
 
 
+**Returns:**
+- `string` 
 
 ### `SetCache`
 

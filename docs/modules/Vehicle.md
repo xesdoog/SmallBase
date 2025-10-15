@@ -11,11 +11,6 @@ Class representing a GTA V vehicle.
 **Returns:**
 - `boolean` 
 
-### `ReadMemoryLayout`
-
-**Returns:**
-- `CVehicle` |nil
-
 ### `GetName`
 
 **Returns:**
@@ -39,7 +34,7 @@ Class representing a GTA V vehicle.
 ### `GetOccupants`
 
 **Returns:**
-- `array` <Handle>
+- `array` <handle>
 
 ### `IsSeatFree`
 
@@ -139,6 +134,13 @@ Returns whether the vehicle is a lowrider equipped with hydraulic suspension.
 ### `MaxPerformance`
 
 Maximizes the vehicle's performance mods.
+
+
+### `Repair`
+
+**Parameters:**
+- `reset_dirt?` bool
+
 
 
 ### `LockDoors`
@@ -297,6 +299,28 @@ Enables/disables a vehicle's model info flag.
 
 
 
+### `GetBoneMatrix`
+
+**Parameters:**
+- `bone_index` number
+
+
+**Returns:**
+- `fMatrix44` 
+
+### `SetBoneMatrix`
+
+**Parameters:**
+- `bone_index` number
+- `matrix` fMatrix44
+
+
+
+### `GetHandlingData`
+
+**Returns:**
+- `CCarHandlingData` |nil
+
 ### `SaveToJSON`
 
 Serializes a vehicle to JSON.
@@ -317,21 +341,6 @@ Spawns a vehicle from JSON and returns a new `Vehicle` instance.
 **Parameters:**
 - `filename` string
 - `warp_into?` boolean
-
-
-
-### `GetBoneMatrix`
-
-**Parameters:**
-- `bone_index` number
-
-
-
-### `SetBoneMatrix`
-
-**Parameters:**
-- `bone_index` number
-- `matrix` fMatrix44
 
 
 

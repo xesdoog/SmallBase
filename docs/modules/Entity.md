@@ -18,11 +18,37 @@ Class representing a GTA V entity.
 **Returns:**
 - `Entity` |nil
 
+### `Resolve`
+
+Resolves this entity to its corresponding internal game class (`CEntity`, `CPed`, or `CVehicle`).
+
+If already resolved, returns the cached instance.
+
+> **[Note]**: Inheritance chains are simplified. There is no `fwEntity`, `fwArchetype`, `CPhysical`, etc...
+
+> Instead, the base class is `CEntity` and the others inherit from it.
+
+Usage Example:
+
+```Lua
+print(Self:Resolve().m_max_health:get_float()) -- -> 200.0 (Single Player Michael)
+
+local veh = Self:GetVehicle()
+if veh then
+local cvehicle = veh:Resolve()
+print(cvehicle.m_max_health:get_float()) -- -> 1000.0
+print(cvehicle.m_handling_flags:get_dword()) -- -> integer<uint32_t> (depends on the vehicle)
+end
+```
+
+**Returns:**
+- `T` 
+
 ### `Create`
 
 **Parameters:**
-- `modelHash` Hash
-- `entityType` eEntityTypes
+- `modelHash` hash
+- `entityType` eEntityType
 - `pos?` vec3
 - `heading?` number
 - `isNetwork?` boolean
@@ -38,12 +64,12 @@ Class representing a GTA V entity.
 ### `GetHandle`
 
 **Returns:**
-- `Handle` 
+- `handle` 
 
 ### `GetModelHash`
 
 **Returns:**
-- `Hash` 
+- `joaat_t` 
 
 ### `GetPointer`
 

@@ -6,11 +6,6 @@ Class representing a GTA V Ped.
 
 ## Methods
 
-### `ReadMemoryLayout`
-
-**Returns:**
-- `CPed` |nil
-
 ### `IsValid`
 
 **Returns:**
@@ -64,7 +59,7 @@ Class representing a GTA V Ped.
 ### `GetVehicleWeapon`
 
 **Returns:**
-- `Hash` -- weapon hash or 0.
+- `hash` -- weapon hash or 0.
 
 ### `GetRelationshipGroupHash`
 
@@ -117,7 +112,7 @@ Class representing a GTA V Ped.
 ### `WarpIntoVehicle`
 
 **Parameters:**
-- `vehicle_handle` Handle
+- `vehicle_handle` handle
 - `seatIndex?` number
 
 
