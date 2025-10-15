@@ -126,7 +126,7 @@ function Toast:Draw(notifier)
     local __caller__
 
     if (notifier and notifier:GetQueueCount() > 0) then
-        __caller__ = string.format("%s  (+%d)", self.caller, notifier:GetQueueCount())
+        __caller__ = _F("%s  (+%d)", self.caller, notifier:GetQueueCount())
     else
         __caller__ = self.caller
     end

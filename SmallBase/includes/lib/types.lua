@@ -11,6 +11,17 @@
 ---@generic T
 ---@class Enum<T>: table
 
+---@generic T
+---@class GenericClass<T>
+---@field m_size uint16_t
+GenericClass = setmetatable({}, {
+    __index = { m_size = 0x40, __type = "GenericClass" },
+    __newindex = function(...)
+        error("Attempt to modify read-only GenericClass!")
+    end,
+    __metatable = false
+})
+
 -- Primitives
 
 -- Time in seconds.
@@ -25,14 +36,16 @@
 ---@class uint16_t: integer
 ---@class uint32_t: integer
 ---@class uint64_t: integer
+---@class joaat_t: uint32_t
 ---@class float: number
 ---@class byte: number
 ---@class bool: boolean
 ---@class ID: integer
 -- RAGE entity script handle
----@class Handle: integer
+---@class handle: integer
 -- RAGE JOAAT hash
----@class Hash: integer
+---@class hash: joaat_t
+---@alias anyval<T> table|metatable|userdata|lightuserdata|function|string|number|boolean
 ---@alias optional<T> T|nil
 
 
@@ -45,9 +58,7 @@
 ---@generic T
 ---@param t array<T>
 ---@return array<T>
-function TypedArray(t)
-    return t
-end
+function TypedArray(t) return t end
 
 ---@generic T: Enum
 ---@param t T
@@ -57,7 +68,7 @@ function ConstEnum(t)
         {
             __index = t,
             __newindex = function(_, key)
-                error(("Attempt to modify read-only enum: '%s'"):format(key))
+                error(_F("Attempt to modify read-only enum: '%s'", key))
             end,
             __metatable = false
         }

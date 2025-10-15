@@ -109,7 +109,7 @@ function Time.format_time_since(seconds)
     local m = math.floor((diff % 3600) / 60)
     local s = diff % 60
 
-    return string.format("%02d:%02d:%02d", h, m, s)
+    return _F("%02d:%02d:%02d", h, m, s)
 end
 
 ---@param ms milliseconds
@@ -196,7 +196,7 @@ Time.TimePoint.__index = Time.TimePoint
 
 -- Returns a new point in time in milliseconds.
 ---@return Time.TimePoint
-function Time.TimePoint.new()
+function Time.TimePoint.new(_)
     return setmetatable({ value = Time.millis() }, Time.TimePoint)
 end
 

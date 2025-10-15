@@ -45,6 +45,7 @@ end)
 demo_tab:AddLoopedCommand("Fast Vehicles", "fastvehicles", function()
     local PV = Self:GetVehicle()
     if not PV then
+        sleep(100)
         return
     end
 
@@ -58,6 +59,7 @@ demo_tab:AddLoopedCommand("Draw Box", "drawbox", function()
 
     local entity = Self:IsOnFoot() and Self or Self:GetVehicle()
     if (not entity or not entity:IsValid()) then
+        sleep(100)
         return
     end
 

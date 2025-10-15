@@ -12,7 +12,7 @@ CommandExecutor:RegisterCommand("clonepv", function(args)
         PV:Clone({ warp_into = warp })
     end)
 end, {
-    args = { "Optional<warp_into: boolean>" },
+    args = { "Optional: warp_into<boolean>" },
     description = "Spawns an exact replica of the vehicle you're currently sitting in. Does nothing if you're on foot."
 })
 
@@ -28,7 +28,7 @@ CommandExecutor:RegisterCommand("savepv", function(args)
         PV:SaveToJSON(filename)
     end)
 end, {
-    args = { "Optional<file_name: string>" },
+    args = { "Optional: file_name<string>" },
     description = "Saves the vehicle you're currently sitting in to JSON."
 })
 
@@ -44,8 +44,8 @@ CommandExecutor:RegisterCommand("spawnjsonveh", function(args)
         Vehicle.CreateFromJSON(filename, warp)
     end)
 end, {
-    args = {"<filename: string>", "Optional<warp_into: boolean>"},
-    description = "Saves the vehicle you're currently sitting in to JSON."
+    args = {"filename<string>", "Optional: warp_into<boolean>"},
+    description = "Spawns a vehicle from JSON."
 })
 
 

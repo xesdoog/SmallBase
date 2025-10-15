@@ -66,7 +66,7 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
     local instance = setmetatable(
         {
             default_config  = default_config or {__version = Backend and Backend.__version or self.__version},
-            file_name       = string.format("%s.json", script_name:lower():gsub("%s+", "_")),
+            file_name       = _F("%s.json", script_name:lower():gsub("%s+", "_")),
             xor_key         = varargs.encryption_key or self.default_xor_key,
             m_disabled      = false,
             m_dirty         = false,
@@ -86,7 +86,7 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
 
     local config_data = instance:Read()
     if type(config_data) ~= "table" then
-        log.warning(string.format("[Serializer]: Failed to read data. Persistent config will be disabled for %s.", script_name))
+        log.warning(_F("[Serializer]: Failed to read data. Persistent config will be disabled for %s.", script_name))
         instance.m_disabled = true
         return instance
     end
@@ -126,7 +126,6 @@ function Serializer:init(script_name, default_config, runtime_vars, varargs)
                 if (instance.default_config[k] == nil) then
                     local value = config_data[k] ~= nil and config_data[k] or v
                     instance.m_key_states[k] = value
-                    return
                 end
 
                 if (instance.m_key_states[k] ~= v) then
@@ -431,7 +430,7 @@ function Serializer:SyncKeys(runtime_vars)
         if saved[k] == nil then
             saved[k] = v
             runtime_vars[k] = v
-            Backend:debug(string.format("[Serializer]: Added missing config key: '%s'", k))
+            Backend:debug(_F("[Serializer]: Added missing config key: '%s'", k))
             dirty = true
         end
     end
@@ -443,7 +442,7 @@ function Serializer:SyncKeys(runtime_vars)
             print(k)
             saved[k] = nil
             runtime_vars[k] = nil
-            Backend:debug(string.format("[Serializer]: Removed deprecated config key: '%s'", k))
+            Backend:debug(_F("[Serializer]: Removed deprecated config key: '%s'", k))
             dirty = true
         end
     end
@@ -676,7 +675,7 @@ end
 
 function Serializer:DebugDump()
     local out = {
-        script_name    = Backend and Backend.script_name or "nil",
+        script_name    = Backend and Backend.script_name or "SmallBase",
         file_name      = self.file_name,
         is_disabled    = self.m_disabled,
         key_states     = self.m_key_states,

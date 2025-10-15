@@ -4,7 +4,6 @@
 --
 -- pointers available globally through the `GPointers` table.
 ---@module "init"
----@diagnostic disable: lowercase-global
 
 
 local SCRIPT_NAME    <const> = "SmallBase"
@@ -12,7 +11,7 @@ local SCRIPT_VERSION <const> = "0.9a"
 local DEFAULT_CONFIG <const> = {
     backend = {
         auto_cleanup_entities = false,
-        language_index = 0,
+        language_index = 1,
         language_code = "en-US",
         language_name = "English"
     },
@@ -28,19 +27,20 @@ local DEFAULT_CONFIG <const> = {
     gamepad_keybinds = {},
 }
 
+require("includes.backend")
+Backend:init(SCRIPT_NAME, SCRIPT_VERSION)
+
 require("includes.lib.types")
 require("includes.lib.utils")
 require("includes.lib.class")
-require("includes.data.pointers")
 require("includes.classes.Vector2")
 require("includes.classes.Vector3")
 require("includes.classes.Vector4")
 require("includes.classes.fMatrix44")
-require("includes.backend")
+require("includes.classes.atArray")
+require("includes.data.pointers")
 
 Memory = require("includes.modules.Memory")
-Backend:init(SCRIPT_NAME, SCRIPT_VERSION)
-
 require("includes.modules.Game")
 
 
@@ -80,13 +80,6 @@ GVars = {}
 --```
 SG_SL = require("includes.data.globals_locals")
 
-
-Time      = require("includes.modules.Time")
-Timer     = Time.Timer
-TimePoint = Time.TimePoint
-yield     = coroutine.yield
-sleep     = Time.sleep
-
 ----------------------------------------------------------------------------------------------------
 -- These services must be loaded before any class that registers with/uses them -------------------
 ThreadManager = require("includes.services.ThreadManager"):init()
@@ -123,7 +116,7 @@ local packages = {
 }
 
 for _, package in ipairs(packages) do
-    require(string.format("%s.%s", base_path, package))
+    require(_F("%s.%s", base_path, package))
 end
 
 Serializer:FlushObjectQueue()

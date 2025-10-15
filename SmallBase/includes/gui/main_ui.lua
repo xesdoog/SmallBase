@@ -30,7 +30,7 @@ local function DrawClock()
         center.x - 20,
         center.y + 15,
         ImGui.GetColorU32(255, 255, 255, 255),
-        string.format("%s %s", month, day)
+        _F("%s %s", month, day)
     )
     ImGui.SetWindowFontScale(1.0)
 

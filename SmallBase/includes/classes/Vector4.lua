@@ -1,17 +1,26 @@
+---@diagnostic disable: unknown-operator
+
 --------------------------------------
 -- Class: vec4
 --------------------------------------
 -- A 4D vector utility class with arithmetic, geometric, and serialization helpers.
 ---@class vec4
+---@field private assert function
 ---@field public x number
 ---@field public y number
 ---@field public z number
 ---@field public w number
+---@operator add(vec4|number): vec4
+---@operator sub(vec4|number): vec4
+---@operator mul(vec4|number): vec4
+---@operator div(vec4|number): vec4
+---@operator unm: vec4
+---@operator eq(vec4): boolean
+---@operator le(vec4): boolean
+---@operator lt(vec4): boolean
 vec4 = {}
 vec4.__index = vec4
 vec4.__type = "vec4"
-vec4.magnitude = vec4.length
-vec4.mag = vec4.length
 
 
 --------------------------------------
@@ -47,7 +56,7 @@ function vec4:assert(arg)
         return true
     else
         error(
-            string.format("Invalid argument! Expected 4D vector, got %s instead", type(arg))
+            _F("Invalid argument! Expected 4D vector, got %s instead", type(arg))
         )
     end
 end
@@ -78,7 +87,7 @@ end
 
 -- Returns the string representation of the vector
 function vec4:__tostring()
-    return string.format(
+    return _F(
         "(%.3f, %.3f, %.3f, %.3f)",
         self.x,
         self.y,
@@ -330,3 +339,6 @@ if vec3 then
         return vec3:new(self.x, self.y, self.z)
     end
 end
+
+vec4.magnitude = vec4.length
+vec4.mag = vec4.length

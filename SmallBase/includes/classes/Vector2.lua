@@ -1,12 +1,13 @@
----@diagnostic disable: unknown-operator, param-type-mismatch
+---@diagnostic disable: unknown-operator
 
 --------------------------------------
 -- Class: vec2
 --------------------------------------
 -- A 2D vector utility class with arithmetic, geometric, and serialization helpers.
 ---@class vec2
----@field x float
----@field y float
+---@field private assert function
+---@field public x float
+---@field public y float
 ---@operator add(vec2|number): vec2
 ---@operator sub(vec2|number): vec2
 ---@operator mul(vec2|number): vec2
@@ -18,8 +19,6 @@
 vec2 = {}
 vec2.__index = vec2
 vec2.__type = "vec2"
-vec2.magnitude = vec2.length
-vec2.magn = vec2.length
 
 
 --------------------------------------
@@ -48,7 +47,7 @@ function vec2:assert(arg)
         return true
     else
         error(
-            string.format("Invalid argument! Expected 2D vector, got %s instead", type(arg))
+            _F("Invalid argument! Expected 2D vector, got %s instead", type(arg))
         )
     end
 end
@@ -79,7 +78,7 @@ end
 
 -- Returns the string representation of the vector
 function vec2:__tostring()
-    return string.format(
+    return _F(
         "(%.3f, %.3f)",
         self.x,
         self.y
@@ -322,3 +321,6 @@ end
 if Serializer and not Serializer.class_types["vec2"] then
     Serializer:RegisterNewType("vec2", vec2.serialize, vec2.deserialize)
 end
+
+vec2.magnitude = vec2.length
+vec2.magn = vec2.length

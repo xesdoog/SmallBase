@@ -256,7 +256,7 @@ function CommandExecutor:ListCommands()
                 sig = sig .. " " .. table.concat(def.args, ", ")
             end
 
-            local line = string.format("* %s - %s", sig, def.description)
+            local line = _F("* %s - %s", sig, def.description)
             if (def.alias and #def.alias > 0) then
                 line = line .. " - Aliases: " .. table.concat(def.alias, " | ")
             end
@@ -401,7 +401,7 @@ function CommandExecutor:DrawCommandDump()
             ImGui.EndChild()
         end
 
-        ImGui.SeparatorText(string.format("Command Count: [ %d ]", self:GetCommandCount()))
+        ImGui.SeparatorText(_F("Command Count: [ %d ]", self:GetCommandCount()))
         ImGui.SetNextWindowBgAlpha(0)
         if ImGui.BeginChild("##cmd_dump_lower", (size.x * 0.965), (size.y * 0.7)) then
             ImGui.PushTextWrapPos(size.x * 0.94)
@@ -410,12 +410,12 @@ function CommandExecutor:DrawCommandDump()
                     ImGui.BulletText(name)
                     ImGui.Indent()
                         ImGui.SetWindowFontScale(0.9)
-                        ImGui.Text(string.format("- Description: %s", data.description or "No description."))
+                        ImGui.Text(_F("- Description: %s", data.description or "No description."))
                         if data.args then
-                            ImGui.Text(string.format("- Arguments (%d): %s", #data.args, table.concat(data.args, ", ")))
+                            ImGui.Text(_F("- Arguments (%d): %s", #data.args, table.concat(data.args, ", ")))
                         end
                         if data.alias then
-                            ImGui.Text(string.format("- Alias: %s", table.concat(data.alias, " | ")))
+                            ImGui.Text(_F("- Alias: %s", table.concat(data.alias, " | ")))
                         end
                         ImGui.SetWindowFontScale(1)
                     ImGui.Unindent()
@@ -527,7 +527,7 @@ function CommandExecutor:Draw()
 
             for name, data in pairs(self.commands) do
                 if (typed_cmd ~= "" and name:find(typed_cmd:lower(), 1, true)) then
-                    local s = string.format(
+                    local s = _F(
                         "%s\nArguments (%d): %s",
                         data.description or "No description",
                         #data.args,

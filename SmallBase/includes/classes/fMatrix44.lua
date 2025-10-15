@@ -1,4 +1,6 @@
----@diagnostic disable: param-type-mismatch
+---@diagnostic disable: param-type-mismatch, unknown-operator
+
+local EPSILON <const> = 1e-6
 
 --------------------------------------
 -- Class: fMatrix44
@@ -21,10 +23,13 @@
 ---@field M42 float
 ---@field M43 float
 ---@field M44 float
----@operator mul(fMatrix44|fMatrix44): fMatrix44
+---@operator mul(fMatrix44|number): fMatrix44
+---@operator eq(fMatrix44): boolean
 ---@overload fun(...): fMatrix44
 fMatrix44 = {}
+
 fMatrix44.__index = fMatrix44
+fMatrix44.__type = "fMatrix44"
 setmetatable(fMatrix44, {
     __call = function(cls, ...)
         return cls:new(...)
@@ -76,76 +81,138 @@ function fMatrix44:new(
     return instance
 end
 
+function fMatrix44:assert(arg)
+    assert(IsInstance(arg, self), _F("Invalid argument! Expected 4x4 matrix, got %s instead", type(arg)))
+end
+
 ---@return fMatrix44
 function fMatrix44:zero()
     return fMatrix44:new(
         0, 0, 0, 0,
+
         0, 0, 0, 0,
+
         0, 0, 0, 0,
+
         0, 0, 0, 0
     )
 end
 
 ---@return boolean
 function fMatrix44:is_zero()
-    local m1 = self:m1()
-    local m2 = self:m2()
-    local m3 = self:m3()
-    local m4 = self:m4()
+    local r1 = self:R1()
+    local r2 = self:R2()
+    local r3 = self:R3()
+    local r4 = self:R4()
 
-    return m1:is_zero() and m2:is_zero() and m3:is_zero() and m4:is_zero()
-end
-
----@param right fMatrix44
-function fMatrix44:__mul(right)
-    return self:multiply(right)
-end
-
-function fMatrix44:__tostring()
-    return string.format(
-        "fMatrix44\n[%.3f, %.3f, %.3f, %.3f]\n [%.3f, %.3f, %.3f, %.3f]\n [%.3f, %.3f, %.3f, %.3f]\n [%.3f, %.3f, %.3f, %.3f]",
-        self.M11,
-        self.M12,
-        self.M13,
-        self.M14,
-
-        self.M21,
-        self.M22,
-        self.M23,
-        self.M24,
-
-        self.M31,
-        self.M32,
-        self.M33,
-        self.M34,
-
-        self.M41,
-        self.M42,
-        self.M43,
-        self.M44
+    return (
+        r1:is_zero() and
+        r2:is_zero() and
+        r3:is_zero() and
+        r4:is_zero()
     )
 end
 
+---@return string
+function fMatrix44:__tostring()
+    return _F([[
+
+      C1     C2     C3     C4
+R1 [ %.3f, %.3f, %.3f, %.3f ]
+R2 [ %.3f, %.3f, %.3f, %.3f ]
+R3 [ %.3f, %.3f, %.3f, %.3f ]
+R4 [ %.3f, %.3f, %.3f, %.3f ]
+]],
+        self.M11, self.M12, self.M13, self.M14,
+
+        self.M21, self.M22, self.M23, self.M24,
+
+        self.M31, self.M32, self.M33, self.M34,
+
+        self.M41, self.M42, self.M43, self.M44
+    )
+end
+
+---@param b fMatrix44|number
+---@return fMatrix44
+function fMatrix44:__mul(b)
+    return self:multiply(b)
+end
+
+---@param b fMatrix44
+---@return boolean
+function fMatrix44:__eq(b)
+    self:assert(b)
+
+    return (
+        math.abs(self.M11 - b.M11) < EPSILON and
+        math.abs(self.M12 - b.M12) < EPSILON and
+        math.abs(self.M13 - b.M13) < EPSILON and
+        math.abs(self.M14 - b.M14) < EPSILON and
+        math.abs(self.M21 - b.M21) < EPSILON and
+        math.abs(self.M22 - b.M22) < EPSILON and
+        math.abs(self.M23 - b.M23) < EPSILON and
+        math.abs(self.M24 - b.M24) < EPSILON and
+        math.abs(self.M31 - b.M31) < EPSILON and
+        math.abs(self.M32 - b.M32) < EPSILON and
+        math.abs(self.M33 - b.M33) < EPSILON and
+        math.abs(self.M34 - b.M34) < EPSILON and
+        math.abs(self.M41 - b.M41) < EPSILON and
+        math.abs(self.M42 - b.M42) < EPSILON and
+        math.abs(self.M43 - b.M43) < EPSILON and
+        math.abs(self.M44 - b.M44) < EPSILON
+    )
+end
+
+-- Returns the first row of the matrix (right).
 ---@return vec4
-function fMatrix44:m1()
+function fMatrix44:R1()
     return vec4:new(self.M11, self.M12, self.M13, self.M14)
 end
 
+-- Returns the second row of the matrix (forward).
 ---@return vec4
-function fMatrix44:m2()
+function fMatrix44:R2()
     return vec4:new(self.M21, self.M22, self.M23, self.M24)
 end
 
+-- Returns the third row of the matrix (up).
 ---@return vec4
-function fMatrix44:m3()
+function fMatrix44:R3()
     return vec4:new(self.M31, self.M32, self.M33, self.M34)
 end
 
+-- Returns the fourth row of the matrix (position).
 ---@return vec4
-function fMatrix44:m4()
+function fMatrix44:R4()
     return vec4:new(self.M41, self.M42, self.M43, self.M44)
 end
 
+-- Returns the first column of the matrix.
+---@return vec4
+function fMatrix44:C1()
+    return vec4:new(self.M11, self.M21, self.M31, self.M41)
+end
+
+-- Returns the second column of the matrix.
+---@return vec4
+function fMatrix44:C2()
+    return vec4:new(self.M12, self.M22, self.M32, self.M42)
+end
+
+-- Returns the third column of the matrix.
+---@return vec4
+function fMatrix44:C3()
+    return vec4:new(self.M13, self.M23, self.M33, self.M43)
+end
+
+-- Returns the fourth column of the matrix.
+---@return vec4
+function fMatrix44:C4()
+    return vec4:new(self.M14, self.M24, self.M34, self.M44)
+end
+
+-- Returns a copy of the matrix.
 function fMatrix44:copy()
     return fMatrix44:new(
         self.M11, self.M12, self.M13, self.M14,
@@ -155,45 +222,44 @@ function fMatrix44:copy()
     )
 end
 
-function fMatrix44:transpose()
-    local result = fMatrix44:new()
-
-    result.M11 = self.M11
-    result.M12 = self.M21
-    result.M13 = self.M31
-    result.M14 = self.M41
-
-    result.M21 = self.M12
-    result.M22 = self.M22
-    result.M23 = self.M32
-    result.M24 = self.M42
-
-    result.M31 = self.M13
-    result.M32 = self.M23
-    result.M33 = self.M33
-    result.M34 = self.M43
-
-    result.M41 = self.M14
-    result.M42 = self.M24
-    result.M43 = self.M34
-    result.M44 = self.M44
-
-    return result
+-- Returns a Vector4 transform from the matrix.
+---@param v vec4
+---@return vec4
+function fMatrix44:transform_vec4(v)
+    return vec4:new(
+        self:R1():dot_product(v),
+        self:R2():dot_product(v),
+        self:R3():dot_product(v),
+        self:R4():dot_product(v)
+    )
 end
 
----@param scale vec3
-function fMatrix44:scale(scale)
-    local result = fMatrix44:new(
-        scale.x, 1, 1, 1,
+-- Transposes the matrix into a new matrix: `new.row = this.column`
+function fMatrix44:transpose()
+    return fMatrix44:new(
+        self.M11, self.M21, self.M31, self.M41,
 
-        1, scale.y, 1, 1,
+        self.M12, self.M22, self.M32, self.M42,
 
-        1, 1, scale.z, 1,
+        self.M13, self.M23, self.M33, self.M43,
 
-        1, 1, 1, 1
+        self.M14, self.M24, self.M34, self.M44
     )
+end
 
-    return result
+
+---@param scale vec3
+---@return fMatrix44
+function fMatrix44:scale(scale)
+    return fMatrix44:new(
+        scale.x, 0, 0, 0,
+
+        0, scale.y, 0, 0,
+
+        0, 0, scale.z, 0,
+
+        0, 0, 0, 1
+    )
 end
 
 ---@param axis vec3
@@ -201,10 +267,15 @@ end
 function fMatrix44:rotate(axis, angle)
     local result = fMatrix44:new(
         1, 0, 0, 0,
+
         0, 1, 0, 0,
+
         0, 0, 1, 0,
+
         0, 0, 0, 1
     )
+
+    axis = axis:normalize()
 
     local x = axis.x
     local y = axis.y
@@ -234,29 +305,40 @@ function fMatrix44:rotate(axis, angle)
     return result
 end
 
----@param b fMatrix44
+---@param b fMatrix44|number
+---@return fMatrix44
 function fMatrix44:multiply(b)
-    local result = fMatrix44:new()
+    if (type(b) == "number") then
+        return fMatrix44:new(
+            (self.M11 * b), (self.M12 * b), (self.M13 * b), (self.M14 * b),
 
-    result.M11 = (self.M11 * b.M11) + (self.M12 * b.M21) + (self.M13 * b.M31) + (self.M14 * b.M41)
-    result.M12 = (self.M11 * b.M12) + (self.M12 * b.M22) + (self.M13 * b.M32) + (self.M14 * b.M42)
-    result.M13 = (self.M11 * b.M13) + (self.M12 * b.M23) + (self.M13 * b.M33) + (self.M14 * b.M43)
-    result.M14 = (self.M11 * b.M14) + (self.M12 * b.M24) + (self.M13 * b.M34) + (self.M14 * b.M44)
+            (self.M21 * b), (self.M22 * b), (self.M23 * b), (self.M24 * b),
 
-    result.M21 = (self.M21 * b.M11) + (self.M22 * b.M21) + (self.M23 * b.M31) + (self.M24 * b.M41)
-    result.M22 = (self.M21 * b.M12) + (self.M22 * b.M22) + (self.M23 * b.M32) + (self.M24 * b.M42)
-    result.M23 = (self.M21 * b.M13) + (self.M22 * b.M23) + (self.M23 * b.M33) + (self.M24 * b.M43)
-    result.M24 = (self.M21 * b.M14) + (self.M22 * b.M24) + (self.M23 * b.M34) + (self.M24 * b.M44)
+            (self.M31 * b), (self.M32 * b), (self.M33 * b), (self.M34 * b),
 
-    result.M31 = (self.M31 * b.M11) + (self.M32 * b.M21) + (self.M33 * b.M31) + (self.M34 * b.M41)
-    result.M32 = (self.M31 * b.M12) + (self.M32 * b.M22) + (self.M33 * b.M32) + (self.M34 * b.M42)
-    result.M33 = (self.M31 * b.M13) + (self.M32 * b.M23) + (self.M33 * b.M33) + (self.M34 * b.M43)
-    result.M34 = (self.M31 * b.M14) + (self.M32 * b.M24) + (self.M33 * b.M34) + (self.M34 * b.M44)
+            (self.M41 * b), (self.M42 * b), (self.M43 * b), (self.M44 * b)
+        )
+    end
 
-    result.M41 = (self.M41 * b.M11) + (self.M42 * b.M21) + (self.M43 * b.M31) + (self.M44 * b.M41)
-    result.M42 = (self.M41 * b.M12) + (self.M42 * b.M22) + (self.M43 * b.M32) + (self.M44 * b.M42)
-    result.M43 = (self.M41 * b.M13) + (self.M42 * b.M23) + (self.M43 * b.M33) + (self.M44 * b.M43)
-    result.M44 = (self.M41 * b.M14) + (self.M42 * b.M24) + (self.M43 * b.M34) + (self.M44 * b.M44)
+    self:assert(b)
 
-    return result
+    local r1 = self:R1()
+    local r2 = self:R2()
+    local r3 = self:R3()
+    local r4 = self:R4()
+
+    local c1 = b:C1()
+    local c2 = b:C2()
+    local c3 = b:C3()
+    local c4 = b:C4()
+
+    return fMatrix44:new(
+        r1:dot_product(c1), r1:dot_product(c2), r1:dot_product(c3), r1:dot_product(c4),
+
+        r2:dot_product(c1), r2:dot_product(c2), r2:dot_product(c3), r2:dot_product(c4),
+
+        r3:dot_product(c1), r3:dot_product(c2), r3:dot_product(c3), r3:dot_product(c4),
+
+        r4:dot_product(c1), r4:dot_product(c2), r4:dot_product(c3), r4:dot_product(c4)
+    )
 end

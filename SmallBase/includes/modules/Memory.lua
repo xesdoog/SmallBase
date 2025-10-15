@@ -1,5 +1,6 @@
 ---@diagnostic disable: param-type-mismatch
 
+require("includes.classes.CEntity")
 require("includes.classes.CPlayerInfo")
 require("includes.classes.CPed")
 require("includes.classes.CWheel")
@@ -27,13 +28,21 @@ function Memory:GetGameVersion()
     return GPointers.GameVersion
 end
 
----@return number|nil
+---@return byte
 function Memory:GetGameState()
+    if GPointers.GameState:is_null() then
+        return 0
+    end
+
     return GPointers.GameState:get_byte()
 end
 
----@return number
+---@return uint32_t
 function Memory:GetGameTime()
+    if GPointers.GameTime:is_null() then
+        return 0
+    end
+
     return GPointers.GameTime:get_dword()
 end
 
@@ -58,7 +67,7 @@ function Memory:GlobalIndexFromAddress(addr)
 
     for page = 0, 63 do
         local page_ptr = sg_base:add(page * 0x8):get_qword()
-        if page_ptr ~= 0 then
+        if (page_ptr ~= 0) then
             local offset = addr - page_ptr
             if (offset >= 0 and offset < 0x3FFFF * 0x8 and offset % 0x8 == 0) then
                 return (page << 0x12) | (offset // 8)
@@ -75,14 +84,14 @@ function Memory:GetVehicleInfo(vehicle)
     return CVehicle(vehicle)
 end
 
----@param ped integer A Ped ID, not a Player ID.
+---@param ped handle A Ped ID, not a Player ID.
 ---@return CPed|nil
 function Memory:GetPedInfo(ped)
     return CPed(ped)
 end
 
 -- Checks if a vehicle's handling flag is set.
----@param vehicle integer
+---@param vehicle handle
 ---@param flag eVehicleHandlingFlags
 ---@return boolean
 function Memory:GetVehicleHandlingFlag(vehicle, flag)
@@ -103,7 +112,7 @@ function Memory:GetVehicleHandlingFlag(vehicle, flag)
     return Bit.is_set(m_handling_flags:get_dword(), flag)
 end
 
----@param vehicle integer
+---@param vehicle handle
 ---@param flag eVehicleModelFlags
 ---@return boolean
 function Memory:GetVehicleModelInfoFlag(vehicle, flag)
@@ -128,7 +137,7 @@ end
 -- Unsafe for non-scripted entities.
 --
 -- Returns the model type of an entity (ped, object, vehicle, MLO, time, etc...)
----@param entity integer
+---@param entity handle
 ---@return number
 function Memory:GetEntityType(entity)
     if not ENTITY.DOES_ENTITY_EXIST(entity) then

@@ -79,9 +79,9 @@ local function get_caller_info(stack_depth)
     local name = info.name
 
     if (name) then
-        return string.format("%s:%d in function %s", src, line, name)
+        return _F("%s:%d in function %s", src, line, name)
     else
-        return string.format("%s:%d", src, line)
+        return _F("%s:%d", src, line)
     end
 end
 
@@ -186,7 +186,7 @@ function Logger:writeToFile(line)
             mkdir(backup_dir)
 
             local timestamp = get_timestamp():gsub("[: ]", "_")
-            local new_name = string.format("backup_%s.log", timestamp)
+            local new_name = _F("backup_%s.log", timestamp)
             local new_path = backup_dir .. "/" .. new_name
 
             os.rename(self.file_path, new_path)
@@ -231,7 +231,7 @@ function Logger:logf(level, fmt, ...)
         return
     end
 
-    local ok, msg = pcall(string.format, fmt, ...)
+    local ok, msg = pcall(_F, fmt, ...)
 
     if not ok then
         msg = "<formatting error!> " .. tostring(msg)

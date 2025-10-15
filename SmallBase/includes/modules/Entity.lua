@@ -1,25 +1,23 @@
 ---@diagnostic disable: param-type-mismatch
 
----@class CEntity -- Dummy
-
 --------------------------------------
 -- Class: Entity
 --------------------------------------
 -- Class representing a GTA V entity.
 ---@class Entity : ClassMeta<Entity>
----@field private m_handle Handle
----@field private m_modelhash Hash
+---@field private m_handle handle
+---@field private m_modelhash joaat_t
 ---@field private m_ptr pointer
----@field private layout CEntity?
+---@field private m_internal CEntity
 ---@overload fun(handle: integer): Entity
 Entity = Class("Entity")
-function Entity.__eq(this, other)
-    if IsInstance(other, Entity) then
-        return this:GetHandle() == other:GetHandle()
-    end
 
-    if (type(other) == "number" and Game.IsScriptHandle(other)) then
-        return this:GetHandle() == other
+function Entity:__eq(b)
+    local hndl = self:GetHandle()
+    if IsInstance(b, Entity) then
+        return (hndl == b:GetHandle())
+    elseif(IsInstance(b, "number") and Game.IsScriptHandle(b)) then
+        return (hndl == b)
     end
 
     return false
@@ -32,35 +30,79 @@ function Entity.new(handle)
         return
     end
 
-    return setmetatable(
-        {
-            m_handle = handle,
-            m_modelhash = Game.GetEntityModel(handle),
-            m_ptr = memory.handle_to_ptr(handle),
-            layout = nil
-        },
-        Entity
-    )
+    ---@type Entity
+    local instance = setmetatable({}, Entity)
+    instance.m_handle = handle
+    instance.m_modelhash = Game.GetEntityModel(handle)
+    instance.m_ptr = memory.handle_to_ptr(handle)
+    instance.m_internal = instance:Resolve()
+
+    return instance
+end
+
+-- Resolves this entity to its corresponding internal game class (`CEntity`, `CPed`, or `CVehicle`).
+--
+-- If already resolved, returns the cached instance.
+--
+-- > **[Note]**: Inheritance chains are simplified. There is no `fwEntity`, `fwArchetype`, `CPhysical`, etc...
+--
+-- > Instead, the base class is `CEntity` and the others inherit from it.
+--
+-- Usage Example:
+--
+--```Lua
+-- print(Self:Resolve().m_max_health:get_float()) -- -> 200.0 (Single Player Michael)
+--
+-- local veh = Self:GetVehicle()
+-- if veh then
+--      local cvehicle = veh:Resolve()
+--      print(cvehicle.m_max_health:get_float()) -- -> 1000.0
+--      print(cvehicle.m_handling_flags:get_dword()) -- -> integer<uint32_t> (depends on the vehicle)
+-- end
+--```
+---@generic T : CEntity
+---@return T
+function Entity:Resolve()
+    if (self.m_internal and self.m_internal:IsValid()) then
+        return self.m_internal
+    end
+
+    -- **DO NOT REMOVE. THIS IS NOT USELESS CODE.**
+    -- We have to do this because `Self` inherits from `Entity` but doesn't have a constructor
+    -- and doesn't store handles as members (because they can change).
+
+    local handle = self:GetHandle() -- This is overridden in `Self` to always invoke `PLAYER.PLAYER_PED_ID()`
+    local ent_type = Game.GetEntityType(handle)
+
+    if (ent_type == eEntityTypes.Ped) then
+        return CPed(handle)
+    elseif (ent_type == eEntityTypes.Vehicle) then
+        return CVehicle(handle)
+    end
+
+    return CEntity(handle)
 end
 
 function Entity:Destroy()
     self.m_handle    = nil
     self.m_modelhash = nil
-    self.layout      = nil
+    self.m_internal  = nil
     self.m_ptr       = nil
 end
 
----@param modelHash Hash
----@param entityType eEntityTypes
+---@param modelHash hash
+---@param entityType eEntityType
 ---@param pos? vec3
 ---@param heading? number
 ---@param isNetwork? boolean
 ---@param isScriptHostPed? boolean
 function Entity:Create(modelHash, entityType, pos, heading, isNetwork, isScriptHostPed)
     modelHash = Game.EnsureModelHash(modelHash)
-    if not Game.IsModelHash(modelHash) then
+    if (not Game.IsModelHash(modelHash)) then
         return
     end
+
+    pos = pos or self:GetSpawnPosInFront()
 
     if (entityType == eEntityTypes.Ped) then
         local handle = Game.CreatePed(modelHash, pos, heading, isNetwork, isScriptHostPed)
@@ -87,12 +129,12 @@ function Entity:Exists()
     return (self:GetHandle() and Game.IsScriptHandle(self:GetHandle()))
 end
 
----@return Handle
+---@return handle
 function Entity:GetHandle()
     return self.m_handle
 end
 
----@return Hash
+---@return joaat_t
 function Entity:GetModelHash()
     return self.m_modelhash
 end

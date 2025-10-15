@@ -1,20 +1,60 @@
+---@diagnostic disable: lowercase-global
 math.randomseed(os.time())
+
+local LUA_TABLE_OVERHEAD<const> = 3 * 0x8 -- 0x18
+
+Bit = require("includes.modules.Bit")
+Cast = require("includes.modules.Cast")
+Time = require("includes.modules.Time")
+
+Timer = Time.Timer
+TimePoint = Time.TimePoint
+yield = coroutine.yield
+sleep = Time.sleep
+_F = string.format
+
 
 --#region Global functions
 
+-- A dummy function that returns its parameter or nil.
 ---@generic T
----@param ... T
+---@param arg? T
 ---@return T
-function DummyFunc(...)
-    return ...
+function DummyFunc(arg)
+    return arg
 end
 
----@param object any
----@param T any  -- can be: class/metatable table, type string, or example object
+-- Returns whether `obj` is an instance of `T`. Can be used instead of Lua's default `type` function.
+--
+-- **Usage Example**:
+-- - String types, similar to the default `type` function:
+--```Lua
+-- print(IsInstance(123, "number")) -> true
+--```
+-- - Math types, similar to the default `math.type` function:
+--```Lua
+-- print(IsInstance(123, "float")) -- -> false
+-- print(IsInstance(1.23, "float")) -- -> true
+--```
+-- - Classes:
+--```Lua
+-- local myveh = Self:GetVehicle()
+-- print(IsInstance(myveh, Vehicle)) -- -> true
+-- print(IsInstance(myveh, Object)) -- -> false
+-- print(IsInstance(myveh, Entity)) -- -> true
+-- print(IsInstance(myveh, "table")) -- -> false
+-- print(IsInstance(myveh, {})) -- -> false
+--```
+---@param obj any
+---@param T anyval
 ---@return boolean
-function IsInstance(object, T)
-    local T_type <const> = type(T)
-    local types <const> = {
+function IsInstance(obj, T)
+    if (obj == nil) then
+        return T == "nil"
+    end
+
+    ---@type set
+    local std_types<const> = {
         ["table"]    = true,
         ["string"]   = true,
         ["number"]   = true,
@@ -23,8 +63,26 @@ function IsInstance(object, T)
         ["userdata"] = true
     }
 
+    ---@type set
+    local math_types<const> = {
+        ["integer"] = true,
+        ["float"]   = true
+    }
+
+    local obj_type<const> = type(obj)
+    local T_type<const>   = type(T)
+    local obj_mt = getmetatable(obj)
+    local T_mt = getmetatable(T)
+
     if (T_type == "table") then
-        local T_mt = getmetatable(T)
+        -- special case for vec3 since it's defined as a usertype in C++ but we extended it
+        -- so it became a hybrid: An instance of vec3 (from vec3:new, vec3:zero, or a return from a native function)
+        -- is of type "userdata" but vec3 itself is of type "table". Since we guard against returning true on classes vs regular tables,
+        -- IsInstance(vec3:new(1, 2, 3), vec3) returns false. This check fixes the issue and correctly returns true.
+        if (obj_type == "userdata" and T.__type == "vec3") then
+            return obj_mt and obj_mt.__type == T.__type
+        end
+
         local is_obj = rawget(T, "__index") ~= nil
             or rawget(T, "__type") ~= nil
             or rawget(T, "__base") ~= nil
@@ -32,40 +90,148 @@ function IsInstance(object, T)
             or (type(T_mt) == "table" and rawget(T_mt, "__call") ~= nil)
 
         if (is_obj) then
-            local mt = getmetatable(object)
-            while mt do
-                if mt == T then
+            while obj_mt do
+                if (obj_mt == T) then
                     return true
                 end
-                mt = rawget(mt, "__base")
+                obj_mt = rawget(obj_mt, "__base")
             end
             return false
         else
-            local obj_mt = getmetatable(object)
-            local sample_mt = getmetatable(T)
-            if (obj_mt or sample_mt) then
-                return obj_mt == sample_mt
+            if (obj_mt or T_mt) then
+                return obj_mt == T_mt
             end
-
-            return type(object) == T_type
         end
     end
 
-    if types[T] then
-        return (type(object) == T and getmetatable(object) == nil)
+    if (T_type == "string") then
+        if (T == "pointer") then
+            return (type(obj.rip) == "function")
+        end
+
+        if ((obj_type) == "number" and math_types[T]) then
+            return math.type(obj) == T
+        end
+
+        if (std_types[T]) then
+            if (obj_type == "table") then
+                return (obj_type == T and obj_mt == nil)
+            else
+                return obj_type == T
+            end
+        end
     end
 
-    return type(object) == T_type
+    return false
 end
 
----@param t table
----@param index number
-function EnumTostring(t, index)
-    if (type(t) ~= "table") then
+-- A poor man's `sizeof` 🥲
+---@param T any
+---@return number
+function SizeOf(T)
+    ---@type dict
+    local types<const> = {
+        ["boolean"]   = 0x1,
+        ["vec2"]      = 0x8,
+        ["vec3"]      = 0xC,
+        ["vec4"]      = 0x10,
+        ["fMatrix44"] = 0x40,
+        ["function"]  = 0x8,
+        ["pointer"]   = 0x8,
+        ["nil"]       = 0x0,
+    }
+
+    local T_type<const> = type(T)
+    local resolved_type
+
+    if (T_type == "table" or T_type == "userdata") then
+        if (IsInstance(T.rip, "function")) then
+            resolved_type = "pointer"
+        elseif (IsInstance(T.__type, "string")) then
+            resolved_type = T.__type
+        end
+    else
+        resolved_type = T_type
+    end
+
+    local known = types[resolved_type]
+    if (known) then
+        return known
+    end
+
+    if (T_type == "string") then
+        return #T
+    end
+
+    if (T_type == "number") then
+        if (T == 0 or IsInstance(T, "float")) then
+            return 0x4
+        end
+
+        local numeric_checks<const> = {
+            ["unsigned"] = {
+                { Cast.AsUint8_t, 0x1 },
+                { Cast.AsUint16_t, 0x2 },
+                { Cast.AsUint32_t, 0x4 },
+                { Cast.AsUint64_t, 0x8 },
+            },
+            ["signed"] = {
+                { Cast.AsInt8_t, 0x1 },
+                { Cast.AsInt16_t, 0x2 },
+                { Cast.AsInt32_t, 0x4 },
+                { Cast.AsInt64_t, 0x8 },
+            }
+        }
+
+        local function num_equal(a, b)
+            return math.abs(a - b) < 1e-9
+        end
+
+        local c = Cast(T)
+        local key = T < 0 and "signed" or "unsigned"
+        local _t = numeric_checks[key]
+
+        for i = 1, #_t do
+            local method, size = _t[i][1], _t[i][2]
+            local value = method(c)
+
+            if num_equal(T, value) then
+                return size
+            end
+        end
+    end
+
+    if (T_type == "table") then
+        if (IsInstance(T.m_size, "number")) then
+            return T.m_size
+        end
+
+        if (IsInstance(T.__sizeof, "number")) then
+            return T.__sizeof
+        end
+
+        if (IsInstance(T.__len, "function")) then
+            return T:__len()
+        end
+
+        if (IsInstance(T.__type, "string")) then
+            return GenericClass.m_size
+        end
+
+        return table.sizeof(T)
+    end
+
+    return 0
+end
+
+---@param e Enum
+---@param index integer
+function EnumTostring(e, index)
+    if (type(e) ~= "table") then
         return ""
     end
 
-    for k, v in pairs(t) do
+    for k, v in pairs(e) do
         if (v == index) then
             return tostring(k)
         end
@@ -74,13 +240,13 @@ function EnumTostring(t, index)
     return "Unknown"
 end
 
----@param name string The global or local's name as it's set in `/includes/data/globals_locals.lua`
+---@param name string The global or local's name. See: data/globals_locals.lua
 ---@param get_full_table? boolean
 ---@return number|table|nil -- If `get_full_table` is true, returns the full table; otherwise, returns the value.
 function GetScriptGlobalOrLocal(name, get_full_table)
     SG_SL = SG_SL or require("includes.data.globals_locals")
     local T = SG_SL[name]
-    if not T then
+    if (not T) then
         log.fwarning("GetScriptGlobalOrLocal(): Unknown script global/local name '%s'", name)
         return
     end
@@ -95,7 +261,7 @@ end
 --
 -- https://en.wikipedia.org/wiki/Jenkins_hash_function
 ---@param key string
----@return integer
+---@return joaat_t
 function Joaat(key)
     local hash = 0
     key = key:lower()
@@ -117,7 +283,7 @@ end
 
 ---@param func function
 ---@param _args any
----@param timeout? number | nil  -- Optional timeout in milliseconds.
+---@param timeout? milliseconds  -- Optional timeout in milliseconds.
 function Await(func, _args, timeout)
     if (type(func) ~= "function") then
         error(("Invalid argument! Function expected, got %s instead"):format(type(func)), 0)
@@ -242,10 +408,10 @@ end
 
 ---@param matrix fMatrix44
 function memory.pointer:set_matrix44(matrix)
-    local m1 = matrix:m1()
-    local m2 = matrix:m2()
-    local m3 = matrix:m3()
-    local m4 = matrix:m4()
+    local m1 = matrix:R1()
+    local m2 = matrix:R2()
+    local m3 = matrix:R3()
+    local m4 = matrix:R4()
 
     self:add(0x00):set_float(m1.x); self:add(0x04):set_float(m1.y); self:add(0x08):set_float(m1.z); self:add(0x0C):set_float(m1.w)
 
@@ -484,6 +650,20 @@ table.getlen = function(t)
     end
 
     return count
+end
+
+-- Calculates an estimate of a table's size in memory.
+--
+-- NOTE: This is VERY inaccurate.
+---@param t table
+---@return number
+table.sizeof = function(t)
+    local size = LUA_TABLE_OVERHEAD
+    for k, v in pairs(t) do
+        size = size + SizeOf(k) + SizeOf(v)
+    end
+
+    return size
 end
 
 -- Returns the number of duplicate items in a table.
@@ -884,60 +1064,12 @@ math.sum = function(...)
     return result
 end
 
---#endregion
-
-
---#region Helpers
-
----@class Bit
-Bit = {}
-
----@param n integer
----@param pos integer
-Bit.get = function(n, pos)
-    return (n >> pos) & 1
-end
-
----@param n integer
----@param pos integer
-Bit.set = function(n, pos)
-    return n | (1 << pos)
-end
-
----@param n integer
----@param pos integer
-Bit.clear = function(n, pos)
-    return n &~ (1 << pos)
-end
-
----@param n integer
----@param pos integer
-Bit.is_set = function(n, pos)
-    return (n & (1 << pos)) ~= 0
-end
-
----@param n integer
----@param s integer
-Bit.lshift = function(n, s)
-    return n << s
-end
-
----@param n integer
----@param s integer
-Bit.rshift = function(n, s)
-    return n >> s
-end
-
----@param n integer
----@param bits integer
-Bit.rrotate = function(n, bits)
-    return ((n >> bits) | (n << (32 - bits))) & 0xFFFFFFFF
-end
-
----@param n integer
----@param bits integer
-Bit.lrotate = function(n, bits)
-    return ((n << bits) | (n >> (32 - bits))) & 0xFFFFFFFF
+---@param n number
+---@param min number
+---@param max number
+---@return boolean
+math.inrange = function(n, min, max)
+    return n >= min and n <= max
 end
 
 --#endregion

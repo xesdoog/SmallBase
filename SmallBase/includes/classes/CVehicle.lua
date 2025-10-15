@@ -1,19 +1,87 @@
----@diagnostic disable: param-type-mismatch, undefined-field
+---@diagnostic disable: param-type-mismatch
 
----@class CHandlingData
----@class CVehicleModelInfo
----@class CVehicleDamage
----@class CBaseSubHandlingData `rage::atArray`
+---@ignore
+---@class CAdvancedData : GenericClass
+local CAdvancedData = GenericClass
+
+---@ignore
+---@class CVehicleModelInfo : GenericClass
+local CVehicleModelInfo = GenericClass
+
+---@ignore
+---@class CVehicleDamage : GenericClass
+local CVehicleDamage = GenericClass
+
+---@ignore
+---@class CBaseSubHandlingData : GenericClass `rage::atArray`
+local CBaseSubHandlingData = GenericClass
+
+---@ignore
+---@class CHandlingData : GenericClass
+local CHandlingData = GenericClass
+
+---@ignore
+---@class CVehicleModelInfoLayout : GenericClass
+local CVehicleModelInfoLayout = GenericClass
+
+---@ignore
 ---@class CCarHandlingData
----@class CVehicleModelInfoLayout
+---@field private m_ptr pointer
+---@field private m_size uint16_t
+---@field m_back_end_popup_car_impulse_mult pointer<float> //0x0008
+---@field m_back_end_popup_building_impulse_mult pointer<float> //0x000C
+---@field m_back_end_popup_max_delta_speed pointer<float> //0x0010
+---@field m_toe_front pointer<float> //0x0014
+---@field m_toe_rear pointer<float> //0x0018
+---@field m_camber_front pointer<float>  //0x001C
+---@field m_camber_rear pointer<float> //0x0020
+---@field m_castor pointer<float> //0x0024
+---@field m_engine_resistance pointer<float> //0x0028
+---@field m_max_drive_bias_transfer pointer<float> //0x002C
+---@field m_jumpforce_scale pointer<float> //0x0030
+---@field m_advanced_flags pointer<uint32_t> //0x003C
+---@field m_advanced_data atArray<CAdvancedData>   //0x0040
+---@overload fun(addr: pointer): CCarHandlingData
+CCarHandlingData = { m_size = 0x48 }
+CCarHandlingData.__index = CCarHandlingData
+CCarHandlingData.__type = "CCarHandlingData"
+setmetatable(CCarHandlingData, {
+    __call = function(cls, ...)
+        return cls.new(...)
+    end,
+})
 
+---@param ptr pointer
+---@return CCarHandlingData|nil
+function CCarHandlingData.new(ptr)
+    if not ptr or ptr:is_null() then return end
+
+    local instance = setmetatable({}, CCarHandlingData)
+
+    instance.m_ptr = ptr
+    instance.m_back_end_popup_car_impulse_mult = ptr:add(0x0008)
+    instance.m_back_end_popup_building_impulse_mult = ptr:add(0x000C)
+    instance.m_back_end_popup_max_delta_speed = ptr:add(0x0010)
+    instance.m_toe_front = ptr:add(0x0014)
+    instance.m_toe_rear = ptr:add(0x0018)
+    instance.m_camber_front = ptr:add(0x001C)
+    instance.m_camber_rear = ptr:add(0x0020)
+    instance.m_castor = ptr:add(0x0024)
+    instance.m_engine_resistance = ptr:add(0x0028)
+    instance.m_max_drive_bias_transfer = ptr:add(0x002C)
+    instance.m_jumpforce_scale = ptr:add(0x0030)
+    instance.m_advanced_flags = ptr:add(0x003C)
+    instance.m_advanced_data = atArray(ptr:add(0x0040))
+
+    return instance
+end
 
 --------------------------------------
 -- Struct: phFragInst
 --------------------------------------
 ---@ignore
 ---@class phFragInst
----@field m_addr pointer
+---@field private m_ptr pointer
 ---@field m_cache_entry pointer
 ---@field m_num_bones number
 ---@field m_skeleton pointer
@@ -22,18 +90,19 @@
 ---@overload fun(addr: pointer): phFragInst
 local phFragInst = {}
 phFragInst.__index = phFragInst
+phFragInst.__type = "phFragInst"
 setmetatable(phFragInst, {
     __call = function(cls, ...)
         return cls.new(...)
     end,
 })
 
----@param addr pointer
+---@param ptr pointer
 ---@return phFragInst|nil
-function phFragInst.new(addr)
-    if not addr or addr:is_null() then return end
+function phFragInst.new(ptr)
+    if not ptr or ptr:is_null() then return end
 
-    local cache = addr:add(0x68):deref()
+    local cache = ptr:add(0x68):deref()
     if not cache or cache:is_null() then return end
 
     local skel = cache:add(0x178):deref() -- CSkeleton*
@@ -44,7 +113,7 @@ function phFragInst.new(addr)
     local g_matricesPtr = skel:add(0x18):deref()
     local instance = setmetatable({}, phFragInst)
 
-    instance.m_addr = addr
+    instance.m_ptr = ptr
     instance.m_cache_entry = cache
     instance.m_skeleton = skel
     instance.m_num_bones = numBones or 0
@@ -59,7 +128,7 @@ function phFragInst:GetMatrixPtr(bone_index)
         return nil
     end
 
-    return self.m_obj_matrices:add(bone_index * 0x40) -- sizeof(fMatrix44)
+    return self.m_obj_matrices:add(bone_index * SizeOf(fMatrix44))
 end
 
 function phFragInst:GetGlobalMatrixPtr(bone_index)
@@ -67,24 +136,31 @@ function phFragInst:GetGlobalMatrixPtr(bone_index)
         return nil
     end
 
-    return self.m_global_matrices:add(bone_index * 0x40) -- sizeof(fMatrix44)
+    return self.m_global_matrices:add(bone_index * SizeOf(fMatrix44))
 end
 
 --------------------------------------
 -- Class: CVehicle
 --------------------------------------
 ---@ignore
----@class CVehicle
+---@class CVehicle : CEntity
 ---@field private m_ptr pointer
 ---@field m_physics_fragments phFragInst //0x30 `struct rage::phFragInst`
----@field CHandlingData pointer<CHandlingData>
----@field CVehicleModelInfo pointer<CVehicleModelInfo>
----@field CVehicleDamage pointer<CVehicleDamage>
----@field CBaseSubHandlingData pointer<CBaseSubHandlingData> `rage::atArray`
----@field CCarHandlingData pointer<CCarHandlingData>?
----@field CVehicleModelInfoLayout pointer<CVehicleModelInfoLayout>
+---@field m_handling_data pointer<CHandlingData>
+---@field m_model_info pointer<CVehicleModelInfo>
+---@field m_vehicle_damage pointer<CVehicleDamage>
+---@field m_sub_handling_data atArray<CBaseSubHandlingData> `rage::atArray`
+---@field m_car_handling_data pointer<CCarHandlingData>?
+---@field m_model_info_layout pointer<CVehicleModelInfoLayout>
+---@field m_can_boost_jump pointer<byte> `bool`
 ---@field m_deform_god pointer<uint8_t>
 ---@field m_water_damage pointer<uint32_t>
+---@field m_next_gear pointer<int16_t>
+---@field m_current_gear pointer<int16_t>
+---@field m_top_gear pointer<int8_t>
+---@field m_engine_health pointer<float>
+---@field m_is_targetable pointer<byte> `bool`
+---@field m_door_lock_status pointer<uint32_t>
 ---@field m_model_info_flags pointer<uint32_t>
 ---@field m_initial_drag_coeff pointer<float>
 ---@field m_drive_bias_rear pointer<float>
@@ -98,122 +174,91 @@ end
 ---@field m_model_flags pointer<uint32_t>
 ---@field m_handling_flags pointer<uint32_t>
 ---@field m_damage_flags pointer<uint32_t>
----@field m_deformation_mult pointer<float>
----@field m_camber_front pointer<float>
----@field m_camber_rear pointer<float>
+---@field m_deform_mult pointer<float>
 ---@field m_wheel_scale pointer<float>
 ---@field m_wheel_scale_rear pointer<float>
----@field m_num_wheels number
----@field m_wheels array<CWheel>?
+---@field m_wheels atArray<CWheel> // 0xC30
+---@field m_num_wheels number // 0xC38
 ---@overload fun(vehicle: integer): CVehicle|nil
-CVehicle = {}
-CVehicle.__index = CVehicle
-setmetatable(CVehicle, {
-    __call = function(cls, addr)
-        return cls.new(addr)
-    end,
-})
+CVehicle = Class("CVehicle", CEntity, 0xC40)
 
----@param vehicle Handle
-function CVehicle.new(vehicle)
-    if not (ENTITY.DOES_ENTITY_EXIST(vehicle) or ENTITY.IS_ENTITY_A_VEHICLE(vehicle)) then
-        return
+---@param vehicle handle
+---@return CVehicle
+function CVehicle:init(vehicle)
+    if not ENTITY.DOES_ENTITY_EXIST(vehicle) or not ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+        error("Invalid entity!")
     end
 
+    self:super().init(self, vehicle)
     local ptr = memory.handle_to_ptr(vehicle)
-    if not ptr or ptr:is_null() then
-        return nil
-    end
 
+    ---@type CVehicle
     local instance = setmetatable({}, CVehicle)
-    instance.m_ptr = ptr
-    instance.CVehicleModelInfo = ptr:add(0x20):deref()
-    instance.CVehicleDamage = ptr:add(0x0420)
-    instance.CHandlingData = ptr:add(0x0960):deref()
-    instance.CBaseSubHandlingData = instance.CHandlingData:add(0x158)
-    instance.CVehicleModelInfoLayout = instance.CVehicleModelInfo:add(0x00B0):deref()
-    instance.m_physics_fragments = phFragInst(ptr:add(0x30):deref())
-    instance.m_deform_god = ptr:add(0x096C)
-    instance.m_water_damage = ptr:add(0xD8)
-    instance.m_model_info_flags = instance.CVehicleModelInfo:add(0x057C)
-    instance.m_initial_drag_coeff = instance.CHandlingData:add(0x0010)
-    instance.m_drive_bias_rear = instance.CHandlingData:add(0x0044)
-    instance.m_drive_bias_front = instance.CHandlingData:add(0x0048)
-    instance.m_acceleration = instance.CHandlingData:add(0x004C)
-    instance.m_initial_drive_gears = instance.CHandlingData:add(0x0050)
-    instance.m_initial_drive_force = instance.CHandlingData:add(0x0060)
-    instance.m_drive_max_flat_velocity = instance.CHandlingData:add(0x0064)
-    instance.m_initial_drive_max_flat_vel = instance.CHandlingData:add(0x0068)
-    instance.m_monetary_value = instance.CHandlingData:add(0x0118)
-    instance.m_model_flags = instance.CHandlingData:add(0x0124)
-    instance.m_handling_flags = instance.CHandlingData:add(0x0128)
-    instance.m_damage_flags = instance.CHandlingData:add(0x012C)
-    instance.m_deformation_mult = instance.CHandlingData:add(0x00F8)
-    -- instance.m_camber_front = instance.CHandlingData:add(0x034C)
-    -- instance.m_camber_rear = instance.CHandlingData:add(0x0350)
-    instance.m_wheel_scale = instance.CVehicleModelInfo:add(0x048C)
-    instance.m_wheel_scale_rear = instance.CVehicleModelInfo:add(0x0490)
 
-    instance.CCarHandlingData = instance:GetHandlingData()
-    instance:GetWheels()
+    instance.m_ptr = ptr
+    instance.m_model_info = ptr:add(0x20):deref()
+    instance.m_vehicle_damage = ptr:add(0x0420)
+    instance.m_handling_data = ptr:add(0x0960):deref()
+    instance.m_sub_handling_data = atArray(instance.m_handling_data:add(0x158), CCarHandlingData)
+    instance.m_model_info_layout = instance.m_model_info:add(0x00B0):deref()
+    instance.m_physics_fragments = phFragInst(ptr:add(0x30):deref())
+    instance.m_can_boost_jump = ptr:add(0x03A4)
+    instance.m_deform_god = ptr:add(0x096C)
+    instance.m_is_targetable = ptr:add(0x0AEE)
+    instance.m_door_lock_status = ptr:add(0x13D0)
+    instance.m_water_damage = ptr:add(0xD8)
+    instance.m_next_gear = ptr:add(0x0880)
+    instance.m_current_gear = ptr:add(0x0882)
+    instance.m_top_gear = ptr:add(0x0886)
+    instance.m_engine_health = ptr:add(0x0910)
+    instance.m_model_info_flags = instance.m_model_info:add(0x057C)
+    instance.m_initial_drag_coeff = instance.m_handling_data:add(0x0010)
+    instance.m_drive_bias_rear = instance.m_handling_data:add(0x0044)
+    instance.m_drive_bias_front = instance.m_handling_data:add(0x0048)
+    instance.m_acceleration = instance.m_handling_data:add(0x004C)
+    instance.m_initial_drive_gears = instance.m_handling_data:add(0x0050)
+    instance.m_initial_drive_force = instance.m_handling_data:add(0x0060)
+    instance.m_drive_max_flat_velocity = instance.m_handling_data:add(0x0064)
+    instance.m_initial_drive_max_flat_vel = instance.m_handling_data:add(0x0068)
+    instance.m_monetary_value = instance.m_handling_data:add(0x0118)
+    instance.m_model_flags = instance.m_handling_data:add(0x0124)
+    instance.m_handling_flags = instance.m_handling_data:add(0x0128)
+    instance.m_damage_flags = instance.m_handling_data:add(0x012C)
+    instance.m_deform_mult = instance.m_handling_data:add(0x00F8)
+    instance.m_wheel_scale = instance.m_model_info:add(0x048C)
+    instance.m_wheel_scale_rear = instance.m_model_info:add(0x0490)
+    instance.m_wheels = atArray(ptr:add(0xC30), CWheel)
+    instance.m_num_wheels = ptr:add(0xC38):get_int()
 
     return instance
 end
 
----@return boolean
-function CVehicle:IsValid()
-    return self.m_ptr and not self.m_ptr:is_null()
-end
+-- ---@param sub_ptr pointer
+-- ---@return eHandlingType
+-- function CVehicle:GetSubHandlingType(sub_ptr)
+--     if not sub_ptr:is_valid() then
+--         return eHandlingType.HANDLING_TYPE_MAX_TYPES
+--     end
 
-function CVehicle:GetWheels()
-    if self.m_wheels then
-        return self.m_num_wheels, self.m_wheels
-    end
+--     local func_ptr = sub_ptr:add(0x8)
+--     local GetHandlingType = memory.dynamic_call("int", {"void*"}, func_ptr)
+--     if (not GetHandlingType or _G[GetHandlingType] == nil) then
+--         return eHandlingType.HANDLING_TYPE_MAX_TYPES
+--     end
 
-    if (GPointers.CWheelOffset == 0) then
-        log.warning("[CVehicle]: Failed to get offset to wheel array pointer!")
-        return 0, nil
-    end
+--     local type_id = _G[GetHandlingType]()
+--     return type_id
+-- end
 
-    local wheel_array_offset = GPointers.CWheelOffset - 0x8 -- 0xC30 as of b3586.0
-    local num_wheels = self.m_ptr:add(GPointers.CWheelOffset):get_int()
-    local wheels_array = self.m_ptr:add(wheel_array_offset):deref()
-
-    if wheels_array:is_null() then
-        return 0, nil
-    end
-
-    local wheels = {}
-    for i = 0, num_wheels - 1 do
-        wheels[i + 1] = CWheel(wheels_array:add(i * 0x8):deref())
-    end
-
-    self.m_num_wheels = num_wheels
-    self.m_wheels = wheels
-
-    return num_wheels, wheels -- not sure if we ever would want to immediately use them
-end
-
----@return pointer|nil
+---@return CCarHandlingData|nil
 function CVehicle:GetHandlingData()
     if not self:IsValid() then
         return nil
     end
 
-    local sub_array = self.CBaseSubHandlingData
-    local size = sub_array:add(0x8):get_int() -- sizeof CBaseSubHandlingData
-    local data_ptr = sub_array:deref()
-
-    for i = 0, size - 1 do
-        local sub_ptr = data_ptr:add(i * 0x8):deref()
-        if not sub_ptr:is_null() then
-            local toe_front = sub_ptr:add(0x14):get_float()
-            local camber_front = sub_ptr:add(0x1C):get_float()
-            local camber_rear = sub_ptr:add(0x20):get_float()
-
-            if toe_front ~= 0.0 or camber_front ~= 0.0 or camber_rear ~= 0.0 then
-                return sub_ptr -- CCarHandlingData
-            end
+    for _, sub_ptr in self.m_sub_handling_data:Iter() do
+        if sub_ptr:is_valid() then
+            return CCarHandlingData(sub_ptr)
         end
     end
 end

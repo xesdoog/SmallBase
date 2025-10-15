@@ -123,7 +123,7 @@ function Accessor:__tostring()
         suffix = ":" .. self.m_script
     end
 
-    return string.format("<%s_%d%s%s>", prefix, self.m_index, chain, suffix)
+    return _F("<%s_%d%s%s>", prefix, self.m_index, chain, suffix)
 end
 
 

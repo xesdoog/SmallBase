@@ -23,7 +23,7 @@ setmetatable(Pointer, {
 })
 
 function Pointer:__tostring()
-    return string.format("Pointer<%s @ 0x%X>", self.m_name, self.m_address)
+    return _F("Pointer<%s @ 0x%X>", self.m_name, self.m_address)
 end
 
 -- Creates a new unresolved `Pointer`.
@@ -139,6 +139,8 @@ function PatternScanner:Scan()
             if not ptr:Scan() then
                 table.insert(self.m_failed_pointers, ptr)
             end
+
+            yield()
         end
 
         self.m_state = eScannerState.DONE
@@ -171,6 +173,8 @@ function PatternScanner:RetryScan()
                 table.remove(self.m_failed_pointers, i)
                 success = success + 1
             end
+
+            yield()
         end
 
         log.fdebug("[PatternScanner] Recovered %d/%d failed pointer(s)", success, sizeof_failed)

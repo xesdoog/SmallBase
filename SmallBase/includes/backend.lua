@@ -19,7 +19,7 @@ eBackendEvent = {
     PLAYER_SWITCH  = 3,
 }
 
----@enum eEntityTypes
+---@enum eEntityType
 eEntityTypes = {
     Ped     = 1,
     Vehicle = 2,
@@ -123,7 +123,7 @@ function Backend:IsPlayerSwitchInProgress()
     return STREAMING.IS_PLAYER_SWITCH_IN_PROGRESS()
 end
 
----@param entity_type eEntityTypes
+---@param entity_type eEntityType
 ---@return number
 function Backend:GetMaxAllowedEntities(entity_type)
     if not self.MaxAllowedEntities[entity_type] then
@@ -134,7 +134,7 @@ function Backend:GetMaxAllowedEntities(entity_type)
 end
 
 ---@param value number
----@param entity_type eEntityTypes
+---@param entity_type eEntityType
 function Backend:SetMaxAllowedEntities(entity_type, value)
     if not self.MaxAllowedEntities[entity_type] then
         return
@@ -143,7 +143,7 @@ function Backend:SetMaxAllowedEntities(entity_type, value)
     self.MaxAllowedEntities[entity_type] = value
 end
 
----@param entity_type eEntityTypes
+---@param entity_type eEntityType
 ---@return boolean
 function Backend:CanCreateEntity(entity_type)
     local currentCount = table.getlen(self.SpawnedEntities[entity_type])
@@ -169,7 +169,7 @@ function Backend:IsBlipRegistered(handle)
 end
 
 ---@param handle integer
----@param entity_type? eEntityTypes
+---@param entity_type? eEntityType
 ---@param etc? table -- metadata
 function Backend:RegisterEntity(handle, entity_type, etc)
     if not Game.IsScriptHandle(handle) then
@@ -185,7 +185,7 @@ function Backend:RegisterEntity(handle, entity_type, etc)
 end
 
 ---@param handle number
----@param entity_type eEntityTypes
+---@param entity_type eEntityType
 function Backend:RemoveEntity(handle, entity_type)
     if not (self.SpawnedEntities[entity_type] or self.SpawnedEntities[entity_type][handle]) then
         return

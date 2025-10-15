@@ -7,24 +7,10 @@
 --
 -- Class representing a GTA V Ped.
 ---@class Ped : Entity
----@field private layout CPed?
----@field Create fun(_, modelHash: Hash, entityType: eEntityTypes, pos?: vec3, heading?: number, isNetwork?: boolean, isScriptHostPed?: boolean): Ped
----@overload fun(handle: Handle): Ped
+---@field private m_internal CPed
+---@field Create fun(_, modelHash: hash, entityType: eEntityType, pos?: vec3, heading?: number, isNetwork?: boolean, isScriptHostPed?: boolean): Ped
+---@overload fun(handle: handle): Ped
 Ped = Class("Ped", Entity)
-
----@return CPed|nil
-function Ped:ReadMemoryLayout()
-    if not self:IsValid() then
-        self:Destroy()
-        return
-    end
-
-    if not self.layout then
-        self.layout = CPed(self:GetHandle())
-    end
-
-    return self.layout
-end
 
 ---@return boolean
 function Ped:IsValid()
@@ -151,7 +137,7 @@ function Ped:GetVehicle()
     return Vehicle(PED.GET_VEHICLE_PED_IS_USING(self:GetHandle()))
 end
 
----@return Hash -- weapon hash or 0.
+---@return hash -- weapon hash or 0.
 function Ped:GetVehicleWeapon()
     if not self:IsValid() or self:IsOnFoot() then
         return 0
@@ -253,7 +239,7 @@ function Ped:SetComponenVariations(components)
     Game.ApplyPedComponents(self:GetHandle(), components)
 end
 
----@param vehicle_handle Handle
+---@param vehicle_handle handle
 ---@param seatIndex? number
 function Ped:WarpIntoVehicle(vehicle_handle, seatIndex)
     if not (self:IsValid() or self:IsAlive() or ENTITY.DOES_ENTITY_EXIST(vehicle_handle)) then
@@ -266,4 +252,21 @@ function Ped:WarpIntoVehicle(vehicle_handle, seatIndex)
     end
 
     PED.SET_PED_INTO_VEHICLE(self:GetHandle(), vehicle_handle, seatIndex)
+end
+
+function Ped:Clean()
+    if not (self:IsValid() and self:IsAlive()) then
+        return
+    end
+
+    local hndl = self:GetHandle()
+
+    PED.CLEAR_PED_BLOOD_DAMAGE(hndl)
+    PED.CLEAR_PED_WETNESS(hndl)
+    PED.CLEAR_PED_ENV_DIRT(hndl)
+    PED.RESET_PED_VISIBLE_DAMAGE(hndl)
+
+    for i = 0, 5, 1 do
+        PED.CLEAR_PED_DAMAGE_DECAL_BY_ZONE(hndl, i, "ALL")
+    end
 end

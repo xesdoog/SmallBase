@@ -3,29 +3,16 @@
 --------------------------------------
 -- Class representing a GTA V vehicle.
 ---@class Vehicle : Entity
----@field private layout CVehicle?
+---@field private m_internal CVehicle
 ---@field private m_class_id number
----@field Create fun(_, modelHash: Hash, entityType: eEntityTypes, pos?: vec3, heading?: number, isNetwork?: boolean, isScriptHostPed?: boolean): Vehicle
----@overload fun(handle: Handle): Vehicle
+---@field Resolve fun() : CVehicle
+---@field Create fun(_, modelHash: joaat_t, entityType: eEntityType, pos?: vec3, heading?: number, isNetwork?: boolean, isScriptHostPed?: boolean): Vehicle
+---@overload fun(handle: handle): Vehicle
 Vehicle = Class("Vehicle", Entity)
 
 ---@return boolean
 function Vehicle:IsValid()
-    return self:Exists() and ENTITY.IS_ENTITY_A_VEHICLE(self:GetHandle())
-end
-
----@return CVehicle|nil
-function Vehicle:ReadMemoryLayout()
-    if not self:IsValid() then
-        self:Destroy()
-        return
-    end
-
-    if not self.layout then
-        self.layout = CVehicle(self:GetHandle())
-    end
-
-    return self.layout
+    return ENTITY.DOES_ENTITY_EXIST(self:GetHandle()) and ENTITY.IS_ENTITY_A_VEHICLE(self:GetHandle())
 end
 
 ---@return string
@@ -70,13 +57,13 @@ function Vehicle:GetClassName()
     return EnumTostring(eVehicleClasses, clsid)
 end
 
----@return array<Handle>
+---@return array<handle>
 function Vehicle:GetOccupants()
     if not self:IsValid() then
         return {}
     end
 
-    ---@type array<Handle>
+    ---@type array<handle>
     local passengers = {}
     local handle     = self:GetHandle()
     local max_seats  = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(self:GetModelHash())
@@ -333,7 +320,8 @@ function Vehicle:MaxPerformance()
     VEHICLE.SET_VEHICLE_STRONG(handle, true)
 end
 
-function Vehicle:Repair()
+---@param reset_dirt? bool
+function Vehicle:Repair(reset_dirt)
     local handle = self:GetHandle()
 
     if not self:IsValid() then
@@ -342,14 +330,16 @@ function Vehicle:Repair()
 
     VEHICLE.SET_VEHICLE_FIXED(handle)
     VEHICLE.SET_VEHICLE_DEFORMATION_FIXED(handle)
-    VEHICLE.SET_VEHICLE_DIRT_LEVEL(handle, 0)
 
-    self:ReadMemoryLayout()
-    if not self.layout then
+    if (reset_dirt) then
+        VEHICLE.SET_VEHICLE_DIRT_LEVEL(handle, 0.0)
+    end
+
+    if (not self.m_internal) then
         return
     end
 
-    local pWaterDamage = self.layout.m_water_damage
+    local pWaterDamage = self.m_internal.m_water_damage
     if pWaterDamage:is_null() then
         return
     end
@@ -403,12 +393,11 @@ function Vehicle:SetAcceleration(multiplier)
         return
     end
 
-    self:ReadMemoryLayout()
-    if not self.layout then
+    if not self.m_internal then
         return
     end
 
-    local pAcceleration = self.layout.m_acceleration
+    local pAcceleration = self.m_internal.m_acceleration
     if pAcceleration:is_valid() then
         pAcceleration:set_float(multiplier)
     end
@@ -420,12 +409,11 @@ function Vehicle:GetDeformation()
         return
     end
 
-    self:ReadMemoryLayout()
-    if not self.layout then
+    if not self.m_internal then
         return
     end
 
-    local pDeformMult = self.layout.m_deformation_mult
+    local pDeformMult = self.m_internal.m_deform_mult
     if pDeformMult:is_valid() then
         return pDeformMult:get_float()
     end
@@ -437,12 +425,11 @@ function Vehicle:SetDeformation(multiplier)
         return
     end
 
-    self:ReadMemoryLayout()
-    if not self.layout then
+    if not self.m_internal then
         return
     end
 
-    local pDeformMult = self.layout.m_deformation_mult
+    local pDeformMult = self.m_internal.m_deform_mult
     if pDeformMult:is_valid() then
         pDeformMult:set_float(multiplier)
     end
@@ -457,7 +444,7 @@ function Vehicle:GetExhaustBones()
     end
 
     local bones   = {}
-    local count   = VEHICLE.GET_VEHICLE_MAX_EXHAUST_BONE_COUNT_() - 1 -- for some reason all vehicles have an additional exhaust bone sticking out of the top of the engine
+    local count   = VEHICLE.GET_VEHICLE_MAX_EXHAUST_BONE_COUNT_() - 1 -- all vehicles have an additional exhaust bone sticking out of the top of the engine
     local bParam  = false
     local boneIdx = -1
 
@@ -890,12 +877,11 @@ function Vehicle:GetHandlingFlag(flag)
         return false
     end
 
-    self:ReadMemoryLayout()
-    if not self.layout then
+    if not self.m_internal then
         return false
     end
 
-    local m_handling_flags = self.layout.m_handling_flags
+    local m_handling_flags = self.m_internal.m_handling_flags
     if m_handling_flags:is_null() then
         return false
     end
@@ -912,12 +898,11 @@ function Vehicle:SetHandlingFlag(flag, toggle)
         return
     end
 
-    self:ReadMemoryLayout()
-    if not self.layout then
+    if not self.m_internal then
         return
     end
 
-    local m_handling_flags = self.layout.m_handling_flags
+    local m_handling_flags = self.m_internal.m_handling_flags
 
     if m_handling_flags:is_null() then
         return
@@ -931,16 +916,11 @@ end
 
 ---@param flag eVehicleModelFlags
 function Vehicle:GetModelFlag(flag)
-    if not self:IsValid() then
+    if not self:IsValid() or not self.m_internal then
         return false
     end
 
-    self:ReadMemoryLayout()
-    if not self.layout then
-        return false
-    end
-
-    local pModelFlags = self.layout.m_model_flags
+    local pModelFlags = self.m_internal.m_model_flags
     if pModelFlags:is_null() then
         return false
     end
@@ -952,16 +932,11 @@ end
 ---@param flag eVehicleModelInfoFlags
 ---@return boolean
 function Vehicle:GetModelInfoFlag(flag)
-    if not self:IsValid() then
+    if not self:IsValid() or not self.m_internal then
         return false
     end
 
-    self:ReadMemoryLayout()
-    if not self.layout then
-        return false
-    end
-
-    local base_ptr = self.layout.m_model_info_flags
+    local base_ptr = self.m_internal.m_model_info_flags
     if not base_ptr:is_valid() then
         return false
     end
@@ -978,16 +953,11 @@ end
 ---@param flag eVehicleModelInfoFlags
 ---@param toggle boolean
 function Vehicle:SetModelInfoFlag(flag, toggle)
-    if not self:IsValid() then
+    if not self:IsValid() or not self.m_internal then
         return
     end
 
-    self:ReadMemoryLayout()
-    if not self.layout then
-        return
-    end
-
-    local base_ptr = self.layout.m_model_info_flags
+    local base_ptr = self.m_internal.m_model_info_flags
     if base_ptr:is_null() then
         return
     end
@@ -1003,6 +973,35 @@ function Vehicle:SetModelInfoFlag(flag, toggle)
     local Bitwise   = toggle and Bit.set or Bit.clear
     local new_bits  = Bitwise(flag_bits, bit_pos)
     flag_ptr:set_dword(new_bits)
+end
+
+---@param bone_index number
+---@return fMatrix44
+function Vehicle:GetBoneMatrix(bone_index)
+    if not self:IsValid() or not self.m_internal then
+        return fMatrix44:zero()
+    end
+
+    return self.m_internal:GetBoneMatrix(bone_index)
+end
+
+---@param bone_index number
+---@param matrix fMatrix44
+function Vehicle:SetBoneMatrix(bone_index, matrix)
+    if not self:IsValid() or not self.m_internal then
+        return
+    end
+
+    self.m_internal:SetBoneMatrix(bone_index, matrix)
+end
+
+---@return CCarHandlingData|nil
+function Vehicle:GetHandlingData()
+    if not (self:IsValid() and self:IsCar()) then
+        return
+    end
+
+    return self.m_internal:GetHandlingData()
 end
 
 -- Serializes a vehicle to JSON.
@@ -1070,29 +1069,6 @@ function Vehicle.CreateFromJSON(filename, warp_into)
     end
 
     return new_veh
-end
-
----@param bone_index number
-function Vehicle:GetBoneMatrix(bone_index)
-    if not self:IsValid() then return end
-    if not self.layout then self:ReadMemoryLayout() end
-
-    local CVehicle = self.layout
-    if not CVehicle then return end
-
-    return CVehicle:GetBoneMatrix(bone_index)
-end
-
----@param bone_index number
----@param matrix fMatrix44
-function Vehicle:SetBoneMatrix(bone_index, matrix)
-    if not self:IsValid() then return end
-    if not self.layout then self:ReadMemoryLayout() end
-
-    local CVehicle = self.layout
-    if not CVehicle then return end
-
-    CVehicle:SetBoneMatrix(bone_index, matrix)
 end
 
 -------------------------

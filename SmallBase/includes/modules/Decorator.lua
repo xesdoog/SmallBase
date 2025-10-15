@@ -66,12 +66,12 @@ function Decorator:DebugDump(entity)
     end
 
     if not self.RegisteredEntities[entity] then
-        Backend:debug(string.format("[%s] is not registered.", entity))
+        Backend:debug(_F("[%s] is not registered.", entity))
         return
     end
 
     Backend:debug(
-        string.format(
+        _F(
             "[%s] is registered to %s as %s",
             entity,
             self.RegisteredEntities[entity].key,

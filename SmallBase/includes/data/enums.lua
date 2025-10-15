@@ -12,7 +12,7 @@ eGameState             = {
     InMPCutscene  = 6,
 }
 
----@enum eModelTypes
+---@enum eModelType
 eModelTypes            = {
     Invalid       = 0,
     Object        = 1,
@@ -77,8 +77,23 @@ eVehicleClasses        = {
     OpenWheel      = 22,
 }
 
+---@enum eHandlingType
+eHandlingType = {
+    HANDLING_TYPE_BIKE            = 0,
+    HANDLING_TYPE_FLYING          = 1,
+    HANDLING_TYPE_VERTICAL_FLYING = 2,
+    HANDLING_TYPE_BOAT            = 3,
+    HANDLING_TYPE_SEAPLANE        = 4,
+    HANDLING_TYPE_SUBMARINE       = 5,
+    HANDLING_TYPE_TRAIN           = 6,
+    HANDLING_TYPE_TRAILER         = 7,
+    HANDLING_TYPE_CAR             = 8,
+    HANDLING_TYPE_WEAPON          = 9,
+    HANDLING_TYPE_MAX_TYPES       = 10
+}
+
 ---@enum eVehicleDrivingFlags
-eVehicleDrivingFlags   = {
+eVehicleDrivingFlags = {
     NONE                                         = 0,
     STOP_FOR_VEHICLES                            = 1,
     STOP_FOR_PEDS                                = 2,

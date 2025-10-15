@@ -3,16 +3,16 @@ local settings_tab = GUI:GetMainTab():RegisterSubtab("Settings ", function()
     GVars.backend.auto_cleanup_entities = GUI:Checkbox("Auto Cleanup Entities", GVars.backend.auto_cleanup_entities)
 
     ImGui.Spacing()
-    ImGui.BulletText(string.format("Language: %s (%s)", GVars.backend.language_name, GVars.backend.language_code))
+    ImGui.BulletText(_F("Language: %s (%s)", GVars.backend.language_name, GVars.backend.language_code))
     ImGui.Spacing()
 
-    if ImGui.BeginCombo("##langs", string.format("%s (%s)",
+    if ImGui.BeginCombo("##langs", _F("%s (%s)",
             Translator.locales[GVars.backend.language_index].name,
             Translator.locales[GVars.backend.language_index].iso
         )) then
         for i, lang in ipairs(Translator.locales) do
             local is_selected = (i == GVars.backend.language_index)
-            if ImGui.Selectable(string.format("%s (%s)", lang.name, lang.iso), is_selected) then
+            if ImGui.Selectable(_F("%s (%s)", lang.name, lang.iso), is_selected) then
                 GVars.backend.language_index = i
                 GVars.backend.language_name = lang.name
                 GVars.backend.language_code = lang.iso
@@ -94,12 +94,12 @@ local function GetSpawnedEntities()
 end
 
 local function DrawEntities()
-    ImGui.BulletText(string.format("Maximum Allowed Entities: [%d]", GetMaxAllowedEntities()))
-    ImGui.BulletText(string.format("Total Spawned Entities: [%d]", GetSpawnedEntities()))
+    ImGui.BulletText(_F("Maximum Allowed Entities: [%d]", GetMaxAllowedEntities()))
+    ImGui.BulletText(_F("Total Spawned Entities: [%d]", GetSpawnedEntities()))
     if ImGui.BeginChild("##entitytypes", 200, 200, true) then
         for etype, entities in ipairs(Backend.SpawnedEntities) do
             local count = table.getlen(entities)
-            local label = string.format("%ss (%d/%d)", EnumTostring(eEntityTypes, etype), count,
+            local label = _F("%ss (%d/%d)", EnumTostring(eEntityTypes, etype), count,
                 Backend.MaxAllowedEntities[etype])
 
             if ImGui.Selectable(label, selected_entity_type == etype) then
@@ -161,7 +161,7 @@ local function DrawThreads()
     local thread_count = table.getlen(thread_list)
     local child_height = math.min(thread_count * 30, 300)
 
-    ImGui.BulletText(string.format("Thread Count: [%d]", thread_count))
+    ImGui.BulletText(_F("Thread Count: [%d]", thread_count))
     ImGui.BeginChild("##threadlist", 400, child_height)
     ImGui.SetNextWindowBgAlpha(0)
     if ImGui.BeginListBox("##thread_listbox", -1, -1) then
@@ -219,7 +219,7 @@ local function DrawPointers()
     local child_width = resolution.x * 0.36
     local child_height = math.min(total_count * 30, resolution.y * 0.3)
 
-    ImGui.BulletText(string.format("Total Count: [%d]", total_count))
+    ImGui.BulletText(_F("Total Count: [%d]", total_count))
     ImGui.BeginChild("##ptr_list", child_width, child_height, true)
     ImGui.SetNextWindowBgAlpha(0)
     if ImGui.BeginListBox("##ptr_listbox", -1, -1) then
@@ -227,7 +227,7 @@ local function DrawPointers()
             if (ptr) then
                 local address = ptr:GetAddress()
                 local value = GPointers[name]
-                local str = string.format(
+                local str = _F(
                     "%s @ 0x%X = [%s]",
                     name,
                     address,
@@ -413,8 +413,8 @@ local function DrawSerializerDebug()
     ImGui.BulletText("Thread State:")
     ImGui.SameLine()
     GUI:TextColored(EnumTostring(eThreadState, eState), state_colors[eState])
-    ImGui.BulletText(string.format("Is Disabled: %s", not Serializer:CanAccess()))
-    ImGui.BulletText(string.format("Time Since Last Flush: %.0f seconds ago.", Serializer:GetTimeSinceLastFlush() / 1e3))
+    ImGui.BulletText(_F("Is Disabled: %s", not Serializer:CanAccess()))
+    ImGui.BulletText(_F("Time Since Last Flush: %.0f seconds ago.", Serializer:GetTimeSinceLastFlush() / 1e3))
 
     if GUI:Button("Dump Serializer") then
         Serializer:DebugDump()
@@ -424,7 +424,7 @@ end
 local function DrawTranslatorDebug()
     ImGui.TextDisabled("You can switch between available test languages in the settings tab.")
     ImGui.Spacing()
-    ImGui.BulletText(string.format("%s %s.", _T("TEST"), GVars.backend.language_name))
+    ImGui.BulletText(_F("%s %s.", _T("TEST"), GVars.backend.language_name))
 
     if GUI:Button("Reload Translator") then
         Translator:Reload()
@@ -500,6 +500,9 @@ local function DrawDummyVehSpawnMenu()
     end
 end
 
+local function DrawMiscTests()
+end
+
 debug_tab:RegisterGUI(function()
     ImGui.BeginTabBar("##debug")
     ImGui.PushTextWrapPos(ImGui.GetFontSize() * 35)
@@ -538,6 +541,11 @@ debug_tab:RegisterGUI(function()
         DrawDummyVehSpawnMenu()
         ImGui.EndTabItem()
     end
+
+    -- if ImGui.BeginTabItem("Misc Tests") then
+    --     DrawMiscTests()
+    --     ImGui.EndTabItem()
+    -- end
 
     ImGui.PopTextWrapPos()
     ImGui.EndTabBar()

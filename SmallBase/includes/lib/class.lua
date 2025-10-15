@@ -5,7 +5,7 @@
 ---@field new? fun(...): T
 ---@field init? fun(self: T, ...): T
 ---@field extend fun(self: T, subclassName: string): T
----@field super fun(self: T): T
+---@field super fun(self: T): ClassMeta<T>
 ---@field isinstance fun(self: any, class: any): boolean
 ---@field notify fun(_, fmt: string, ...?: any) : nil
 
@@ -15,15 +15,18 @@
 ---@generic T
 ---@param name string Class name
 ---@param base T? Optional: Parent class (inheritance)
+---@param size? integer Optional: sizeof class
 ---@return ClassMeta<T>
-function Class(name, base)
-    local cls = {}
+function Class(name, base, size)
+    size = size or SizeOf(GenericClass)
+
+    local cls = { m_size = size }
     cls.__index = cls
-    cls.__name = name or "unk"
-    cls.__type = (name)
+    cls.__name = name
+    cls.__type = name
 
     -- optional inheritance
-    if base then
+    if (base) then
         -- so I have to manually copy base metamethods? https://www.youtube.com/watch?v=AxkZJmi-5xc
         for k, v in pairs(base) do
             if k:match("^__") and cls[k] == nil then
@@ -64,7 +67,7 @@ function Class(name, base)
 
                 return instance
             end,
-            __index = base
+            __index = base,
         }
     )
 
@@ -72,11 +75,13 @@ function Class(name, base)
         return self.__base or self
     end
 
-    ---@param subclassName string
-    function cls:extend(subclassName)
-        return Class(subclassName, self)
+    ---@param sub_ame string
+    ---@param sub_size? integer
+    function cls:extend(sub_ame, sub_size)
+        return Class(sub_ame, self, sub_size)
     end
 
+    ---@param of any
     function cls:isinstance(of)
         return IsInstance(self, of)
     end

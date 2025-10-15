@@ -11,6 +11,8 @@ PatternScanner = require("includes.services.PatternScanner"):init()
 --
 -- You can call `PointerScanner:IsDone()` to double check.
 ---@class GPointers
+---@field GameState pointer<byte>
+---@field GameTime pointer<uint32_t>
 GPointers = {
     Init = function()
         PatternScanner:Scan()
@@ -24,14 +26,14 @@ PatternScanner:Add("ScriptGlobals", "48 8D 15 ? ? ? ? 4C 8B C0 E8 ? ? ? ? 48 85 
     GPointers.ScriptGlobals = ptr:add(0x3):rip()
 end)
 
-PatternScanner:Add("CWheelOffset", "3B B7 ? ? ? ? 7D 0D", function(ptr)
-    if ptr:is_null() then
-        GPointers.CWheelOffset = 0
-        return
-    end
+-- PatternScanner:Add("CWheelOffset", "3B B7 ? ? ? ? 7D 0D", function(ptr)
+--     if ptr:is_null() then
+--         GPointers.CWheelOffset = 0
+--         return
+--     end
 
-    GPointers.CWheelOffset = ptr:get_disp32(0x2) -- cmp esi, [rdi+0000C38h] (b3586.0)
-end)
+--     GPointers.CWheelOffset = ptr:get_disp32(0x2) -- cmp esi, [rdi+0000C38h] (b3586.0)
+-- end)
 
 PatternScanner:Add("GameVersion", "8B C3 33 D2 C6 44 24 20", function(ptr)
     if ptr:is_null() then

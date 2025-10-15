@@ -37,13 +37,17 @@ end)
 
 ### Registering a Thread
 
-```lua
-ThreadManager:RegisterNewThread("MyThread", function()
-    if GVars.some_feature_enabled then
-        GoofAround()
-    end
-end)
-```
+`CreateNewThread(name: string, callback: function, suspended_thread: optional<boolean>, debug_only: optional<boolean>)`
+
+- Example:
+
+    ```lua
+    ThreadManager:CreateNewThread("MyThread", function()
+        if GVars.some_feature_enabled then
+            GoofAround()
+        end
+    end)
+    ```
 
 ### Controlling Threads
 
@@ -86,8 +90,9 @@ Threads appear in a debug tab with color-coded states and controls:
 ## API Compatibility
 
 - Uses `script.run_in_fiber` or `script.run_in_callback` based on API version.
-- Falls back to a noop in mock/test environment.
+- Falls back to coroutines in test environments.
 
 ## Notes
 
-- Threads can be created in a suspended state by setting the last optional parameter to `true` in the `RegisterNewThread` method.
+- Threads can be initialized in a suspended state by setting the third parameter to `true` in the `CreateNewThread` method.
+- Threads can be registered to run only in debug environments by setting the last parameter to `true` in the `CreateNewThread` method.

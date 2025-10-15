@@ -5,36 +5,34 @@
 --------------------------------------
 ---@ignore
 ---@class CWheel
----@field private m_addr pointer
----@field m_offset_from_body pointer //0x20 `float`
----@field m_unk_030 pointer //0x30 unknown?
----@field m_world_pos pointer // 0x3C `vec3`
----@field m_world_velocity vec3 //0xB0 `vec3`
----@field m_rotation_speed pointer //0x168 `float radians`
----@field m_traction_loss pointer //0x16C `float?|int?`
----@field m_temperature pointer //0x170 `int?`
----@field m_tire_grip pointer //0x190 `int?`
----@field m_tire_grip_wet pointer //0x194 `int?`
----@field m_tire_drag_coeff pointer //0x198 `float`
----@field m_top_speed_mult pointer //0x19C `float`
----@field m_steer_angle pointer //0x1C4 `radians` `float`
----@field m_brake_pressure pointer //0x1D4 `float`
----@field m_throttle pointer //0x1D8 `float`
----@field m_cur_health pointer //0x1E0 `float`
----@field m_max_health pointer //0x1E4 `float`
----@field unk_flags_1EC pointer //0x1EC `dword`
----@field unk_flags_1F0 pointer //0x1F0 `dword`
----@field m_surface_id integer //0x1F2 `int`
----@field m_is_in_air pointer //0x1F3 `bool`
----@field m_is_burst pointer //0x1F4 `bool`
----@field m_offset_pos_x pointer //0x40 `float`
----@field m_offset_pos_y pointer //0x44 `float`
----@field m_offset_pos_z pointer //0x48 `float`
----@field m_wheel_transform pointer[] // 0x90 - 0xBC `rage::fMatrix34`
----@field m_drive_flags pointer //0xC8 `dword`
+---@field private m_ptr pointer
+---@field private m_size uint16_t
+---@field m_offset_from_body pointer<float> //0x020
+---@field m_unk_0030 pointer // ?? 0x030
+---@field m_world_pos pointer<vec3> // 0x03C
+---@field m_wheel_transform array<pointer<fMatrix44>> // 0x090 - 0x0BC `rage::fMatrix44`
+---@field m_unk_flags pointer<uint32_t> //0x0C8
+---@field m_rotation_speed pointer<float> // 0x168 `radians`
+---@field m_traction_loss pointer<float> // 0x16C
+---@field m_unk0170 pointer // ?? 0x170
+---@field m_unk0190 pointer // ?? 0x190
+---@field m_unk0194 pointer // ?? 0x194
+---@field m_tire_drag_coeff pointer<float> // 0x198
+---@field m_top_speed_mult pointer<float> // 0x19C
+---@field m_steer_angle pointer<float> // 0x1C4 `radians`
+---@field m_brake_pressure pointer<float> // 0x1D4
+---@field m_throttle pointer<float> // 0x1D8
+---@field m_cur_health pointer<float> // 0x1E0
+---@field m_max_health pointer //0x1E4
+---@field unk_flags_1EC pointer<uint32_t> // 0x1EC
+---@field unk_flags_1F0 pointer<uint32_t> // 0x1F0
+---@field m_surface_id pointer<uint16_t> // 0x1F2
+---@field m_is_in_air pointer<byte> // 0x1F3 `bool`
+---@field m_is_burst pointer<byte> // 0x1F4 `bool`
 ---@overload fun(addr: pointer): CWheel|nil
-CWheel = {}
+CWheel = { m_size = 0x1FC }
 CWheel.__index = CWheel
+CWheel.__type = "CWheel"
 setmetatable(CWheel, {
     __call = function(cls, addr)
         return cls.new(addr)
@@ -49,16 +47,17 @@ function CWheel.new(addr)
 
     local instance = setmetatable({}, CWheel)
 
-    instance.m_addr = addr
-    instance.m_offset_from_body = addr:add(0x20)
-    instance.m_unk_030 = addr:add(0x30)
-    instance.m_world_pos = addr:add(0x3C)
-    instance.m_world_velocity = addr:add(0xB0)
+    instance.m_ptr = addr
+    instance.m_offset_from_body = addr:add(0x020)
+    instance.m_unk_0030 = addr:add(0x030)
+    instance.m_world_pos = addr:add(0x03C)
+    instance.m_wheel_transform = { addr:add(0x090), addr:add(0x0A0), addr:add(0x0B0), addr:add(0x0C0) }
+    instance.m_unk_flags = addr:add(0x0C8)
     instance.m_rotation_speed = addr:add(0x168)
     instance.m_traction_loss = addr:add(0x16C)
-    instance.m_temperature = addr:add(0x170)
-    instance.m_tire_grip = addr:add(0x190)
-    instance.m_tire_grip_wet = addr:add(0x194)
+    instance.m_unk0170 = addr:add(0x170)
+    instance.m_unk0190 = addr:add(0x190)
+    instance.m_unk0194 = addr:add(0x194)
     instance.m_tire_drag_coeff = addr:add(0x198)
     instance.m_top_speed_mult = addr:add(0x19C)
     instance.m_steer_angle = addr:add(0x1C4)
@@ -71,21 +70,16 @@ function CWheel.new(addr)
     instance.m_surface_id = addr:add(0x1F2)
     instance.m_is_in_air = addr:add(0x1F3)
     instance.m_is_burst = addr:add(0x1F4)
-    instance.m_offset_pos_x = addr:add(0x40)
-    instance.m_offset_pos_y = addr:add(0x44)
-    instance.m_offset_pos_z = addr:add(0x48)
-    instance.m_wheel_transform = { addr:add(0x90), addr:add(0xA0), addr:add(0xB0) }
-    instance.m_drive_flags = addr:add(0xC8)
 
     return instance
 end
 
 function CWheel:IsValid()
-    return self.m_addr and not self.m_addr:is_null()
+    return self.m_ptr and self.m_ptr:is_valid()
 end
 
 function CWheel:GetAddress()
-    return self:IsValid() and self.m_addr:get_address() or 0x0
+    return self:IsValid() and self.m_ptr:get_address() or 0x0
 end
 
 ---@return vec3 -- The world position of the wheel or a zero vector if the wheel is invalid.
@@ -97,19 +91,41 @@ function CWheel:GetWorldPosition()
     return self.m_world_pos:get_vec3()
 end
 
---[[
--- broken
-function CWheel:GetAngle(transform_index)
+---@return vec3
+function CWheel:GetTransformRight()
+    return self.m_wheel_transform[1]:get_vec3()
+end
+
+---@return vec3
+function CWheel:GetTransformFwd()
+    return self.m_wheel_transform[2]:get_vec3()
+end
+
+---@return vec3
+function CWheel:GetTransformUp()
+    return self.m_wheel_transform[3]:get_vec3()
+end
+
+---@return vec3
+function CWheel:GetTransformPos()
+    return self.m_wheel_transform[4]:get_vec3()
+end
+
+---@return float
+function CWheel:GetTiltAngle()
     if not self:IsValid() then
         return 0.0
     end
 
-    local up = self.m_wheel_transform[transform_index]:get_vec3() -- 4th column not needed
+    local up = self:GetTransformUp()
     local world_up = vec3:new(0, 0, 1)
+
     local dot = up:dot_product(world_up)
     local mag = up:length()
-    local angle = math.acos(dot / mag)
 
-    return math.deg(angle)
+    if (mag == 0) then
+        return 0.0
+    end
+
+    return math.deg(math.acos(dot / mag))
 end
-]]

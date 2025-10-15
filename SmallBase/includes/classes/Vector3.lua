@@ -5,8 +5,7 @@
 --------------------------------------
 -- A 3D vector utility class with arithmetic, geometric, and serialization helpers.
 ---@class vec3
----@overload fun(x: number, y: number, z: number): vec3
----@overload fun(pos: { x: number, y: number, z: number } | { [1]: number, [2]: number, [3]: number }): vec3
+---@field private assert function
 ---@operator add(vec3|number): vec3
 ---@operator sub(vec3|number): vec3
 ---@operator mul(vec3|number): vec3
@@ -17,9 +16,6 @@
 ---@operator lt(vec3): boolean
 
 vec3.__type = "vec3"
-vec3.magnitude = vec3.length
-vec3.mag = vec3.length
-
 
 --------------------------------------
 -- Constructors & Utils
@@ -34,7 +30,7 @@ function vec3:assert(arg)
         return true
     else
         error(
-            string.format("Invalid argument. Expected 3D vector, got %s instead", type(arg))
+            _F("Invalid argument. Expected 3D vector, got %s instead", type(arg))
         )
     end
 end
@@ -300,3 +296,6 @@ if vec2 then
         return vec2:new(self.x, self.y)
     end
 end
+
+vec3.magnitude = vec3.length
+vec3.mag = vec3.length

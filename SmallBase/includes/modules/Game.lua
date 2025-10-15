@@ -241,7 +241,7 @@ function Game.SafeRemovePedFromGroup(ped)
 end
 
 ---@param entity integer
----@param entity_type? eEntityTypes
+---@param entity_type? eEntityType
 function Game.DeleteEntity(entity, entity_type)
     ThreadManager:RunInFiber(function()
         entity_type = entity_type or Game.GetEntityType(entity)
@@ -660,25 +660,25 @@ function Game.GetEntityPlayerIsFreeAimingAt(player)
     return bIsAiming and Entity or nil
 end
 
----@param entity integer
+---@param entity handle
 ---@return integer
 function Game.GetEntityModel(entity)
     return ENTITY.GET_ENTITY_MODEL(entity)
 end
 
----@param entity integer
----@return integer
+---@param entity handle
+---@return eEntityType
 function Game.GetEntityType(entity)
     return ENTITY.GET_ENTITY_TYPE(entity)
 end
 
----@param entity integer
+---@param entity handle
 ---@return string
 function Game.GetEntityTypeString(entity)
     return EnumTostring(eEntityTypes, Game.GetEntityType(entity)) or "Unknown"
 end
 
----@param model integer
+---@param model joaat_t
 ---@return vec3, vec3
 function Game.GetModelDimensions(model)
     local vmin, vmax = vec3:zero(), vec3:zero()
@@ -690,10 +690,10 @@ function Game.GetModelDimensions(model)
     return vmin, vmax
 end
 
----Returns a number for the vehicle seat the provided ped
----
----is sitting in (-1 driver, 0 front passenger, etc...).
----@param ped integer
+-- Returns a number for the vehicle seat the provided ped
+--
+-- is sitting in (-1 driver, 0 front passenger, etc...).
+---@param ped handle
 ---@return integer | nil
 function Game.GetPedVehicleSeat(ped)
     if not PED.IS_PED_SITTING_IN_ANY_VEHICLE(ped) then
@@ -1157,7 +1157,7 @@ end
 
 ---@param modelHash integer
 function Game.GetPedName(modelHash)
-    return t_PedLookup[modelHash].name or string.format("0x%X", modelHash)
+    return t_PedLookup[modelHash].name or _F("0x%X", modelHash)
 end
 
 ---@param model integer|string
@@ -1262,4 +1262,40 @@ function Game.FadeInEntity(entity)
             end
         end
     end
+end
+
+-- Loads ground at the given coordinates. **Must be called in a coroutine**.
+---@param coords vec3
+function Game.LoadGroundAtCoord(coords)
+    local max_ground_check = 1000
+    local max_attempts = 300
+    local ground_z = coords.z
+    local current_attempts = 0
+    local found = false
+    local p1, height = false, 0
+
+    while (not found and current_attempts < max_attempts) do
+        found, ground_z = MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, max_ground_check, ground_z, false, false)
+        STREAMING.REQUEST_COLLISION_AT_COORD(coords.x, coords.y, coords.z)
+
+        if (current_attempts % 10 == 0) then
+            coords.z = coords.z + 25
+        end
+
+        current_attempts = current_attempts + 1
+        yield()
+    end
+
+    if (not found) then
+        return false
+    end
+
+    p1, height = WATER.GET_WATER_HEIGHT(coords.x, coords.y, coords.z, height)
+    if (p1) then
+        coords.z = height
+    else
+        coords.z = ground_z + 1.0
+    end
+
+    return true
 end

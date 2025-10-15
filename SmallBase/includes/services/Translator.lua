@@ -22,14 +22,14 @@ Translator.locales = locales_loaded and t or {{ name = "English", iso = "en-US" 
 
 function Translator:Load()
     local iso = GVars.backend.language_code or "en-US"
-    local bool, res -- fwd decl
+    local ok, res -- fwd decl
 
     if (iso ~= "en-US") then -- skip already loaded default
-        local path = string.format("lib.translations.%s", iso)
-        bool, res = pcall(require, path)
+        local path = _F("lib.translations.%s", iso)
+        ok, res = pcall(require, path)
     end
 
-    self.labels = (bool and (type(res) == "table")) and res or self.default_labels
+    self.labels = (ok and (type(res) == "table")) and res or self.default_labels
     self.lang_code = iso
     self.m_log_history = {}
     self.m_last_load_time:reset()
@@ -59,12 +59,13 @@ function Translator:Reload()
         return
     end
 
-    -- We can't even unload files because package is fully disabled. loadfile? in yopur dreams... 🥲
+    -- We can't even unload files because package is fully disabled. loadfile? in your dreams... 🥲
     self:Load()
     Toast:ShowMessage("Translator", "Reloaded.")
 end
 
 ---@param label string
+---@return string
 function Translator:GetCache(label)
     self.m_cache[self.lang_code] = self.m_cache[self.lang_code] or {}
     return self.m_cache[self.lang_code][label]
@@ -87,16 +88,15 @@ function Translator:Translate(label)
     end
 
     local cached = self:GetCache(label)
-    if (cached and (self.lang_code == GVars.backend.language_code)) then
+    if (cached) then
         return cached
     end
 
     local text = self.labels[label]
-
     if (not text) then
         self:Notify("Missing label!")
         Backend:debug("Missing label: %s", label)
-        return string.format("[!MISSING LABEL]: %s", label)
+        return _F("[!MISSING LABEL]: %s", label)
     end
 
     if (string.isnullorempty(text)) then

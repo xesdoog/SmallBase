@@ -227,7 +227,7 @@ function Tab:AddLoopedCommand(label, gvar_key, callback, on_disable, meta)
 end
 
 function Tab:Notify(fmt, ...)
-    local msg = (... ~= nil) and string.format(fmt, ...) or fmt
+    local msg = (... ~= nil) and _F(fmt, ...) or fmt
     Toast:ShowMessage(self:GetName(), msg, false, 5)
 end
 
@@ -374,18 +374,18 @@ function GUI:Draw()
     end
 end
 
--- Calculates a new window size percentage and center position vectors in relation to the screen resolution.
----@param x_percent float
----@param y_percent float
----@return vec2, vec2
-function GUI:GetNewWindowSizeAndCenterPos(x_percent, y_percent)
+-- Calculates a new window size and center position vectors in relation to the screen resolution.
+---@param x_mod float x modifier (ex: 0.5)
+---@param y_mod float y modifier (ex: 0.3)
+---@return vec2, vec2 -- size, center position
+function GUI:GetNewWindowSizeAndCenterPos(x_mod, y_mod)
     if self.m_screen_resolution:is_zero() then
         self.m_screen_resolution = Game.GetScreenResolution()
     end
 
     local size = vec2:new(
-        self.m_screen_resolution.x * x_percent,
-        self.m_screen_resolution.y * y_percent
+        self.m_screen_resolution.x * x_mod,
+        self.m_screen_resolution.y * y_mod
     )
     local center = vec2:new(
         (self.m_screen_resolution.x - size.x) / 2,
@@ -395,31 +395,35 @@ function GUI:GetNewWindowSizeAndCenterPos(x_percent, y_percent)
     return size, center
 end
 
--- Just a wrapper for ImGui::TextColored.
+-- Wrapper for `ImGui::TextColored`.
 ---@param text string
 ---@param color Color
 ---@param opts? { alpha: number, wrap_pos: number }
 function GUI:TextColored(text, color, opts)
     opts = opts or {}
-    local r, g, b, a
-    if not IsInstance(color, Color) then
+    local r, g, b, a -- fwd decl
+    local has_wrap_pos = type(opts.wrap_pos) == "number"
+
+    if (not IsInstance(color, Color)) then
         r, g, b, a = 1, 0.1, 0, 1
     end
 
     r, g, b, a = color:AsFloat()
     ImGui.PushStyleColor(ImGuiCol.Text, r, g, b, opts.alpha or a or 1)
-    if (type(opts.wrap_pos) == "number") then
+
+    if (has_wrap_pos) then
         ImGui.PushTextWrapPos(opts.wrap_pos)
     end
+
     ImGui.TextWrapped(text)
     ImGui.PopStyleColor(1)
 
-    if (type(opts.wrap_pos) == "number") then
+    if (has_wrap_pos) then
         ImGui.PopTextWrapPos()
     end
 end
 
--- Creates a help marker (?) symbol in front of the widget this function is called after.
+-- Creates a help marker `(?)` symbol in front of the widget this function is called after.
 --
 -- When the symbol is hovered, it displays a tooltip.
 ---@param text string
@@ -475,7 +479,7 @@ end
 ---@param lines string[]
 ---@param wrap_pos? number
 function GUI:TooltipMultiline(lines, wrap_pos)
-    if( GVars.ui.disable_tooltips) then
+    if (GVars.ui.disable_tooltips) then
         return
     end
 
@@ -496,7 +500,7 @@ function GUI:TooltipMultiline(lines, wrap_pos)
     end
 end
 
--- Draws a small confirmation popup window with two Yes/No buttons.
+-- Draws a small confirmation popup window with Yes/No buttons.
 --
 -- Can execute a callback function on confirmation.
 ---@param name string
@@ -582,7 +586,7 @@ end
 ---@param fmt string
 ---@param ... any
 function GUI:Notify(fmt, ...)
-    local msg = (... ~= nil) and string.format(fmt, ...) or fmt
+    local msg = (... ~= nil) and _F(fmt, ...) or fmt
     local name = Backend.script_name:replace("_", " "):titlecase()
     Toast:ShowMessage(name, msg)
 end
@@ -649,8 +653,8 @@ end
 
 --- Draws an ImGui item and handles enabling/disabling it on `condition`.
 ---@generic T1, T2, T3, T4, T5
----@param ImGuiItem fun(...: any): T1, T2, T3, T4, T5 ImGui item
----@param condition boolean Disables the item when true
+---@param ImGuiItem fun(...: any): T1, T2, T3, T4, T5
+---@param condition boolean Disables the item when true.
 ---@param ... any
 ---@return T1, T2, T3, T4, T5, ...
 function GUI:ConditionalItem(ImGuiItem, condition, ...)
@@ -726,8 +730,8 @@ GUI.Sounds = {
 
 ---@enum GUI.MouseButtons
 GUI.MouseButtons = {
-    LEFT = 0,
-    RIGHT = 1
+    LEFT = 0x0,
+    RIGHT = 0x1
 }
 
 --#endregion
