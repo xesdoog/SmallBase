@@ -17,7 +17,7 @@
 GenericClass = setmetatable({}, {
     __index = { m_size = 0x40, __type = "GenericClass" },
     __newindex = function(...)
-        error("Attempt to modify read-only GenericClass!")
+        error("Attempt to modify read-only Generic Class!")
     end,
     __metatable = false
 })
@@ -54,6 +54,13 @@ GenericClass = setmetatable({}, {
 ---@alias Callback fun()
 ---@alias Predicate<P1, P2, P3, P4, P5> fun(p1: P1, p2?: P2, p3?: P3, p4?: P4, p5?: P5): boolean
 ---@alias Comparator<A, B> fun(a: A, b: B): boolean
+
+-- A poor man's `nullptr` 🥲
+NULLPTR = (function()
+    local p = memory.scan_pattern("48 8B C4")
+    p:set_address(0x0)
+    return p
+end)()
 
 ---@generic T
 ---@param t array<T>

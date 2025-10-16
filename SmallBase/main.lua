@@ -44,7 +44,7 @@ CommandExecutor:RegisterCommand("spawnjsonveh", function(args)
         Vehicle.CreateFromJSON(filename, warp)
     end)
 end, {
-    args = {"filename<string>", "Optional: warp_into<boolean>"},
+    args = { "filename<string>", "Optional: warp_into<boolean>" },
     description = "Spawns a vehicle from JSON."
 })
 

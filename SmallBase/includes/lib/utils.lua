@@ -340,6 +340,14 @@ end
 
 --#region extensions
 
+---@type Comparator<pointer, pointer>
+function memory.pointer:__eq(right)
+    if not IsInstance(right, "pointer") then
+        return false
+    end
+
+    return self:get_address() == right:get_address()
+end
 
 -- Retrieves a 32-bit displacement value from the memory address, optionally adding an offset and adjustment.
 --

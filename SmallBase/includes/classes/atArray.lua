@@ -8,13 +8,12 @@
 ---@class atArray<T>
 ---@field private m_address pointer
 ---@field private m_data_ptr pointer
----@field private m_size integer
+---@field private m_size uint16_t
 ---@field private m_count uint16_t
----@field private m_data_type any
----@field private m_data_size uint16_t
 ---@field private m_data array<pointer>
+---@field private m_data_type any
 ---@field private m_last_update_time Time.TimePoint
----@overload fun(address: pointer, data_type: any, data_size?: number): atArray
+---@overload fun(address: pointer, data_type?: ClassMeta): atArray
 atArray = {}
 atArray.__index = atArray
 atArray.__type = "atArray"
@@ -26,49 +25,39 @@ setmetatable(atArray, {
 
 ---@generic T
 ---@param address pointer
----@param data_type? T
----@param data_size? integer
+---@param data_type? ClassMeta<T>
 ---@return atArray<T>
-function atArray.new(address, data_type, data_size)
-    local default = setmetatable(
+function atArray.new(address, data_type)
+    local instance = setmetatable(
         {
-            m_address = 0x0,
-            m_data_ptr = 0x0,
-            m_size = 0,
-            m_count = 0,
-            m_data_size = 0,
-            m_data = {}
+            m_address = NULLPTR,
+            m_data_ptr = NULLPTR,
+            m_size = 0x0,
+            m_count = 0x0,
+            m_data = {},
+            m_data_type = nil
         },
         atArray
     )
 
     if not (IsInstance(address, "pointer") and address:is_valid()) then
-        return default
+        return instance
     end
 
     local array_size = address:add(0x8):get_word()
     if (array_size == 0) then
-        return default
+        return instance
     end
 
-    data_type = data_type or GenericClass
-    data_size = data_size or SizeOf(data_type)
-    local instance = setmetatable(
-        {
-            m_address = address,
-            m_data_ptr = address:deref(),
-            m_size = array_size,
-            m_count = address:add(0xA):get_word(),
-            m_data_type = data_type,
-            m_data_size = data_size,
-            m_data = {},
-            m_last_update_time = TimePoint:new()
-        },
-        atArray
-    )
+    instance.m_address = address
+    instance.m_data_ptr = address:deref()
+    instance.m_size = array_size
+    instance.m_count = address:add(0xA):get_word()
+    instance.m_data_type = data_type
+    instance.m_last_update_time = TimePoint:new()
 
     for i = 0, array_size - 1 do
-        instance.m_data[i+1] = instance.m_data_ptr:add(i * data_size):deref()
+        instance.m_data[i+1] = instance.m_data_ptr:add(i * 0x8):deref()
     end
 
     return instance
@@ -76,16 +65,28 @@ end
 
 ---@return boolean
 function atArray:IsValid()
-    return IsInstance(self.m_address, "pointer")
-    and IsInstance(self.m_data_ptr, "pointer")
-    and self.m_address:is_valid()
-    and self.m_data_ptr:is_valid()
+    return self.m_address:is_valid() and self.m_data_ptr:is_valid()
+end
+
+---@return boolean
+function atArray:IsNull()
+    return not self:IsValid()
 end
 
 ---@return boolean
 function atArray:IsEmpty()
     self:Update()
     return self.m_size == 0
+end
+
+function atArray:Clear()
+    self.m_address = NULLPTR
+    self.m_data_ptr = NULLPTR
+    self.m_data = {}
+    self.m_size = 0x0
+    self.m_count = 0x0
+    self.m_data_type = nil
+    self.m_last_update_time:reset()
 end
 
 function atArray:Update()
@@ -106,7 +107,7 @@ function atArray:Update()
     end
 
     for i = 0, self.m_size - 1 do
-        self.m_data[i+1] = self.m_data_ptr:add(i * self.m_data_size):deref()
+        self.m_data[i+1] = self.m_data_ptr:add(i * 0x8):deref()
     end
 
     self.m_last_update_time:reset()
@@ -154,12 +155,12 @@ end
 
 ---@return uint16_t
 function atArray:DataSize()
-    return self.m_data_size
+    return SizeOf(self.m_data)
 end
 
 ---@return string
 function atArray:DataType()
-    return (self.m_data_type and self.m_data_type.__type) or "None"
+    return (self.m_data_type and self.m_data_type.__type) or "pointer<undefined>"
 end
 
 ---@param i number
