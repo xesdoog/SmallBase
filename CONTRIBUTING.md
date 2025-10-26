@@ -96,7 +96,7 @@ You are free to use any style you want, except in these cases:
 | Enum Members | Preferably UPPER_SNAKE_CASE but PascalCase is also allowed | `eExampleEnum.SOME_MEMBER`/`eExampleEnum.SomeMember` |
 | Classes | PascalCase | `MyNewClass = Class("MyNewClass")` |
 | Class Methods | PascalCase | `function MyNewClass:ExampleMethod(...) end` |
-| Class Private Variables | snake_case prefixed with an `m` | `m_handle` |
+| Class Members | snake_case prefixed with an `m` | `m_handle` |
 
 ### Formatting
 

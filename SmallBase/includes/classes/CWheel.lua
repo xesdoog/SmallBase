@@ -74,10 +74,12 @@ function CWheel.new(addr)
     return instance
 end
 
+---@return boolean
 function CWheel:IsValid()
     return self.m_ptr and self.m_ptr:is_valid()
 end
 
+---@return integer
 function CWheel:GetAddress()
     return self:IsValid() and self.m_ptr:get_address() or 0x0
 end
@@ -91,26 +93,31 @@ function CWheel:GetWorldPosition()
     return self.m_world_pos:get_vec3()
 end
 
+-- test
 ---@return vec3
 function CWheel:GetTransformRight()
     return self.m_wheel_transform[1]:get_vec3()
 end
 
+-- test
 ---@return vec3
 function CWheel:GetTransformFwd()
     return self.m_wheel_transform[2]:get_vec3()
 end
 
+-- test
 ---@return vec3
 function CWheel:GetTransformUp()
     return self.m_wheel_transform[3]:get_vec3()
 end
 
+-- test
 ---@return vec3
 function CWheel:GetTransformPos()
     return self.m_wheel_transform[4]:get_vec3()
 end
 
+-- test
 ---@return float
 function CWheel:GetTiltAngle()
     if not self:IsValid() then

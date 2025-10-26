@@ -148,14 +148,14 @@ end
 --------------------------------------
 
 -- Returns the magnitude (length) of the vector.
----@return number
+---@return float
 function vec3:length()
     return math.sqrt(self.x ^ 2 + self.y ^ 2 + self.z ^ 2)
 end
 
 -- Returns the distance between this vector and another.
 ---@param b vec3
----@return number
+---@return float
 function vec3:distance(b)
     self:assert(b)
     local dist_x = (self.x - b.x) ^ 2

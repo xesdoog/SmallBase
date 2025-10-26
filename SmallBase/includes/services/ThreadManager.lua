@@ -4,9 +4,9 @@ local API_VER <const> = Backend:GetAPIVersion()
 
 ---@enum eThreadState
 eThreadState = {
-    UNK = -1,
-    DEAD = 0,
-    RUNNING = 1,
+    UNK       = -1,
+    DEAD      = 0,
+    RUNNING   = 1,
     SUSPENDED = 2,
 }
 
@@ -181,7 +181,7 @@ end
 ---@class ThreadManager : ClassMeta<ThreadManager>
 ---@field private m_threads table<string, Thread>
 ---@field private m_mock_routines table<integer, thread>
----@field private m_callback_handlers table<eAPIVersion, { dispatch: function}>
+---@field private m_callback_handlers table<integer, { dispatch: function}>
 local ThreadManager = Class("ThreadManager")
 
 ---@return ThreadManager

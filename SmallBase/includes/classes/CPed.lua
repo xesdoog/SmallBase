@@ -71,10 +71,10 @@ function CPed:HasSeatbelt()
     return (self.m_seatbelt & 0x3) ~= 0
 end
 
----@return number
+---@return float
 function CPed:GetSpeed()
     if not self:IsValid() then
-        return 0
+        return 0.0
     end
 
     local speed_vec = self.m_velocity:get_vec3()

@@ -1,5 +1,3 @@
----@diagnostic disable: param-type-mismatch
-
 --------------------------------------
 -- Class: Player
 --------------------------------------
@@ -29,6 +27,7 @@ function Player.new(player_id)
     local instance = setmetatable({
         m_pid = player_id,
         m_handle = ped_handle,
+    ---@diagnostic disable-next-line: param-type-mismatch
     }, Player)
 
     instance.m_internal = instance:Resolve()
@@ -37,15 +36,16 @@ end
 
 ---@return eGameState
 function Player:GetGameState()
-    if (self.m_internal and
-        self.m_internal:IsValid() and
-        self.m_internal.m_player_info and
-        self.m_internal.m_player_info:IsValid()
-    ) then
-        return self.m_internal.m_player_info:GetGameState()
+    if (not self:IsValid()) then
+        return eGameState.Invalid
     end
 
-    return eGameState.Invalid
+    local cplayerinfo = self:Resolve().m_player_info
+    if (not cplayerinfo or not cplayerinfo:IsValid()) then
+        return eGameState.Invalid
+    end
+
+    return cplayerinfo:GetGameState()
 end
 
 -- Returns whether the player is currently playing.

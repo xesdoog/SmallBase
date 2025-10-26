@@ -3,6 +3,17 @@ math.randomseed(os.time())
 
 local LUA_TABLE_OVERHEAD<const> = 3 * 0x8 -- 0x18
 
+INT_SIZES = {
+    int8_t   = 0x1,
+    int16_t  = 0x2,
+    int32_t  = 0x4,
+    int64_t  = 0x8,
+    uint8_t  = 0x1,
+    uint16_t = 0x2,
+    uint32_t = 0x4,
+    uint64_t = 0x8,
+}
+
 Bit = require("includes.modules.Bit")
 Cast = require("includes.modules.Cast")
 Time = require("includes.modules.Time")
@@ -127,9 +138,9 @@ end
 
 -- A poor man's `sizeof` 🥲
 ---@param T any
+---@param seen? set<table> Circular reference
 ---@return number
-function SizeOf(T)
-    ---@type dict
+function SizeOf(T, seen)
     local types<const> = {
         ["boolean"]   = 0x1,
         ["vec2"]      = 0x8,
@@ -142,10 +153,10 @@ function SizeOf(T)
     }
 
     local T_type<const> = type(T)
-    local resolved_type
+    local resolved_type -- fwd decl
 
     if (T_type == "table" or T_type == "userdata") then
-        if (IsInstance(T.rip, "function")) then
+        if (IsInstance(T, "pointer")) then
             resolved_type = "pointer"
         elseif (IsInstance(T.__type, "string")) then
             resolved_type = T.__type
@@ -164,50 +175,22 @@ function SizeOf(T)
     end
 
     if (T_type == "number") then
-        if (T == 0 or IsInstance(T, "float")) then
-            return 0x4
-        end
-
-        local numeric_checks<const> = {
-            ["unsigned"] = {
-                { Cast.AsUint8_t, 0x1 },
-                { Cast.AsUint16_t, 0x2 },
-                { Cast.AsUint32_t, 0x4 },
-                { Cast.AsUint64_t, 0x8 },
-            },
-            ["signed"] = {
-                { Cast.AsInt8_t, 0x1 },
-                { Cast.AsInt16_t, 0x2 },
-                { Cast.AsInt32_t, 0x4 },
-                { Cast.AsInt64_t, 0x8 },
-            }
-        }
-
-        local function num_equal(a, b)
-            return math.abs(a - b) < 1e-9
-        end
-
-        local c = Cast(T)
-        local key = T < 0 and "signed" or "unsigned"
-        local _t = numeric_checks[key]
-
-        for i = 1, #_t do
-            local method, size = _t[i][1], _t[i][2]
-            local value = method(c)
-
-            if num_equal(T, value) then
-                return size
-            end
-        end
+        return math.sizeof(T)
     end
 
     if (T_type == "table") then
+        seen = seen or {}
+        if seen[T] then
+            return 0
+        end
+        seen[T] = true
+
         if (IsInstance(T.m_size, "number")) then
             return T.m_size
         end
 
-        if (IsInstance(T.__sizeof, "number")) then
-            return T.__sizeof
+        if (T.__enum or IsInstance(T.__sizeof, "function")) then
+            return T:__sizeof()
         end
 
         if (IsInstance(T.__len, "function")) then
@@ -215,13 +198,73 @@ function SizeOf(T)
         end
 
         if (IsInstance(T.__type, "string")) then
-            return GenericClass.m_size
+            return GenericClass.m_size -- 0x40
         end
 
-        return table.sizeof(T)
+        return table.sizeof(T, seen)
     end
 
     return 0
+end
+
+-- A switch-case construct. This is only beneficial if you have **A LOT** of `if` statements;
+--
+-- otherwise regular `if-elseif-else` chains or cached lookup tables are faster and create less overhead.
+--
+-- **[Note]**: Avoid calling this per-frame. This function creates a closure every time it's called and the reason
+--
+-- for this is that it allows for more flexible and dynamic case handling. Also looks fancier lol
+--
+-- Example:
+--
+--```Lua
+-- local result = Switch(value) {
+--     [1] = function() return "one" end,
+--     [2] = function() return "two" end,
+--     default = "default"
+-- }
+--```
+--
+-- If you want a version with less overhead, use `Match` instead:
+--
+--```Lua
+-- local cases = {
+--     [1] = function() return "one" end,
+--     [2] = function() return "two" end,
+--     default = "default"
+-- }
+-- local result = Match(value, cases)
+--```
+---@param case number|string
+function Switch(case)
+    return function(cases)
+        local result = cases[case] or cases["default"]
+        assert(result ~= nil, "No case matched and no default provided!")
+        return (type(result) == "function") and result() or result
+    end
+end
+
+-- A switch-case construct without the closure overhead of `Switch`.
+--
+-- **Usage Example**:
+--
+--```Lua
+-- local cases = {
+--     [1] = function() return "one" end,
+--     [2] = function() return "two" end,
+--     default = "other"
+-- }
+-- local result = Match(value, cases)
+--```
+---@generic K: number|string
+---@generic V
+---@param case K
+---@param cases table<K, ValueOrFunction<V>>
+---@return V
+function Match(case, cases)
+    local result = cases[case] or cases["default"]
+    assert(result ~= nil, "No case matched and no default provided!")
+    return (type(result) == "function") and result() or result
 end
 
 ---@param e Enum
@@ -281,27 +324,31 @@ function Joaat(key)
     return hash
 end
 
----@param func function
----@param _args any
----@param timeout? milliseconds  -- Optional timeout in milliseconds.
-function Await(func, _args, timeout)
-    if (type(func) ~= "function") then
-        error(("Invalid argument! Function expected, got %s instead"):format(type(func)), 0)
+-- `Await` is not a true asynchronous function. Instead, it is designed to be called within a coroutine to pause execution until a condition becomes true.
+--
+-- All logic after the `Await` call will only execute once the provided function returns true.
+--
+-- If the condition isn't met before the optional timeout is reached, `Await` throws an error to prevent further execution.
+---@param func fun(args: any): boolean
+---@param args any
+---@param timeout? milliseconds  -- Optional timeout in milliseconds. Defaults to 1200ms.
+function Await(func, args, timeout)
+    local ftype = type(func)
+    if (ftype ~= "function") then
+        error(_F("Invalid argument #1! Function expected, got %s instead", ftype), 2)
     end
 
-    if type(_args) ~= "table" then
-        _args = { _args }
+    -- It is essential to use IsInstance here instead of type(args) == "table"
+    -- otherwise passing objects and userdata will fail.
+    if not IsInstance(args, "table") then
+        args = { args }
     end
 
-    if (not timeout) then
-        timeout = 3000
-    end
-
-    local startTime = Time.millis()
-    while not func(table.unpack(_args)) do
-        if (timeout and (Time.millis() - startTime) > timeout) then
-            log.warning("[Await Error]: timeout reached!")
-            return false
+    timeout = timeout or 1200
+    local start_time = Time.millis()
+    while not func(table.unpack(args)) do
+        if ((Time.millis() - start_time) > timeout) then
+            error("Timeout reached!")
         end
         yield()
     end
@@ -340,6 +387,7 @@ end
 
 --#region extensions
 
+-- Equality comparator for pointer objects.
 ---@type Comparator<pointer, pointer>
 function memory.pointer:__eq(right)
     if not IsInstance(right, "pointer") then
@@ -364,8 +412,10 @@ function memory.pointer:get_disp32(offset, adjust)
         return 0
     end
 
-    local val = self:add(offset or 0):get_int()
-    return val + (adjust or 0)
+    offset = offset or 0
+    adjust = adjust or 0
+    local val = self:add(offset):get_int()
+    return val + adjust
 end
 
 ---@return vec3
@@ -453,6 +503,29 @@ function memory.pointer:dump(size)
     )
 end
 
+---@param size? number bytes
+function memory.pointer:create_pattern(size)
+    if (self:is_null()) then
+        return ""
+    end
+
+    size = size or 0x10
+    local out = {}
+    local REG_DIRECT_RANGE<const> = Range(0xC0, 0x100)
+
+    for i = 0, size - 1 do
+        local byte = self:add(i):get_byte()
+        out[#out+1] = REG_DIRECT_RANGE:Contains(byte)
+        and "??"
+        or string.format("%02X", byte)
+    end
+
+    return table.concat(out, " ")
+end
+
+
+-- stdlib --
+
 ---@param t table
 ---@param key string|number
 ---@param value any
@@ -473,7 +546,7 @@ end
 ---@return string|number|nil -- the table key where the value was found or nil
 table.matchbyvalue = function(t, value)
     if not t or (table.getlen(t) == 0) then
-        return
+        return nil
     end
 
     for k, v in pairs(t) do
@@ -481,6 +554,8 @@ table.matchbyvalue = function(t, value)
             return k
         end
     end
+
+    return nil
 end
 
 ---@param t table
@@ -662,13 +737,24 @@ end
 
 -- Calculates an estimate of a table's size in memory.
 --
--- NOTE: This is VERY inaccurate.
+-- NOTE: This is **VERY** inaccurate.
 ---@param t table
+---@param seen? set<table>
 ---@return number
-table.sizeof = function(t)
+table.sizeof = function(t, seen)
+    if (type(t) ~= "table") then
+        return 0
+    end
+
+    seen = seen or {}
+    if seen[t] then
+        return 0
+    end
+    seen[t] = true
+
     local size = LUA_TABLE_OVERHEAD
     for k, v in pairs(t) do
-        size = size + SizeOf(k) + SizeOf(v)
+        size = size + SizeOf(k, seen) + SizeOf(v, seen)
     end
 
     return size
@@ -1080,4 +1166,49 @@ math.inrange = function(n, min, max)
     return n >= min and n <= max
 end
 
+---@param n integer
+math.sizeof = function(n)
+    local t_n = type(n)
+    assert(t_n == "number",
+        _F("Attempt to call math.sizeof on a non-integer value. Number expected, got %s instead!", t_n)
+    )
+
+    if (n == 0 or IsInstance(n, "float")) then
+        return 0x4
+    end
+
+    local int_infer<const> = {
+        ["unsigned"] = {
+            { Cast.AsUint8_t,  "uint8_t" },
+            { Cast.AsUint16_t, "uint16_t" },
+            { Cast.AsUint32_t, "uint32_t" },
+            { Cast.AsUint64_t, "uint64_t" },
+        },
+        ["signed"] = {
+            { Cast.AsInt8_t,  "int8_t" },
+            { Cast.AsInt16_t, "int16_t" },
+            { Cast.AsInt32_t, "int32_t" },
+            { Cast.AsInt64_t, "int64_t" },
+        }
+    }
+
+    local function num_equal(a, b) -- ignore lost floating point precision
+        return math.abs(a - b) < 1e-9
+    end
+
+    local c = Cast(n)
+    local key = n < 0 and "signed" or "unsigned"
+    local _t = int_infer[key]
+
+    for i = 1, #_t do
+        local method, size_key = _t[i][1], _t[i][2]
+        local value = method(c)
+
+        if num_equal(n, value) then
+            return INT_SIZES[size_key]
+        end
+    end
+
+    return 0x4
+end
 --#endregion

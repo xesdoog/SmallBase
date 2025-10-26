@@ -10,7 +10,7 @@
 ---@class Self: Player
 ---@field private m_internal CPed
 ---@field private m_vehicle? Vehicle
----@field private m_prev_vehicle? handle
+---@field private m_last_vehicle? Vehicle
 ---@field Resolve fun(self: Self) : CPed
 ---@overload fun(): Self
 Self = Class("Self", Player)
@@ -38,8 +38,42 @@ function Self:GetModelHash()
 end
 
 ---@override
+---@return Vehicle|nil
 function Self:GetVehicle()
     return self.m_vehicle
+end
+
+---@return Vehicle|nil
+function Self:GetLastVehicle()
+    return self.m_last_vehicle
+end
+
+-- A function to handle custom logic when switching vehicles (delete, restore, reset states/state flags, etc.)
+--
+-- A tangeled spaghetti example can be found [here](https://github.com/YimMenu-Lua/Samurais-Scripts/blob/main/includes/classes/Self.lua#L744).
+function Self:OnVehicleSwitch()
+    -- Your logic goes here //
+
+    -- Ex:
+    -- if (self.m_last_vehicle ~= self.m_vehicle) then
+    --     -- reset last vehicle before setting it to current.
+    -- end
+
+
+    -- keep this at the bottom
+    self.m_last_vehicle = self.m_vehicle
+    self.m_vehicle = Vehicle(self:GetVehicleNative())
+end
+
+-- A function to handle custom logic when exiting your vehicle (do nothing, destroy the reference, restore, etc.)
+--
+-- A tangeled spaghetti example can be found [here](https://github.com/YimMenu-Lua/Samurais-Scripts/blob/main/includes/classes/Self.lua#L799).
+function Self:OnVehicleExit()
+    -- Your logic goes here //
+
+    -- keep this at the bottom
+    self.m_last_vehicle = self.m_vehicle
+    self.m_vehicle = nil
 end
 
 -- Returns the entity local player is aiming at.
@@ -104,13 +138,13 @@ function Self:IsUsingAirctaftMG()
 end
 
 -- Teleports local player to the provided coordinates.
----@param where integer|vec3 -- blip or coordinates
+---@param where integer|vec3 -- [blip ID](https://wiki.rage.mp/wiki/Blips) or vector3 coordinates
 ---@param keep_vehicle? boolean
 function Self:Teleport(where, keep_vehicle)
     ThreadManager:RunInFiber(function()
-        local coords
+        local coords -- fwd decl
 
-        if not keep_vehicle and not Self:IsOnFoot() then
+        if (not keep_vehicle and not Self:IsOnFoot()) then
             TASK.CLEAR_PED_TASKS_IMMEDIATELY(Self:GetHandle())
             sleep(50)
         end
@@ -157,7 +191,7 @@ end
 -- Returns whether the player is inside a modshop.
 ---@return boolean
 function Self:IsInCarModShop()
-    if self:IsOnFoot() or self:IsOutside() then
+    if (self:IsOnFoot() or self:IsOutside()) then
         return false
     end
 
@@ -237,7 +271,7 @@ function Self:Destroy()
     ---@diagnostic disable-next-line
     self:super():Destroy()
     self.m_vehicle = nil
-    self.m_prev_vehicle = nil
+    self.m_last_vehicle = nil
 end
 
 Backend:RegisterEventCallback(eBackendEvent.PLAYER_SWITCH, function()
@@ -248,19 +282,18 @@ Backend:RegisterEventCallback(eBackendEvent.SESSION_SWITCH, function()
     Self:Destroy()
 end)
 
+-- An example thread to handle custom local player logic.
+-- Create and cache a new `Vehicle` instance only once if it either
+-- doesn't already exist or doesn't match the player's current vehicle.
 ThreadManager:CreateNewThread("SB_SELF", function()
-    if (not Self.m_internal) then
-        Self.m_internal = Self:Resolve()
+    if (Self.m_vehicle and Self.m_vehicle:IsValid()) then
+        if (Self:IsOnFoot()) then
+            Self:OnVehicleExit()
+        elseif (Self.m_vehicle:GetHandle() ~= Self:GetVehicleNative()) then
+            Self:OnVehicleSwitch()
+        end
+    elseif (not Self:IsOnFoot()) then
+        Self.m_vehicle = Vehicle(Self:GetVehicleNative())
     end
-
-    if (Self.m_vehicle and Self:IsOnFoot()) then
-        Self.m_prev_vehicle = Self.m_vehicle:GetHandle()
-        Self.m_vehicle = nil
-    end
-
-    if (Self.m_vehicle == nil and not Self:IsOnFoot()) then
-        Self.m_vehicle = Vehicle(PED.GET_VEHICLE_PED_IS_IN(Self:GetHandle(), false))
-    end
-
     sleep(500)
 end)

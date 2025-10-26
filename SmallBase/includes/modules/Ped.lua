@@ -22,10 +22,12 @@ function Ped:IsAlive()
     return self:IsValid() and not ENTITY.IS_ENTITY_DEAD(self:GetHandle(), false)
 end
 
+---@return boolean
 function Ped:IsOnFoot()
     return self:IsValid() and PED.IS_PED_ON_FOOT(self:GetHandle())
 end
 
+---@return boolean
 function Ped:IsRagdoll()
     return PED.IS_PED_RAGDOLL(self:GetHandle())
 end
@@ -54,6 +56,7 @@ function Ped:IsInWater()
     return self:IsValid() and ENTITY.IS_ENTITY_IN_WATER(self:GetHandle())
 end
 
+---@return boolean
 function Ped:IsSwimming()
     if not self:IsValid() then
         return false
@@ -118,6 +121,7 @@ function Ped:IsEnemy()
     )
 end
 
+---@return hash -- weapon hash or 0.
 function Ped:GetCurrentWeapon()
     if not self:IsValid() then
         return 0
@@ -128,13 +132,19 @@ function Ped:GetCurrentWeapon()
     return armed and weapon or 0
 end
 
----@return Vehicle|nil
+-- Bypasses `Vehicle` instance creation and directly returns the handle of the ped's vehicle or 0.
+---@return handle
+function Ped:GetVehicleNative()
+    return PED.GET_VEHICLE_PED_IS_IN(self:GetHandle(), false)
+end
+
+---@return Vehicle|nil -- A `Vehicle` instance or `nil`, not a vehicle handle.
 function Ped:GetVehicle()
     if not self:IsValid() or self:IsOnFoot() then
         return
     end
 
-    return Vehicle(PED.GET_VEHICLE_PED_IS_USING(self:GetHandle()))
+    return Vehicle(self:GetVehicleNative())
 end
 
 ---@return hash -- weapon hash or 0.
@@ -217,6 +227,7 @@ function Ped:GetBoneCoords(boneID)
     return Game.GetPedBoneCoords(self:GetHandle(), boneID)
 end
 
+---@return number|nil
 function Ped:GetVehicleSeat()
     if (not self:IsValid() or not self:IsAlive() or self:IsOnFoot()) then
         return
@@ -225,6 +236,7 @@ function Ped:GetVehicleSeat()
     return Game.GetPedVehicleSeat(self:GetHandle())
 end
 
+---@return table
 function Ped:GetComponentVariations()
     if not self:IsValid() then
         return {}

@@ -95,6 +95,7 @@ if (not memory) then
             get_vec3 = function(self) return vec3:zero() end,
             get_address = function(self) return 0x0 end,
             get_disp32 = function(self, offset, adjust) return 0 end,
+            set_address = function(self, address) end,
             is_null = function(self) return true end,
             is_valid = function(self) return false end
         },

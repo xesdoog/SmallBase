@@ -64,7 +64,7 @@ end
 ---@return eModelType
 function CEntity:GetModelType()
     if not self:IsValid() then
-        return 0
+        return eModelType.Invalid
     end
 
     return (self.m_model_type:get_word() & 0x1F)

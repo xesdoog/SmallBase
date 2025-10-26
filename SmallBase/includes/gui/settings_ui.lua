@@ -99,7 +99,7 @@ local function DrawEntities()
     if ImGui.BeginChild("##entitytypes", 200, 200, true) then
         for etype, entities in ipairs(Backend.SpawnedEntities) do
             local count = table.getlen(entities)
-            local label = _F("%ss (%d/%d)", EnumTostring(eEntityTypes, etype), count,
+            local label = _F("%ss (%d/%d)", EnumTostring(eEntityType, etype), count,
                 Backend.MaxAllowedEntities[etype])
 
             if ImGui.Selectable(label, selected_entity_type == etype) then
@@ -127,17 +127,17 @@ local function DrawEntities()
                 ImGui.TableSetColumnIndex(1)
                 ImGui.Text(tostring(Game.GetEntityModel(handle)))
                 ImGui.TableSetColumnIndex(2)
-                ImGui.Text(EnumTostring(eEntityTypes, selected_entity_type))
+                ImGui.Text(EnumTostring(eEntityType, selected_entity_type))
                 ImGui.TableSetColumnIndex(3)
 
                 ImGui.SameLine()
-                if (selected_entity_type == eEntityTypes.Ped) then
+                if (selected_entity_type == eEntityType.Ped) then
                     if GUI:Button("Kill##" .. handle) then
                         ThreadManager:RunInFiber(function()
                             Ped(handle):Kill()
                         end)
                     end
-                elseif (selected_entity_type == eEntityTypes.Vehicle) then
+                elseif (selected_entity_type == eEntityType.Vehicle) then
                     if GUI:Button("Clone##" .. handle) then
                         ThreadManager:RunInFiber(function()
                             Vehicle(handle):Clone()

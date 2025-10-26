@@ -20,7 +20,7 @@ eBackendEvent = {
 }
 
 ---@enum eEntityType
-eEntityTypes = {
+eEntityType = {
     Ped     = 1,
     Vehicle = 2,
     Object  = 3
@@ -45,14 +45,14 @@ Backend = {
     CreatedBlips       = {},
     AttachedEntities   = {},
     SpawnedEntities    = {
-        [eEntityTypes.Ped]     = {},
-        [eEntityTypes.Vehicle] = {},
-        [eEntityTypes.Object]  = {},
+        [eEntityType.Ped]     = {},
+        [eEntityType.Vehicle] = {},
+        [eEntityType.Object]  = {},
     },
     MaxAllowedEntities = {
-        [eEntityTypes.Ped]     = 50,
-        [eEntityTypes.Vehicle] = 25,
-        [eEntityTypes.Object]  = 75,
+        [eEntityType.Ped]     = 50,
+        [eEntityType.Vehicle] = 25,
+        [eEntityType.Object]  = 75,
     },
 }
 Backend.__index = Backend

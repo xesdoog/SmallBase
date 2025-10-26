@@ -12,12 +12,13 @@
 ---@overload fun(handle: integer): Entity
 Entity = Class("Entity")
 
-function Entity:__eq(b)
+function Entity:__eq(right)
     local hndl = self:GetHandle()
-    if IsInstance(b, Entity) then
-        return (hndl == b:GetHandle())
-    elseif(IsInstance(b, "number") and Game.IsScriptHandle(b)) then
-        return (hndl == b)
+
+    if IsInstance(right, Entity) then
+        return (hndl == right:GetHandle())
+    elseif(IsInstance(right, "number") and Game.IsScriptHandle(right)) then
+        return (hndl == right)
     end
 
     return false
@@ -44,7 +45,7 @@ end
 --
 -- If already resolved, returns the cached instance.
 --
--- > **[Note]**: Inheritance chains are simplified. There is no `fwEntity`, `fwArchetype`, `CPhysical`, etc...
+-- > **[Note]**: Inheritance chains are simplified. There are no `fwEntity`, `fwArchetype`, `CPhysical`, etc...
 --
 -- > Instead, the base class is `CEntity` and the others inherit from it.
 --
@@ -57,7 +58,7 @@ end
 -- if veh then
 --      local cvehicle = veh:Resolve()
 --      print(cvehicle.m_max_health:get_float()) -- -> 1000.0
---      print(cvehicle.m_handling_flags:get_dword()) -- -> integer<uint32_t> (depends on the vehicle)
+--      print(cvehicle.m_handling_flags:get_dword()) -- -> dword flags (depends on the vehicle)
 -- end
 --```
 ---@generic T : CEntity
@@ -71,16 +72,16 @@ function Entity:Resolve()
     -- We have to do this because `Self` inherits from `Entity` but doesn't have a constructor
     -- and doesn't store handles as members (because they can change).
 
-    local handle = self:GetHandle() -- This is overridden in `Self` to always invoke `PLAYER.PLAYER_PED_ID()`
-    local ent_type = Game.GetEntityType(handle)
+    local hndl = self:GetHandle() -- This is overridden in `Self` to always invoke `PLAYER.PLAYER_PED_ID()`
+    local ent_type = Game.GetEntityType(hndl)
 
-    if (ent_type == eEntityTypes.Ped) then
-        return CPed(handle)
-    elseif (ent_type == eEntityTypes.Vehicle) then
-        return CVehicle(handle)
+    if (ent_type == eEntityType.Ped) then
+        return CPed(hndl)
+    elseif (ent_type == eEntityType.Vehicle) then
+        return CVehicle(hndl)
     end
 
-    return CEntity(handle)
+    return CEntity(hndl)
 end
 
 function Entity:Destroy()
@@ -88,6 +89,8 @@ function Entity:Destroy()
     self.m_modelhash = nil
     self.m_internal  = nil
     self.m_ptr       = nil
+
+    return nil
 end
 
 ---@param modelHash hash
@@ -104,10 +107,10 @@ function Entity:Create(modelHash, entityType, pos, heading, isNetwork, isScriptH
 
     pos = pos or self:GetSpawnPosInFront()
 
-    if (entityType == eEntityTypes.Ped) then
+    if (entityType == eEntityType.Ped) then
         local handle = Game.CreatePed(modelHash, pos, heading, isNetwork, isScriptHostPed)
         return Ped(handle)
-    elseif (entityType == eEntityTypes.Vehicle) then
+    elseif (entityType == eEntityType.Vehicle) then
         local handle = Game.CreateVehicle(modelHash, pos, heading, isNetwork, isScriptHostPed)
         return Vehicle(handle)
     else
@@ -329,6 +332,10 @@ end
 
 function Entity:SetAsNoLongerNeeded()
     ENTITY.SET_ENTITY_AS_NO_LONGER_NEEDED(self:GetHandle())
+end
+
+function Entity:SetModelAsNoLongerNeeded()
+    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(self:GetModelHash())
 end
 
 function Entity:GetModelDimensions()

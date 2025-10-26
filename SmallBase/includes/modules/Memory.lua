@@ -55,7 +55,7 @@ end
 --
 -- We can even directly wrap the return in a `ScriptGlobal` instance, essentially no longer needing to update script globals after game updates.
 --
--- Useful if I figure out a way to make strong patterns for script globals
+-- Useful if I figure out a way to make strong patterns for script globals.
 ---@param addr integer
 ---@return integer -- Script global index. Example: 262145
 function Memory:GlobalIndexFromAddress(addr)
@@ -90,7 +90,9 @@ function Memory:GetPedInfo(ped)
     return CPed(ped)
 end
 
--- Checks if a vehicle's handling flag is set.
+-- Checks if a vehicle's handling flag is set. It is recommended to use the `Vehicle` module instead since it caches the CVehicle instance.
+--
+-- This is only useful if you want to quickly get/set a flag once and don't need a `Vehicle` instance.
 ---@param vehicle handle
 ---@param flag eVehicleHandlingFlags
 ---@return boolean
@@ -112,6 +114,9 @@ function Memory:GetVehicleHandlingFlag(vehicle, flag)
     return Bit.is_set(m_handling_flags:get_dword(), flag)
 end
 
+-- Checks if a vehicle's model info flag is set. It is recommended to use the `Vehicle` module instead since it caches the CVehicle instance.
+--
+-- This is only useful if you want to quickly get/set a flag once and don't need a `Vehicle` instance.
 ---@param vehicle handle
 ---@param flag eVehicleModelFlags
 ---@return boolean
@@ -138,25 +143,25 @@ end
 --
 -- Returns the model type of an entity (ped, object, vehicle, MLO, time, etc...)
 ---@param entity handle
----@return number
+---@return eModelType
 function Memory:GetEntityType(entity)
     if not ENTITY.DOES_ENTITY_EXIST(entity) then
-        return 0
+        return eModelType.Invalid
     end
 
     local b_IsMemSafe, i_EntityType = pcall(function()
         local pEntity = memory.handle_to_ptr(entity)
 
-        if pEntity:is_valid() then
-            local m_model_info = pEntity:add(0x0020):deref()
-            local m_model_type = m_model_info:add(0x009D)
-
-            return m_model_type:get_word()
+        if pEntity:is_null() then
+            return eModelType.Invalid
         end
-        return 0
+
+        local m_model_info = pEntity:add(0x0020):deref()
+        local m_model_type = m_model_info:add(0x009D)
+        return m_model_type:get_word()
     end)
 
-    return b_IsMemSafe and i_EntityType or 0
+    return b_IsMemSafe and i_EntityType or eModelType.Invalid
 end
 
 --[[
@@ -174,7 +179,6 @@ function Memory:SetWeaponEffectGroup(dword)
     end
 end
 --]]
-
 
 -- inline
 return Memory()

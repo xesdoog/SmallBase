@@ -110,7 +110,7 @@ end
 ---@param is_networked? boolean
 ---@param is_sripthost_ped? boolean
 function Game.CreatePed(model_hash, spawn_pos, heading, is_networked, is_sripthost_ped)
-    if not Backend:CanCreateEntity(eEntityTypes.Ped) then
+    if not Backend:CanCreateEntity(eEntityType.Ped) then
         if not GVars.backend.auto_cleanup_entities then
             Toast:ShowError(
                 "SmallBase",
@@ -124,7 +124,7 @@ function Game.CreatePed(model_hash, spawn_pos, heading, is_networked, is_sriptho
         -- Not sure why this code even exists. SpawnedEntities is a dict, not an array.
         -- TODO: Fix this by keeping a reference to the last spawned entity in eah category and move the logic to Backend
         local oldest = table.remove(Backend.SpawnedEntities.peds, 1)
-        Game.DeleteEntity(oldest, eEntityTypes.Ped)
+        Game.DeleteEntity(oldest, eEntityType.Ped)
     end
 
     Await(Game.RequestModel, model_hash)
@@ -139,7 +139,7 @@ function Game.CreatePed(model_hash, spawn_pos, heading, is_networked, is_sriptho
         is_sripthost_ped or false
     )
 
-    Backend:RegisterEntity(i_Handle, eEntityTypes.Ped)
+    Backend:RegisterEntity(i_Handle, eEntityType.Ped)
     return i_Handle
 end
 
@@ -149,7 +149,7 @@ end
 ---@param is_networked? boolean
 ---@param is_scripthost_veh? boolean
 function Game.CreateVehicle(model_hash, spawn_pos, heading, is_networked, is_scripthost_veh)
-    if not Backend:CanCreateEntity(eEntityTypes.Vehicle) then
+    if not Backend:CanCreateEntity(eEntityType.Vehicle) then
         if not GVars.backend.auto_cleanup_entities then
             Toast:ShowError(
                 "SmallBase",
@@ -161,7 +161,7 @@ function Game.CreateVehicle(model_hash, spawn_pos, heading, is_networked, is_scr
         end
 
         local oldest = table.remove(Backend.SpawnedEntities.vehicles, 1)
-        Game.DeleteEntity(oldest, eEntityTypes.Vehicle)
+        Game.DeleteEntity(oldest, eEntityType.Vehicle)
     end
 
     Await(Game.RequestModel, model_hash)
@@ -182,7 +182,7 @@ function Game.CreateVehicle(model_hash, spawn_pos, heading, is_networked, is_scr
     if Game.IsOnline() then
         DECORATOR.DECOR_SET_INT(i_Handle, "MPBitset", 0)
     end
-    Backend:RegisterEntity(i_Handle, eEntityTypes.Vehicle)
+    Backend:RegisterEntity(i_Handle, eEntityType.Vehicle)
 
     return i_Handle
 end
@@ -195,7 +195,7 @@ end
 ---@param should_place_on_ground? boolean
 ---@param heading? integer
 function Game.CreateObject(model_hash, spawn_pos, is_networked, is_scripthost_obj, is_dynamic, should_place_on_ground, heading)
-    if not Backend:CanCreateEntity(eEntityTypes.Object) then
+    if not Backend:CanCreateEntity(eEntityType.Object) then
         if not GVars.backend.auto_cleanup_entities then
             Toast:ShowError(
                 "SmallBase",
@@ -207,7 +207,7 @@ function Game.CreateObject(model_hash, spawn_pos, is_networked, is_scripthost_ob
         end
 
         local oldest = table.remove(Backend.SpawnedEntities.objects, 1)
-        Game.DeleteEntity(oldest, eEntityTypes.Object)
+        Game.DeleteEntity(oldest, eEntityType.Object)
     end
 
     Await(Game.RequestModel, model_hash)
@@ -228,7 +228,7 @@ function Game.CreateObject(model_hash, spawn_pos, is_networked, is_scripthost_ob
     if heading then
         ENTITY.SET_ENTITY_HEADING(i_Handle, heading)
     end
-    Backend:RegisterEntity(i_Handle, eEntityTypes.Object)
+    Backend:RegisterEntity(i_Handle, eEntityType.Object)
 
     return i_Handle
 end
@@ -266,7 +266,7 @@ function Game.DeleteEntity(entity, entity_type)
             sleep(50)
 
             if ENTITY.DOES_ENTITY_EXIST(entity) and Game.IsOnline() then
-                Await(entities.take_control_of, entity)
+                Await(entities.take_control_of, { entity, 300 }, 500)
                 ENTITY.DELETE_ENTITY(entity)
             end
             sleep(50)
@@ -675,7 +675,7 @@ end
 ---@param entity handle
 ---@return string
 function Game.GetEntityTypeString(entity)
-    return EnumTostring(eEntityTypes, Game.GetEntityType(entity)) or "Unknown"
+    return EnumTostring(eEntityType, Game.GetEntityType(entity)) or "Unknown"
 end
 
 ---@param model joaat_t
@@ -1143,10 +1143,10 @@ function Game.GetModelType(modelHash)
     end
 
     if STREAMING.IS_MODEL_A_PED(modelHash) then
-        return eEntityTypes.Ped
+        return eEntityType.Ped
     elseif STREAMING.IS_MODEL_A_VEHICLE(modelHash) then
-        return eEntityTypes.Vehicle
-    else return eEntityTypes.Object
+        return eEntityType.Vehicle
+    else return eEntityType.Object
     end
 end
 

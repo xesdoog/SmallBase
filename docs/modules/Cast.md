@@ -1,67 +1,50 @@
 # Cast
 
-## Methods
+A lightweight utility for explicit integer type casting.  
+Converts Lua numbers to signed or unsigned integer equivalents across common C/C++ bit-widths.
 
-### `__call`
+Since Lua numbers are IEEE-754 doubles, precision is guaranteed only up to **2⁵³**.
 
+---
 
-### `new`
+- **Constructor parameters:**
 
-Constructor
+    | Name | Type | Description |
+    |------|------|--------------|
+    | `n` | `integer` | The number to cast. |
 
-**Parameters:**
-- `n` integer
+---
 
+- **Methods:**
 
-**Returns:**
-- `Cast` 
+    | Method | Return | Description |
+    |---------|----------|-------------|
+    | `:AsUint8_t()` | `uint8_t` | Casts to 8-bit unsigned integer. |
+    | `:AsInt8_t()` | `int8_t` | Casts to 8-bit signed integer. |
+    | `:AsUint16_t()` | `uint16_t` | Casts to 16-bit unsigned integer. |
+    | `:AsInt16_t()` | `int16_t` | Casts to 16-bit signed integer. |
+    | `:AsUint32_t()` | `uint32_t` | Casts to 32-bit unsigned integer. |
+    | `:AsInt32_t()` | `int32_t` | Casts to 32-bit signed integer. |
+    | `:AsUint64_t()` | `uint64_t` | Casts to 64-bit unsigned integer *(precision-limited)*. |
+    | `:AsInt64_t()` | `int64_t` | Casts to 64-bit signed integer *(precision-limited)*. |
+    | `:AsJoaat_t()` | `joaat_t` | Alias for `AsUint32_t()`. |
 
-### `AsUint8_t`
+> [!Note]
+> The return types are **aliases** of `number`. They're not real integer types but are there just for IntelliSense. For more information, please refer to [types.lua](../SmallBase/includes/lib/types.lua).
 
-**Returns:**
-- `uint8_t` 
+---
 
-### `AsInt8_t`
+- **Usage Example:**
 
-**Returns:**
-- `int8_t` 
+    ```lua
+    local c = Cast(65535)
 
-### `AsUint16_t`
+    print(c:AsUint16_t()) --> 65535
+    print(c:AsInt16_t())  --> -1
+    ```
 
-**Returns:**
-- `uint16_t` 
+---
 
-### `AsInt16_t`
-
-**Returns:**
-- `int16_t` 
-
-### `AsUint32_t`
-
-**Returns:**
-- `uint32_t` 
-
-### `AsInt32_t`
-
-**Returns:**
-- `int32_t` 
-
-### `AsJoaat_t`
-
-**Returns:**
-- `joaat_t` 
-
-### `AsUint64_t`
-
-**[NOTE]** Lua numbers are IEEE-754 doubles so this **will lose precision above 2^53**.
-
-V1 does not have `bigint` or an `FFI` lib so we're stuck with this.
-
-**Returns:**
-- `uint64_t` 
-
-### `AsInt64_t`
-
-**Returns:**
-- `int64_t` 
-
+> [!Iportant]
+> `Cast` only performs bit-mask operations. No magic, no conversions beyond integer bounds.  
+> You don't need this module if you're on V2 since it runs **LuaJIT** compared to V1's **Lua 5.4**.

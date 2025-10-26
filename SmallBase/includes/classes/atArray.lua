@@ -13,7 +13,7 @@
 ---@field private m_data array<pointer>
 ---@field private m_data_type any
 ---@field private m_last_update_time Time.TimePoint
----@overload fun(address: pointer, data_type?: ClassMeta): atArray
+---@overload fun(address: pointer, data_type?: any): atArray
 atArray = {}
 atArray.__index = atArray
 atArray.__type = "atArray"
@@ -25,7 +25,7 @@ setmetatable(atArray, {
 
 ---@generic T
 ---@param address pointer
----@param data_type? ClassMeta<T>
+---@param data_type optional<T>
 ---@return atArray<T>
 function atArray.new(address, data_type)
     local instance = setmetatable(
@@ -160,7 +160,12 @@ end
 
 ---@return string
 function atArray:DataType()
-    return (self.m_data_type and self.m_data_type.__type) or "pointer<undefined>"
+    local _t = "unknonwn"
+    if (self.m_data_type and IsInstance(self.m_data_type.__type, "string")) then
+        _t = self.m_data_type.__type
+    end
+
+    return _F("pointer<%s>", _t)
 end
 
 ---@param i number
@@ -210,9 +215,10 @@ end
 function atArray:__tostring()
     self:Update()
     local buffer = ""
+    local data_type = self:DataType()
 
     for i, data in self:Iter() do
-        buffer = buffer .. _F("[%d] <Pointer @ 0x%X>\n", i, data:get_address())
+        buffer = buffer .. _F("\n[%d] %s @ 0x%X>", i, data_type, data:get_address())
     end
 
     return buffer

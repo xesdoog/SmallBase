@@ -4,7 +4,7 @@
 local Compat = {}
 Compat.__index = Compat
 
----@param version eAPIVersion
+---@param version integer eAPIVersion
 function Compat.SetupEnvironment(version)
     if (version == eAPIVersion.V1) then
         print = function(...)
@@ -17,10 +17,12 @@ function Compat.SetupEnvironment(version)
                 if (type(v) == "table") then
                     if v.__tostring then
                         str = v:__tostring()
-                    elseif (type(table.serialize) == "function") then
+                    elseif (type(table.serialize) == "function") then -- this is defined in utils.lua
                         local ok, result = pcall(table.serialize, v)
                         str = ok and result or "<serialization error!>"
                     end
+                elseif IsInstance(v, "pointer") then
+                    str = string.format("Pointer @ 0x%X", v:get_address())
                 else
                     local ok, result = pcall(tostring, v)
                     str = ok and result or "<tostring error!>"

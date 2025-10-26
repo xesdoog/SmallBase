@@ -11,6 +11,7 @@
 --print(c:AsInt16_t()) --> -1
 --```
 -----------------------------------------
+---@ignore
 ---@class Cast
 ---@field private m_value integer
 ---@overload fun(n: integer): Cast
@@ -89,7 +90,7 @@ end
 
 -- **[NOTE]** Lua numbers are IEEE-754 doubles so this **will lose precision above 2^53**.
 --
--- V1 does not have `bigint` or an `FFI` lib so we're stuck with this.
+-- V1 does not have `bigint` or an `FFI` lib so this will have to do.
 ---@return uint64_t
 function Cast:AsUint64_t()
     local lo = self.m_value & 0xFFFFFFFF

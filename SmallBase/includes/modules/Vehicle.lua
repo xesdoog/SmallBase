@@ -5,6 +5,8 @@
 ---@class Vehicle : Entity
 ---@field private m_internal CVehicle
 ---@field private m_class_id number
+---@field private m_num_seats number
+---@field private m_max_passengers number
 ---@field Resolve fun() : CVehicle
 ---@field Create fun(_, modelHash: joaat_t, entityType: eEntityType, pos?: vec3, heading?: number, isNetwork?: boolean, isScriptHostPed?: boolean): Vehicle
 ---@overload fun(handle: handle): Vehicle
@@ -80,20 +82,30 @@ function Vehicle:GetOccupants()
     return passengers
 end
 
+---@return number
 function Vehicle:GetNumberOfPassengers()
     if not self:IsValid() then
         return 0
     end
 
-    return VEHICLE.GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(self:GetHandle())
+    if not self.m_max_passengers then
+        self.m_max_passengers = VEHICLE.GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(self:GetHandle())
+    end
+
+    return self.m_max_passengers
 end
 
+---@return number
 function Vehicle:GetNumberOfSeats()
     if not self:IsValid() then
         return 0
     end
 
-    return VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(self:GetModelHash())
+    if not self.m_num_seats then
+        self.m_num_seats = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(self:GetModelHash())
+    end
+
+    return self.m_num_seats
 end
 
 ---@param seatIndex number
@@ -136,12 +148,14 @@ function Vehicle:IsEmpty()
     return true
 end
 
+---@return boolean
 function Vehicle:IsLocalPlayerInVehicle()
-    if Self:IsOnFoot() or not self:IsValid() then
+    local PV = Self:GetVehicle()
+    if not (PV and PV:IsValid() and self:IsValid()) then
         return false
     end
 
-    return self == Self:GetVehicle()
+    return self:GetHandle() == PV:GetHandle()
 end
 
 ---@return boolean
@@ -276,7 +290,40 @@ function Vehicle:IsLowrider()
         or self:GetModelInfoFlag(eVehicleModelInfoFlags.HAS_LOWRIDER_DONK_HYDRAULICS)
 end
 
--- Maximizes the vehicle's performance mods.
+function Vehicle:Clean()
+    if not self:IsValid() then
+        return
+    end
+
+    VEHICLE.SET_VEHICLE_DIRT_LEVEL(self:GetHandle(), 0.0)
+end
+
+---@param reset_dirt? bool
+function Vehicle:Repair(reset_dirt)
+    if not self:IsValid() then
+        return
+    end
+
+    local handle = self:GetHandle()
+    VEHICLE.SET_VEHICLE_FIXED(handle)
+    VEHICLE.SET_VEHICLE_DEFORMATION_FIXED(handle)
+
+    if (reset_dirt) then
+        self:Clean()
+    end
+
+    local pWaterDamage = self:Resolve().m_water_damage
+    if pWaterDamage:is_null() then
+        return
+    end
+
+    local damage_bits = pWaterDamage:get_int()
+    if (type(damage_bits) == "number") then
+        pWaterDamage:set_int(Bit.clear(damage_bits, 0))
+    end
+end
+
+-- Maximizes the vehicle's performance mods, repairs and cleans it.
 function Vehicle:MaxPerformance()
     local handle = self:GetHandle()
 
@@ -314,40 +361,7 @@ function Vehicle:MaxPerformance()
 
     VEHICLE.TOGGLE_VEHICLE_MOD(handle, 18, true)
     VEHICLE.TOGGLE_VEHICLE_MOD(handle, 22, true)
-    VEHICLE.SET_VEHICLE_FIXED(handle)
-    VEHICLE.SET_VEHICLE_DEFORMATION_FIXED(handle)
-    VEHICLE.SET_VEHICLE_BODY_HEALTH(handle, 1000)
-    VEHICLE.SET_VEHICLE_STRONG(handle, true)
-end
-
----@param reset_dirt? bool
-function Vehicle:Repair(reset_dirt)
-    local handle = self:GetHandle()
-
-    if not self:IsValid() then
-        return
-    end
-
-    VEHICLE.SET_VEHICLE_FIXED(handle)
-    VEHICLE.SET_VEHICLE_DEFORMATION_FIXED(handle)
-
-    if (reset_dirt) then
-        VEHICLE.SET_VEHICLE_DIRT_LEVEL(handle, 0.0)
-    end
-
-    if (not self.m_internal) then
-        return
-    end
-
-    local pWaterDamage = self.m_internal.m_water_damage
-    if pWaterDamage:is_null() then
-        return
-    end
-
-    local damage_bits = pWaterDamage:get_int()
-    if (type(damage_bits) == "number") then
-        pWaterDamage:set_int(Bit.clear(damage_bits, 0))
-    end
+    self:Repair(true)
 end
 
 ---@param toggle boolean
@@ -387,52 +401,44 @@ function Vehicle:LockDoors(toggle)
     end
 end
 
----@param multiplier float
-function Vehicle:SetAcceleration(multiplier)
-    if not self:IsValid() or (math.type(multiplier) ~= "float") then
-        return
+-- Gets the vehicle's acceleration multiplier.
+---@return float
+function Vehicle:GetAcceleration(multiplier)
+    if not self:IsValid() then
+        return 0.0
     end
 
-    if not self.m_internal then
-        return
-    end
-
-    local pAcceleration = self.m_internal.m_acceleration
-    if pAcceleration:is_valid() then
-        pAcceleration:set_float(multiplier)
-    end
+    return self:Resolve():GetAcceleration()
 end
 
+-- Sets the vehicle's acceleration multiplier.
+---@param multiplier float
+function Vehicle:SetAcceleration(multiplier)
+    if not (self:IsValid() and (type(multiplier) == "number")) then
+        return
+    end
+
+    self:Resolve():SetAcceleration(multiplier)
+end
+
+-- Gets the vehicle's deformation multiplier.
 ---@return float|nil
 function Vehicle:GetDeformation()
     if not self:IsValid() then
         return
     end
 
-    if not self.m_internal then
-        return
-    end
-
-    local pDeformMult = self.m_internal.m_deform_mult
-    if pDeformMult:is_valid() then
-        return pDeformMult:get_float()
-    end
+    return self:Resolve():GetDeformMultiplier()
 end
 
+-- Sets the vehicle's deformation multiplier.
 ---@param multiplier float
 function Vehicle:SetDeformation(multiplier)
-    if not self:IsValid() or type(multiplier) ~= "number" then
+    if not (self:IsValid() and type(multiplier) == "number") then
         return
     end
 
-    if not self.m_internal then
-        return
-    end
-
-    local pDeformMult = self.m_internal.m_deform_mult
-    if pDeformMult:is_valid() then
-        pDeformMult:set_float(multiplier)
-    end
+    self:Resolve():SetDeformMultiplier(multiplier)
 end
 
 ---@return table
@@ -444,7 +450,7 @@ function Vehicle:GetExhaustBones()
     end
 
     local bones   = {}
-    local count   = VEHICLE.GET_VEHICLE_MAX_EXHAUST_BONE_COUNT_() - 1 -- all vehicles have an additional exhaust bone sticking out of the top of the engine
+    local count   = VEHICLE.GET_VEHICLE_MAX_EXHAUST_BONE_COUNT_() - 1 -- all vehicles have an additional exhaust bone sticking out of the top of the engine.
     local bParam  = false
     local boneIdx = -1
 
@@ -504,23 +510,25 @@ end
 
 ---@return table
 function Vehicle:GetCustomWheels()
-    local handle = self:GetHandle()
     if not self:IsValid() then
         return {}
     end
 
+    local handle = self:GetHandle()
     local wheels = {}
     wheels.type  = VEHICLE.GET_VEHICLE_WHEEL_TYPE(handle)
     wheels.index = VEHICLE.GET_VEHICLE_MOD(handle, 23)
     wheels.var   = VEHICLE.GET_VEHICLE_MOD_VARIATION(handle, 23)
+
     return wheels
 end
 
 function Vehicle:SetCustomWheels(tWheelData)
-    local handle = self:GetHandle()
     if not self:IsValid() or not tWheelData then
         return
     end
+
+    local handle = self:GetHandle()
 
     if tWheelData.type then
         VEHICLE.SET_VEHICLE_WHEEL_TYPE(handle, tWheelData.type)
@@ -787,7 +795,7 @@ function Vehicle:Clone(opts)
 
     opts = opts or {}
     local pos = opts.spawn_pos or self:GetSpawnPosInFront()
-    local clone = Vehicle:Create(self:GetModelHash(), eEntityTypes.Vehicle, pos)
+    local clone = Vehicle:Create(self:GetModelHash(), eEntityType.Vehicle, pos)
     local tModData = self:GetMods()
 
     if clone:IsValid() then
@@ -860,7 +868,7 @@ function Vehicle:ShuffleSeats(step)
     end)
 end
 
--- Must be called on tick.
+-- Must be called on tick. If you want a one-shot thing, use `Vehicle:SetAcceleration` instead.
 ---@param value number speed modifier
 function Vehicle:ModifyTopSpeed(value)
     if not Self:IsValid() then
@@ -870,6 +878,7 @@ function Vehicle:ModifyTopSpeed(value)
     VEHICLE.MODIFY_VEHICLE_TOP_SPEED(self:GetHandle(), value)
 end
 
+-- Returns whether a handling flag is enabled.
 ---@param flag eVehicleHandlingFlags
 ---@return boolean
 function Vehicle:GetHandlingFlag(flag)
@@ -877,122 +886,92 @@ function Vehicle:GetHandlingFlag(flag)
         return false
     end
 
-    if not self.m_internal then
-        return false
-    end
-
-    local m_handling_flags = self.m_internal.m_handling_flags
-    if m_handling_flags:is_null() then
-        return false
-    end
-
-    local flag_bits = m_handling_flags:get_dword()
-    return Bit.is_set(flag_bits, flag)
+    return self:Resolve():GetHandlingFlag(flag)
 end
 
 -- Enables/disables a vehicle's handling flag.
 ---@param flag eVehicleHandlingFlags
 ---@param toggle boolean
 function Vehicle:SetHandlingFlag(flag, toggle)
-    if not self:IsValid() or not (self:IsCar() or self:IsBike() or self:IsQuad()) then
+    if not self:IsValid() then
         return
     end
 
-    if not self.m_internal then
-        return
-    end
-
-    local m_handling_flags = self.m_internal.m_handling_flags
-
-    if m_handling_flags:is_null() then
-        return
-    end
-
-    local flag_bits = m_handling_flags:get_dword()
-    local Bitwise   = toggle and Bit.set or Bit.clear
-    local new_bits  = Bitwise(flag_bits, flag)
-    m_handling_flags:set_dword(new_bits)
+    self:Resolve():SetHandlingFlag(flag, toggle)
 end
 
+-- Returns whether a model flag is enabled.
 ---@param flag eVehicleModelFlags
 function Vehicle:GetModelFlag(flag)
-    if not self:IsValid() or not self.m_internal then
+    if not self:IsValid() then
         return false
     end
 
-    local pModelFlags = self.m_internal.m_model_flags
-    if pModelFlags:is_null() then
-        return false
-    end
-
-    local iModelFlags = pModelFlags:get_dword()
-    return Bit.is_set(iModelFlags, flag)
+    return self:Resolve():GetModelFlag(flag)
 end
 
+-- Returns whether a model info flag is enabled **(not the same as model flags)**.
 ---@param flag eVehicleModelInfoFlags
 ---@return boolean
 function Vehicle:GetModelInfoFlag(flag)
-    if not self:IsValid() or not self.m_internal then
+    if not self:IsValid() then
         return false
     end
 
-    local base_ptr = self.m_internal.m_model_info_flags
-    if not base_ptr:is_valid() then
-        return false
-    end
-
-    local index     = math.floor(flag / 32)
-    local bit_pos   = flag % 32
-    local flag_ptr  = base_ptr:add(index * 4)
-    local flag_bits = flag_ptr:get_dword()
-
-    return Bit.is_set(flag_bits, bit_pos)
+    return self:Resolve():GetModelInfoFlag(flag)
 end
 
 -- Enables/disables a vehicle's model info flag.
 ---@param flag eVehicleModelInfoFlags
 ---@param toggle boolean
 function Vehicle:SetModelInfoFlag(flag, toggle)
-    if not self:IsValid() or not self.m_internal then
+    if not self:IsValid() then
         return
     end
 
-    local base_ptr = self.m_internal.m_model_info_flags
-    if base_ptr:is_null() then
+    self:Resolve():SetModelInfoFlag(flag, toggle)
+end
+
+-- Returns whether an advanced flag is enabled.
+---@param flag eVehicleAdvancedFlags
+---@return boolean
+function Vehicle:GetAdvancedFlag(flag)
+    if not self:IsValid() then
+        return false
+    end
+
+    return self:Resolve():GetAdvancedFlag(flag)
+end
+
+-- Enables/disables a vehicle's advanced flag.
+---@param flag eVehicleAdvancedFlags
+---@param toggle boolean
+function Vehicle:SetAdvancedFlag(flag, toggle)
+    if not self:IsValid() then
         return
     end
 
-    local index    = math.floor(flag / 32)
-    local bit_pos  = flag % 32
-    local flag_ptr = base_ptr:add(index * 4)
-    if flag_ptr:is_null() then
-        return
-    end
-
-    local flag_bits = flag_ptr:get_dword()
-    local Bitwise   = toggle and Bit.set or Bit.clear
-    local new_bits  = Bitwise(flag_bits, bit_pos)
-    flag_ptr:set_dword(new_bits)
+    self:Resolve():SetAdvancedFlag(flag, toggle)
 end
 
 ---@param bone_index number
 ---@return fMatrix44
 function Vehicle:GetBoneMatrix(bone_index)
-    if not self:IsValid() or not self.m_internal then
+    if not self:IsValid() then
         return fMatrix44:zero()
     end
 
-    return self.m_internal:GetBoneMatrix(bone_index)
+    return self:Resolve():GetBoneMatrix(bone_index)
 end
 
 ---@param bone_index number
 ---@param matrix fMatrix44
 function Vehicle:SetBoneMatrix(bone_index, matrix)
-    if not self:IsValid() or not self.m_internal then
+    if not self:IsValid() then
         return
     end
 
-    self.m_internal:SetBoneMatrix(bone_index, matrix)
+    self:Resolve():SetBoneMatrix(bone_index, matrix)
 end
 
 ---@return CCarHandlingData|nil
@@ -1001,7 +980,7 @@ function Vehicle:GetHandlingData()
         return
     end
 
-    return self.m_internal:GetHandlingData()
+    return self:Resolve():GetCarHandlingData()
 end
 
 -- Serializes a vehicle to JSON.
@@ -1059,7 +1038,7 @@ function Vehicle.CreateFromJSON(filename, warp_into)
 
     local entity   = Self:GetVehicle() ~= nil and Self:GetVehicle() or Self
     local spawnpos = entity:GetSpawnPosInFront()
-    local new_veh  = Vehicle:Create(modelhash, eEntityTypes.Vehicle, spawnpos, Self:GetHeading())
+    local new_veh  = Vehicle:Create(modelhash, eEntityType.Vehicle, spawnpos, Self:GetHeading())
     if (new_veh:IsValid() and type(data.mods) == "table") then
         new_veh:ApplyMods(data.mods)
     end
