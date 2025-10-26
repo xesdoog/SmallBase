@@ -261,7 +261,7 @@ Retrieves a 32-bit displacement (immediate value) from the memory address, optio
 
     -- The pattern lands 2 bytes before the instruction, so we add an offset of 2.
     local disp32   = ptr:get_disp32(0x2)
-    local adjusted = ptr:get_disp32(0x2, 0x8)
+    local adjusted = ptr:get_disp32(0x2, -0x8)
 
     print(disp32)   -- -> 3128 (0xC38) atArray::m_size
     print(adjusted) -- -> 3120 (0xC30) atArray::m_data
