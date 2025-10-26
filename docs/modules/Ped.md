@@ -16,12 +16,27 @@ Class representing a GTA V Ped.
 **Returns:**
 - `boolean` 
 
+### `IsOnFoot`
+
+**Returns:**
+- `boolean` 
+
+### `IsRagdoll`
+
+**Returns:**
+- `boolean` 
+
 ### `IsInCombat`
 
 **Returns:**
 - `boolean` 
 
 ### `IsInWater`
+
+**Returns:**
+- `boolean` 
+
+### `IsSwimming`
 
 **Returns:**
 - `boolean` 
@@ -51,10 +66,22 @@ Class representing a GTA V Ped.
 **Returns:**
 - `boolean` 
 
+### `GetCurrentWeapon`
+
+**Returns:**
+- `hash` -- weapon hash or 0.
+
+### `GetVehicleNative`
+
+Bypasses `Vehicle` instance creation and directly returns the handle of the ped's vehicle or 0.
+
+**Returns:**
+- `handle` 
+
 ### `GetVehicle`
 
 **Returns:**
-- `Vehicle` |nil
+- `Vehicle` |nil -- A `Vehicle` instance or `nil`, not a vehicle handle.
 
 ### `GetVehicleWeapon`
 
@@ -101,6 +128,16 @@ Class representing a GTA V Ped.
 - `boneID` number
 
 
+
+### `GetVehicleSeat`
+
+**Returns:**
+- `number` |nil
+
+### `GetComponentVariations`
+
+**Returns:**
+- `table` 
 
 ### `SetComponenVariations`
 

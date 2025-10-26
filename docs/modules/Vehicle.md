@@ -36,6 +36,16 @@ Class representing a GTA V vehicle.
 **Returns:**
 - `array` <handle>
 
+### `GetNumberOfPassengers`
+
+**Returns:**
+- `number` 
+
+### `GetNumberOfSeats`
+
+**Returns:**
+- `number` 
+
 ### `IsSeatFree`
 
 **Parameters:**
@@ -50,6 +60,11 @@ Class representing a GTA V vehicle.
 - `boolean` 
 
 ### `IsEmpty`
+
+**Returns:**
+- `boolean` 
+
+### `IsLocalPlayerInVehicle`
 
 **Returns:**
 - `boolean` 
@@ -131,16 +146,16 @@ Returns whether the vehicle is an F1 race car.
 Returns whether the vehicle is a lowrider equipped with hydraulic suspension.
 
 
-### `MaxPerformance`
-
-Maximizes the vehicle's performance mods.
-
-
 ### `Repair`
 
 **Parameters:**
 - `reset_dirt?` bool
 
+
+
+### `MaxPerformance`
+
+Maximizes the vehicle's performance mods, repairs and cleans it.
 
 
 ### `LockDoors`
@@ -150,7 +165,16 @@ Maximizes the vehicle's performance mods.
 
 
 
+### `GetAcceleration`
+
+Gets the vehicle's acceleration multiplier.
+
+**Returns:**
+- `float` 
+
 ### `SetAcceleration`
+
+Sets the vehicle's acceleration multiplier.
 
 **Parameters:**
 - `multiplier` float
@@ -159,10 +183,14 @@ Maximizes the vehicle's performance mods.
 
 ### `GetDeformation`
 
+Gets the vehicle's deformation multiplier.
+
 **Returns:**
 - `float` |nil
 
 ### `SetDeformation`
+
+Sets the vehicle's deformation multiplier.
 
 **Parameters:**
 - `multiplier` float
@@ -247,7 +275,7 @@ Maximizes the vehicle's performance mods.
 
 ### `ModifyTopSpeed`
 
-Must be called on tick.
+Must be called on tick. If you want a one-shot thing, use `Vehicle:SetAcceleration` instead.
 
 **Parameters:**
 - `value` number speed modifier
@@ -255,6 +283,8 @@ Must be called on tick.
 
 
 ### `GetHandlingFlag`
+
+Returns whether a handling flag is enabled.
 
 **Parameters:**
 - `flag` eVehicleHandlingFlags
@@ -275,12 +305,16 @@ Enables/disables a vehicle's handling flag.
 
 ### `GetModelFlag`
 
+Returns whether a model flag is enabled.
+
 **Parameters:**
 - `flag` eVehicleModelFlags
 
 
 
 ### `GetModelInfoFlag`
+
+Returns whether a model info flag is enabled **(not the same as model flags)**.
 
 **Parameters:**
 - `flag` eVehicleModelInfoFlags
@@ -295,6 +329,27 @@ Enables/disables a vehicle's model info flag.
 
 **Parameters:**
 - `flag` eVehicleModelInfoFlags
+- `toggle` boolean
+
+
+
+### `GetAdvancedFlag`
+
+Returns whether an advanced flag is enabled.
+
+**Parameters:**
+- `flag` eVehicleAdvancedFlags
+
+
+**Returns:**
+- `boolean` 
+
+### `SetAdvancedFlag`
+
+Enables/disables a vehicle's advanced flag.
+
+**Parameters:**
+- `flag` eVehicleAdvancedFlags
 - `toggle` boolean
 
 

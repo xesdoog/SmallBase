@@ -144,7 +144,7 @@ Vector Operations
 Returns the magnitude (length) of the vector.
 
 **Returns:**
-- `number` 
+- `float` 
 
 ### `distance`
 
@@ -155,7 +155,7 @@ Returns the distance between this vector and another.
 
 
 **Returns:**
-- `number` 
+- `float` 
 
 ### `normalize`
 

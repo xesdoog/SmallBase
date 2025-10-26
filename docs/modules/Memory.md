@@ -35,7 +35,7 @@ Theory: Get a pattern for a script global -> scan it -> get the address and pass
 
 We can even directly wrap the return in a `ScriptGlobal` instance, essentially no longer needing to update script globals after game updates.
 
-Useful if I figure out a way to make strong patterns for script globals
+Useful if I figure out a way to make strong patterns for script globals.
 
 **Parameters:**
 - `addr` integer
@@ -64,7 +64,9 @@ Useful if I figure out a way to make strong patterns for script globals
 
 ### `GetVehicleHandlingFlag`
 
-Checks if a vehicle's handling flag is set.
+Checks if a vehicle's handling flag is set. It is recommended to use the `Vehicle` module instead since it caches the CVehicle instance.
+
+This is only useful if you want to quickly get/set a flag once and don't need a `Vehicle` instance.
 
 **Parameters:**
 - `vehicle` handle
@@ -75,6 +77,10 @@ Checks if a vehicle's handling flag is set.
 - `boolean` 
 
 ### `GetVehicleModelInfoFlag`
+
+Checks if a vehicle's model info flag is set. It is recommended to use the `Vehicle` module instead since it caches the CVehicle instance.
+
+This is only useful if you want to quickly get/set a flag once and don't need a `Vehicle` instance.
 
 **Parameters:**
 - `vehicle` handle
@@ -95,5 +101,5 @@ Returns the model type of an entity (ped, object, vehicle, MLO, time, etc...)
 
 
 **Returns:**
-- `number` 
+- `eModelType` 
 
